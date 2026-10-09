@@ -1,0 +1,20 @@
+[Pp][Ll][Aa][Nn].[Mm][Dd]
+
+.env
+.env.*
+!.env.example
+
+# Python development artifacts.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor and operating-system artifacts.
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
