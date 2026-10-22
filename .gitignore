@@ -18,3 +18,8 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Personal academic inputs. Keep originals local; commit anonymized fixtures.
+/24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf
+/24110107_Graduation Plan.xlsx
+/copied_input.txt
