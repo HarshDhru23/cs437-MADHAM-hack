@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CS437: The Open Hackathon</title>
+  <link rel="stylesheet" href="../../assets/course-theme.css">
+  <script>
+    var storedTheme = localStorage.getItem("iitgn-course-theme");
+    document.documentElement.dataset.theme =
+      storedTheme === "dark" || storedTheme === "light" ? "dark" : "grid";
+  </script>
+  <style>
+    .rules{border-collapse:collapse;width:100%;margin:16px 0;}
+    .rules td{padding:8px 12px;border-bottom:1px solid rgba(128,128,128,.25);vertical-align:top;}
+    .rules td:first-child{width:2em;opacity:.55;font-weight:600;}
+    .dates{border-collapse:collapse;width:100%;margin:16px 0;}
+    .dates td{padding:8px 12px;border-bottom:1px solid rgba(128,128,128,.25);vertical-align:top;}
+    .dates td:first-child{white-space:nowrap;font-weight:600;width:10em;}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <main class="shell" id="main-content">
+    <div class="topline">
+      <a class="brand" href="../../">IITGN Courses</a>
+      <nav class="nav" aria-label="Course navigation">
+        <a href="../">CS437</a>
+        <a href="../classes/">Classes</a>
+        <a href="./" aria-current="page">Hackathon</a>
+        <a href="../progress/">Progress</a>
+      </nav>
+    </div>
+
+    <section class="hero">
+      <p class="eyebrow">Group project &middot; 5 October to 17 November</p>
+      <h1>The Open Hackathon</h1>
+      <p class="lead">Your group builds one piece of software of its own choosing, and keeps building it until the end of the semester. On Monday 16 November, someone outside your group will ask your software for a new feature in plain English. Your group builds it, and your own tests decide whether it is accepted. Build with that day in mind.</p>
+    </section>
+
+    <section class="content-section">
+      <h2>1. What you can build</h2>
+      <p>Almost anything, if it passes three tests:</p>
+      <ul class="compact-list">
+        <li><strong>It has a real user:</strong> a student, a mess committee, a club, a shopkeeper, a parent, a lab. Name them.</li>
+        <li><strong>That user can use it without touching code:</strong> a web page, a phone-friendly site, a bot.</li>
+        <li><strong>It can grow.</strong> A new feature request must have somewhere to go. A tool that does one fixed calculation has nowhere to grow.</li>
+      </ul>
+      <p>Some shapes that work: booking a shared room or a court; a lost-and-found board; a mess menu with ratings; a club's event sign-ups; splitting bills in a hostel wing. Your own idea is better than any of these.</p>
+      <p>Your team is your current group.</p>
+    </section>
+
+    <section class="content-section">
+      <h2>2. The rules</h2>
+      <table class="rules">
+        <tr><td>1</td><td><strong>One new repo per group</strong>, named <code>cs437-&lt;group&gt;-hack</code>, with both instructors as collaborators. Branch protection on <code>main</code>: every change arrives by a pull request that another member reviewed.</td></tr>
+        <tr><td>2</td><td><strong>Spec before code.</strong> <code>SPEC.md</code> says who the user is and lists what they can do, one checkable statement per line: "A student can book a court for a one-hour slot"; "Two students cannot book the same slot".</td></tr>
+        <tr><td>3</td><td><strong>Tests before features.</strong> Every line of <code>SPEC.md</code> has at least one automated test. A feature is done when its test passes <em>and</em> it works when you try it as your user would. Looking right is not enough, and neither is a passing test that checks the wrong thing.</td></tr>
+        <tr><td>4</td><td><strong>One command to run, one to test.</strong> The README gives both. Someone who clones the repo on a fresh laptop must get it running from the README alone.</td></tr>
+        <tr><td>5</td><td><strong>No secrets in the repo.</strong> API keys go in a <code>.env</code> file that <code>.gitignore</code> lists. A committed key breaks this rule even if you delete it later: git history keeps it.</td></tr>
+        <tr><td>6</td><td><strong>Everyone commits.</strong> The group's work counts only for members with a merged pull request.</td></tr>
+        <tr><td>7</td><td><strong>AI is allowed everywhere.</strong> Log how you used it in <code>lab-notes/class-NN.md</code> in your own repo, as usual, naming the part you built.</td></tr>
+      </table>
+    </section>
+
+    <section class="content-section">
+      <h2>3. Your idea, by tonight</h2>
+      <p>By <strong>tonight, Monday 5 October, 23:59</strong>, one person per group posts your idea in the CS437 space, in three sentences:</p>
+      <ol class="compact-list">
+        <li>Who the user is.</li>
+        <li>What they do today, without your software.</li>
+        <li>What your software changes for them.</li>
+      </ol>
+      <p>We approve ideas on Tuesday 6 October. If two groups post the same idea, the group that posted first builds it, and the other picks something else. During this week, talk to your user and write one thing they said at the top of your <code>SPEC.md</code>.</p>
+    </section>
+
+    <section class="content-section">
+      <h2>4. Checkpoints</h2>
+      <p>Class time also goes to other work until November, so most of this happens outside class. We check your repo on each date.</p>
+      <table class="dates">
+        <tr><td>Mon 5 Oct</td><td>Kickoff in class: pick your user and your idea.</td></tr>
+        <tr><td>Mon 5 Oct, 23:59</td><td>Idea posted.</td></tr>
+        <tr><td>Tue 6 Oct</td><td>Ideas approved.</td></tr>
+        <tr><td>Fri 9 Oct</td><td>Repo created, branch protection on, both instructors invited. <code>SPEC.md</code> with one thing your user said, and at least five statements. One test, for one statement, running and failing.</td></tr>
+        <tr><td>Fri 16 Oct</td><td><code>SPEC.md</code> with at least ten statements. A test for every statement; all may still fail. It runs.</td></tr>
+        <tr><td>Tue 27 Oct</td><td>At least half the statements green, each merged through a reviewed pull request. A stranger can run it from the README.</td></tr>
+        <tr><td>Tue 3 Nov</td><td>Every statement green. The spec is frozen.</td></tr>
+        <tr><td>Mon 2 – Tue 10 Nov</td><td>Four class sessions for the hackathon: review another group's pull requests, fix what they find, make the tests honest.</td></tr>
+        <tr><td>Mon 16 Nov</td><td><strong>Acceptance run.</strong> Someone outside your group asks for a feature your group has not seen. You write it into <code>SPEC.md</code>, add its tests, and build it. Your test suite decides.</td></tr>
+        <tr><td>Tue 17 Nov</td><td>Demos.</td></tr>
+      </table>
+    </section>
+
+    <section class="content-section">
+      <h2>5. How it is judged</h2>
+      <ul class="compact-list">
+        <li><strong>The acceptance run.</strong> Was the new feature built in the time, and do your tests really check it?</li>
+        <li><strong>Honest tests.</strong> We will break something your spec promises. Do your tests notice?</li>
+        <li><strong>The process.</strong> Spec first, tests first, reviewed pull requests, every member committing. All of it visible in <code>git log</code>.</li>
+        <li><strong>The user.</strong> Would the person you named actually use it?</li>
+      </ul>
+      <p>A more ambitious project can earn more marks, but only if it is complete. How much the hackathon counts will be announced with the course grading policy.</p>
+    </section>
+  </main>
+</body>
+</html>
