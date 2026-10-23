@@ -42,3 +42,44 @@ Initial scope: one IITGN B.Tech CSE curriculum/batch version, with manually ente
 | CP-05 | `tests/test_prerequisites.py::PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order` | Written; runs and fails because prerequisite validation is unimplemented. |
 
 For now, all five tests use explicitly synthetic courses and requirements, not IITGN curriculum data. They check the domain behavior promised by each statement.
+
+## October 27 implementation scope (not release certification)
+
+The selected cohort is 2024-entry B.Tech CSE. Both imports and account persistence are required. The October 9 text above is historical. The following complete statement map supersedes its initial scope. Source-dependent promises remain blocked until committed approved evidence and human/browser verification exist.
+
+| ID | Checkable statement | Primary evidence/test |
+| --- | --- | --- |
+| CP-01 | A student can inspect all CSE 2024 requirements grouped by basket before supplying history. | Existing test + requirements browser flow and approved-data completeness. |
+| CP-02 | A student can record/correct completed, in-progress and failed course attempts without losing prior attempts. | Existing test + edit/commit integration. |
+| CP-03 | A student can inspect counted completed courses/credits and remaining requirements. | Existing test + independently hand-audited record. |
+| CP-04 | A student can add/remove/move future courses and see semester credit totals. | Existing test + browser planner workflow. |
+| CP-05 | A student can see which prerequisite is missing when it is not completed or earlier planned. | Existing ordering matrix + visible issue. |
+| CP-06 | A student can import a supported transcript PDF with correct semester/code/credit/grade rows. | 39-row independent oracle, wrapped titles, repeated headers, multipage. |
+| CP-07 | A student can paste an IMS grade table and recover all valid rows in their proper terms. | 40-row oracle + tab/whitespace/line-ending variants. |
+| CP-08 | A student can review and correct candidate rows before accepting an import. | Browser preview; no pre-commit record mutation. |
+| CP-09 | A student can recover from an unsupported/invalid import with row-level explanations and the old record intact. | Malformed/encrypted/image-only/oversized input and atomicity tests. |
+| CP-10 | A student's course variants, zero-credit obligations and distinct repeated registrations are preserved. | ES 242(N), PE/IN and two CS 299 fixtures. |
+| CP-11 | A student can re-import without duplicating the same attempt and can resolve conflicting changes. | Idempotence, revised grade, user-correction and distinct-instance tests. |
+| CP-12 | A student can see discrepancies between source totals, extracted rows and degree-countable credits. | PDF 104 vs paste 105; separate classification, no forced equality. |
+| CP-13 | A student can inspect source evidence and unresolved catalogue/equivalence matches for imported rows. | CS 203/202 stays unresolved without approval. |
+| CP-14 | A student's earned-credit, prerequisite-exposure and performance status follow separate approved grade policies. | P/D/E/F/unknown/blank matrix and zero-credit obligations. |
+| CP-15 | A student can inspect CPI and its counted credits/points, with discrepancies or incomplete policies identified. | Sample 849/92 -> 9.23; P exclusion, cap/rounding and repeat-policy cases. |
+| CP-16 | A student can inspect term SPI with its counted attempts and calculation. | Independently calculated terms, fail/repeat/withdrawal policy tests. |
+| CP-17 | A student's mandatory choices and overlapping basket requirements are evaluated without prohibited double counting. | Alternative allocations, narrow-basket adversary, total conservation. |
+| CP-18 | A student can see project/online/exposure caps and excluded credits, including approved exceptions. | 8-credit combined cap, project cap, quad/exposure limits and evidence. |
+| CP-19 | A student can trace every audit decision to its applicable rule version and source. | Explanation/source completeness; wrong-cohort rejection. |
+| CP-20 | A student sees separate actual/current/projected progress and cannot receive an unconditional completion result with missing required evidence. | Incomplete core, pending grade, missing policy and projected-pass cases. |
+| CP-21 | A student can see normal/GPS/summer/advisor load violations and approval-dependent overload status. | Boundary and approval-condition tests. |
+| CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations in plan validation. | Ordering truth tables, duplicate/repeat policy and unknown prerequisite. |
+| CP-23 | A student can inspect confirmed/tentative/unknown availability for the selected planning term. | Complete vs partial offering snapshot; historical pattern never confirmed. |
+| CP-24 | A student can choose sections and see overlapping required meetings, or that clashes could not be checked. | Lecture/lab, alternatives, touching endpoints, quads, missing meetings. |
+| CP-25 | A student can inspect CSE honours eligibility, progress and remaining approved requirements. | Reviewed honours dataset, required project and overlap constraints. |
+| CP-26 | A student can inspect AI minor eligibility, progress and remaining approved requirements. | Reviewed AI minor dataset; base-core exclusions and project limits. |
+| CP-27 | A student can inspect a joint base/honours/AI-minor allocation without exceeding allowed sharing. | Joint adversarial allocation; two-open-elective sharing limits. |
+| CP-28 | A student can compare isolated drop/fail/postpone/replace/credit-cap scenarios against a baseline. | Immutable-history check, downstream issues, hypothetical metric labels. |
+| CP-29 | A student can sign in on another device, retrieve saved records/plans, and resolve conflicting saves. | Signup/login/logout, two-browser test, stale-revision conflict and persistence. |
+| CP-30 | A student can export a readable audit/plan and a versioned backup of their own record. | Printed report + JSON round-trip, sources, unknowns and revision. |
+| CP-31 | A student can complete import, requirement inspection and planning using a phone or keyboard. | Browser accessibility/responsive flows plus observed user session. |
+| CP-32 | A student's personal data is accessible only to that account and can be deleted. | Two-user access/export/delete tests; CSRF, temporary-upload cleanup. |
+| CP-33 | A student can compare no-internship, 3-month and 6-month scenarios using exact dates and see affected courses and completion assumptions. | Calendar boundaries, summer/semester presets, full/partial term conflicts, downstream prerequisites and immutable baseline. |
+| CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4 credits per quad/16 overall; HSS/open-project caps; no duplicated modules or unauthorized approvals. |

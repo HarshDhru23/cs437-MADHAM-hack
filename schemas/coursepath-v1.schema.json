@@ -1,0 +1,968 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursepath.local/schemas/coursepath-v1.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "data": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/record"
+        },
+        {
+          "$ref": "#/$defs/preview"
+        },
+        {
+          "$ref": "#/$defs/audit"
+        },
+        {
+          "$ref": "#/$defs/validation"
+        },
+        {
+          "$ref": "#/$defs/comparison"
+        },
+        {
+          "$ref": "#/$defs/conflict"
+        },
+        {
+          "$ref": "#/$defs/account"
+        },
+        {
+          "$ref": "#/$defs/session"
+        },
+        {
+          "$ref": "#/$defs/plan"
+        },
+        {
+          "$ref": "#/$defs/plan_list"
+        },
+        {
+          "$ref": "#/$defs/analysis"
+        },
+        {
+          "$ref": "#/$defs/curriculum"
+        },
+        {
+          "$ref": "#/$defs/catalogue"
+        },
+        {
+          "$ref": "#/$defs/import_conflict"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/issue"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,4})?$"
+    },
+    "term_id": {
+      "type": "string",
+      "pattern": "^20[0-9]{2}-[0-9]{2}-(I|II|SUMMER)$"
+    },
+    "term": {
+      "type": "object",
+      "required": [
+        "id",
+        "start_date",
+        "end_date_exclusive"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/term_id"
+        },
+        "start_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "end_date_exclusive": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "entity_refs",
+        "source_refs",
+        "suggested_action"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "unknown",
+            "approval_required"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "entity_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_refs": {
+          "type": "array"
+        },
+        "suggested_action": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "attempt": {
+      "type": "object",
+      "required": [
+        "id",
+        "normalized_code",
+        "original_code",
+        "title",
+        "credits",
+        "grade",
+        "term_id",
+        "completion_status",
+        "learning_designation",
+        "source_refs",
+        "user_corrections"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalized_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_code": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "term_id": {
+          "$ref": "#/$defs/term_id"
+        },
+        "completion_status": {
+          "enum": [
+            "completed",
+            "in_progress",
+            "failed",
+            "withdrawn",
+            "incomplete",
+            "unknown"
+          ]
+        },
+        "learning_designation": {
+          "enum": [
+            "degree",
+            "additional",
+            "unknown"
+          ]
+        },
+        "course_version_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "instance_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array"
+        },
+        "user_corrections": {
+          "type": "array"
+        },
+        "approval_refs": {
+          "type": "array"
+        },
+        "source_key": {
+          "type": "string"
+        },
+        "original": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "attempts",
+        "revision",
+        "profile"
+      ],
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "profile": {
+          "type": "object",
+          "required": [
+            "programme",
+            "admission_year",
+            "curriculum_version"
+          ],
+          "properties": {
+            "programme": {
+              "const": "BTECH_CSE"
+            },
+            "admission_year": {
+              "const": 2024
+            },
+            "curriculum_version": {
+              "type": "string"
+            }
+          }
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attempt"
+          }
+        },
+        "current_enrolment": {
+          "type": "array"
+        },
+        "reported_controls": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false
+    },
+    "preview": {
+      "type": "object",
+      "required": [
+        "candidate_attempts",
+        "reported_controls",
+        "unparsed_rows"
+      ],
+      "properties": {
+        "candidate_attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attempt"
+          }
+        },
+        "reported_controls": {
+          "type": "object"
+        },
+        "unparsed_rows": {
+          "type": "array"
+        },
+        "extracted_controls": {
+          "type": "object"
+        },
+        "sample_controls": {
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "base_record_revision": {
+          "type": "integer"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "diff": {
+          "type": "array"
+        },
+        "profile_candidates": {
+          "type": "object",
+          "properties": {
+            "programme": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "admission_year": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "requirement_result": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "required_credits",
+        "counted_credits",
+        "source_refs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "satisfied",
+            "pending",
+            "conditional",
+            "needs_review"
+          ]
+        },
+        "required_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "counted_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "source_refs": {
+          "type": "array"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement_result"
+          }
+        }
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "required": [
+        "id",
+        "attempt_id",
+        "requirement_id",
+        "credits",
+        "counting_context",
+        "source_refs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "attempt_id": {
+          "type": "string"
+        },
+        "requirement_id": {
+          "type": "string"
+        },
+        "credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "counting_context": {
+          "enum": [
+            "base",
+            "honours",
+            "ai_minor"
+          ]
+        },
+        "source_refs": {
+          "type": "array"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "required": [
+        "actual",
+        "current",
+        "projected",
+        "ledger"
+      ],
+      "properties": {
+        "actual": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement_result"
+          }
+        },
+        "current": {
+          "type": "array"
+        },
+        "projected": {
+          "type": "array"
+        },
+        "ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/allocation"
+          }
+        },
+        "rule_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "record_revision": {
+          "type": "integer"
+        },
+        "excluded_attempts": {
+          "type": "array"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "issues": {
+          "type": "array"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "workload",
+        "per_course",
+        "meeting_check_status"
+      ],
+      "properties": {
+        "workload": {
+          "type": "object"
+        },
+        "per_course": {
+          "type": "array"
+        },
+        "meeting_check_status": {
+          "enum": [
+            "clear",
+            "conflicts",
+            "not_checked"
+          ]
+        },
+        "issues": {
+          "type": "array"
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "required": [
+        "baseline_record_revision",
+        "cases"
+      ],
+      "properties": {
+        "baseline_record_revision": {
+          "type": "integer"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "duration_choice",
+              "approved_credits",
+              "start_date",
+              "end_date_exclusive"
+            ],
+            "properties": {
+              "duration_choice": {
+                "enum": [
+                  "none",
+                  "three_months",
+                  "six_months"
+                ]
+              },
+              "approved_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "start_date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "end_date_exclusive": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              }
+            }
+          }
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "required": [
+        "current_revision",
+        "action"
+      ],
+      "properties": {
+        "current_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "action": {
+          "const": "reload_compare"
+        }
+      },
+      "additionalProperties": false
+    },
+    "account": {
+      "type": "object",
+      "required": [
+        "id",
+        "username"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "required": [
+        "csrf_token",
+        "user"
+      ],
+      "properties": {
+        "csrf_token": {
+          "type": "string"
+        },
+        "user": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/account"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "planned_course": {
+      "type": "object",
+      "required": [
+        "id",
+        "normalized_code",
+        "credits"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "normalized_code": {
+          "type": "string"
+        },
+        "credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "course_id": {
+          "type": "string"
+        },
+        "course_version_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "offering_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "section_ids": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "instance_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "intended_allocation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "placeholder": {
+      "type": "object",
+      "required": [
+        "id",
+        "requirement_id",
+        "desired_credits"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "requirement_id": {
+          "type": "string"
+        },
+        "desired_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "planned_semester": {
+      "type": "object",
+      "required": [
+        "term_id",
+        "courses",
+        "placeholders"
+      ],
+      "properties": {
+        "term_id": {
+          "$ref": "#/$defs/term_id"
+        },
+        "semester_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planned_course"
+          }
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/placeholder"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "id",
+        "revision",
+        "semesters"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semesters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planned_semester"
+          }
+        },
+        "label": {
+          "type": "string"
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan_list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/plan"
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "required": [
+        "audit",
+        "performance",
+        "record_revision",
+        "rule_version"
+      ],
+      "properties": {
+        "audit": {
+          "$ref": "#/$defs/audit"
+        },
+        "performance": {
+          "type": "object"
+        },
+        "record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "plan_revision": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/validation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "curriculum": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "cohort",
+        "review_status",
+        "total_credits",
+        "requirements",
+        "sources"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "cohort": {
+          "const": "BTECH_CSE-2024"
+        },
+        "review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted"
+          ]
+        },
+        "total_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "requirements": {
+          "type": "array"
+        },
+        "sources": {
+          "type": "array"
+        },
+        "missing_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "caps": {
+          "type": "array"
+        },
+        "noncredit_obligations": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false
+    },
+    "catalogue": {
+      "type": "object",
+      "required": [
+        "courses",
+        "coverage",
+        "review_status"
+      ],
+      "properties": {
+        "courses": {
+          "type": "array"
+        },
+        "coverage": {
+          "enum": [
+            "complete",
+            "partial",
+            "unknown"
+          ]
+        },
+        "review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "import_conflict": {
+      "type": "object",
+      "required": [
+        "diff"
+      ],
+      "properties": {
+        "diff": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_reference": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "version",
+        "applicable_cohorts",
+        "effective_date",
+        "locator",
+        "review_status",
+        "authority"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "advisory",
+            "transcript",
+            "paste",
+            "timetable",
+            "course_plan",
+            "approval",
+            "student_example"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "applicable_cohorts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "effective_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "file_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted"
+          ]
+        },
+        "authority": {
+          "enum": [
+            "institutional",
+            "student_provided",
+            "example"
+          ]
+        },
+        "retrieved_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

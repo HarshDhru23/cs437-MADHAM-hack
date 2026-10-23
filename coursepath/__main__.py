@@ -1,12 +1,13 @@
-"""Run the October 9 scaffold without external dependencies."""
+"""Describe available entry points without starting services implicitly."""
 
 
 def main():
-    print("CoursePath - October 9 specification/test-first checkpoint")
-    print("No product features are implemented yet.")
-    print("Read SPEC.md for the five requirements and their test mapping.")
-    print("Run tests: python -m unittest discover -s tests -v")
-    print("Expected today: five assertion failures, one for each requirement.")
+    print("CoursePath - 2024-entry CSE backend")
+    print("Setup and API handoff: server/README.md and server/HANDOFF.md")
+    print("Domain tests: python -m unittest discover -s tests -v")
+    print("Database setup: python server/manage.py migrate")
+    print("Backend: python server/manage.py runserver 127.0.0.1:8000")
+    print("Academic sources are draft; frontend integration and review are pending.")
 
 
 if __name__ == "__main__":

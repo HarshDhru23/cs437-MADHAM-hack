@@ -1,6 +1,9 @@
-"""Unimplemented academic history boundary for CP-02."""
+from copy import deepcopy
 
 
 def record_course_attempts(academic_history, attempts):
-    """Record the student's manually entered attempts and their statuses."""
-    return []
+    """Historical manual-entry wrapper; preserve every registration instance."""
+    for attempt in attempts:
+        if attempt.get('status') not in {'COMPLETED', 'IN_PROGRESS', 'FAILED'}:
+            raise ValueError('Unsupported historical attempt status')
+    return deepcopy(academic_history + list(attempts))
