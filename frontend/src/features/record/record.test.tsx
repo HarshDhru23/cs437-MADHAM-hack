@@ -1,0 +1,169 @@
+import { act, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
+import type { AcademicRecord, RecordPatch } from '../../api/types';
+import { attempt, record } from '../../test/fixtures';
+import { fakeApi, issue, renderApp } from '../../test/harness';
+import { RecordPage } from './RecordPage';
+
+function server(initial: AcademicRecord = record) {
+  let current = structuredClone(initial);
+  const patches: RecordPatch[] = [];
+  let conflictNext = false;
+  const api = fakeApi({
+    'GET /record': () => ({ data: current }),
+    'PATCH /record': (req) => {
+      const body = req.body as RecordPatch;
+      patches.push(body);
+      if (conflictNext || body.expected_revision !== current.revision) {
+        conflictNext = false;
+        return { status: 409, data: { current_revision: current.revision + 1, action: 'reload_compare' }, issues: [issue('REVISION_CONFLICT', 'error')] };
+      }
+      current = { ...current, revision: current.revision + 1, ...(body.attempts ? { attempts: body.attempts } : {}), ...(body.current_enrolment ? { current_enrolment: body.current_enrolment } : {}) };
+      return { data: current };
+    },
+  });
+  return { ...api, patches, conflict: () => (conflictNext = true), get current() { return current; }, set current(v) { current = v; } };
+}
+
+describe('RecordPage (CP-02, A04)', () => {
+  it('separates completed history (by term, chronological) from current enrolment', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    const history = await screen.findByRole('region', { name: 'Completed history' });
+    const captions = within(history).getAllByRole('table').map((t) => t.querySelector('caption')?.textContent);
+    expect(captions).toEqual(['2024–25 Semester I', '2024–25 Semester II', '2025–26 Semester I', '2025–26 Semester II']);
+    expect(screen.getByRole('region', { name: 'Current enrolment' })).toHaveTextContent(/No confirmed current courses/);
+    expect(screen.getByText(/Latest completed term/).parentElement).toHaveTextContent('2025–26 Semester II');
+    expect(screen.getByText(/Current enrolment is never filled in automatically/)).toBeInTheDocument();
+  });
+
+  it('keeps both repeated registrations and shows unresolved classification', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Completed history' });
+    expect(screen.getAllByText('ZZ 299')).toHaveLength(2);
+    expect(screen.getAllByText('Not matched to a reviewed catalogue').length).toBeGreaterThan(0);
+  });
+
+  it('requires a justification to correct an attempt and keeps the original evidence', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Completed history' });
+    await userEvent.click(screen.getByRole('button', { name: 'Correct CS 203 (2025–26 Semester II)' }));
+    const dialog = screen.getByRole('dialog', { name: /Correct CS 203/ });
+    const title = within(dialog).getByLabelText('Title');
+    await userEvent.clear(title);
+    await userEvent.type(title, 'Corrected synthetic title');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save correction' }));
+    expect(within(dialog).getByText('Explain what you checked before correcting a record.')).toBeInTheDocument();
+    expect(s.patches).toHaveLength(0);
+    await userEvent.type(within(dialog).getByLabelText(/Justification/), 'Checked against my transcript');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save correction' }));
+    await waitFor(() => expect(s.patches).toHaveLength(1));
+    const body = s.patches[0]!;
+    expect(body.expected_revision).toBe(3);
+    expect(body.correction_justifications).toEqual({ 'a-tools': 'Checked against my transcript' });
+    expect(body.attempts?.find((a) => a.id === 'a-tools')?.title).toBe('Corrected synthetic title');
+    expect(body.attempts?.find((a) => a.id === 'a-tools')?.original?.title).toBe('Synthetic course');
+    expect(body.attempts).toHaveLength(record.attempts.length);
+  });
+
+  it('adds a manual in-progress or failed attempt without removing prior attempts', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Completed history' });
+    await userEvent.click(screen.getByRole('button', { name: 'Add an attempt' }));
+    const dialog = screen.getByRole('dialog', { name: 'Add an attempt' });
+    await userEvent.type(within(dialog).getByLabelText('Course code'), 'ZZ 401');
+    await userEvent.type(within(dialog).getByLabelText('Title'), 'Synthetic retake');
+    await userEvent.type(within(dialog).getByLabelText('Credits'), '4');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Status'), 'failed');
+    await userEvent.type(within(dialog).getByLabelText('Grade'), 'F');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add attempt' }));
+    await waitFor(() => expect(s.patches).toHaveLength(1));
+    const attempts = s.patches[0]!.attempts!;
+    expect(attempts).toHaveLength(record.attempts.length + 1);
+    expect(attempts.at(-1)).toMatchObject({ normalized_code: 'ZZ 401', completion_status: 'failed', grade: 'F', source_refs: [], approval_refs: [], course_version_id: null });
+  });
+
+  it('saves confirmed current enrolment with debounce and shows acknowledged revision', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    const section = await screen.findByRole('region', { name: 'Current enrolment' });
+    await userEvent.type(within(section).getByLabelText('Course code'), 'ZZ 330');
+    await userEvent.type(within(section).getByLabelText('Credits'), '4');
+    await userEvent.click(within(section).getByRole('button', { name: 'Add to current enrolment' }));
+    expect(within(section).getByText(/Confirm that you are enrolled/)).toBeInTheDocument();
+    await userEvent.click(within(section).getByLabelText(/I confirm I am enrolled/));
+    await userEvent.click(within(section).getByRole('button', { name: 'Add to current enrolment' }));
+    expect(within(section).getByRole('status')).toHaveTextContent(/Unsaved changes|Saving/);
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
+    expect(s.patches[0]).toMatchObject({ expected_revision: 3, current_enrolment: [{ normalized_code: 'ZZ 330', credits: '4', confirmed: true, term_id: '2026-27-I' }] });
+    await waitFor(() => expect(within(section).getByRole('status')).toHaveTextContent('Saved'));
+    expect(within(section).getByRole('status')).toHaveTextContent('Server revision 4');
+  });
+
+  it('on a stale save (409) keeps the draft and offers reload/compare, never auto-retrying', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    const section = await screen.findByRole('region', { name: 'Current enrolment' });
+    s.conflict();
+    await userEvent.type(within(section).getByLabelText('Course code'), 'ZZ 330');
+    await userEvent.type(within(section).getByLabelText('Credits'), '4');
+    await userEvent.click(within(section).getByLabelText(/I confirm I am enrolled/));
+    await userEvent.click(within(section).getByRole('button', { name: 'Add to current enrolment' }));
+    await waitFor(() => expect(within(section).getByRole('status')).toHaveTextContent('Conflict'), { timeout: 2000 });
+    expect(within(section).getAllByText('ZZ 330').length).toBeGreaterThan(0);
+    await act(async () => new Promise((r) => setTimeout(r, 800)));
+    expect(s.patches).toHaveLength(1);
+    // Another device saved; reload shows the server version and drops the draft.
+    s.current = { ...s.current, revision: 4, current_enrolment: [{ id: 'other', normalized_code: 'ZZ 331', term_id: '2026-27-I', credits: '4', confirmed: true }] };
+    await userEvent.click(within(section).getByRole('button', { name: 'Reload saved version' }));
+    await waitFor(() => expect(within(section).getByText('ZZ 331')).toBeInTheDocument());
+    expect(within(section).queryByText('ZZ 330')).not.toBeInTheDocument();
+  });
+
+  it('can explicitly keep the local draft over the newer saved version', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    const section = await screen.findByRole('region', { name: 'Current enrolment' });
+    s.conflict();
+    await userEvent.type(within(section).getByLabelText('Course code'), 'ZZ 330');
+    await userEvent.type(within(section).getByLabelText('Credits'), '4');
+    await userEvent.click(within(section).getByLabelText(/I confirm I am enrolled/));
+    await userEvent.click(within(section).getByRole('button', { name: 'Add to current enrolment' }));
+    await waitFor(() => expect(within(section).getByRole('status')).toHaveTextContent('Conflict'), { timeout: 2000 });
+    s.current = { ...s.current, revision: 4 };
+    await userEvent.click(within(section).getByRole('button', { name: 'Keep my version' }));
+    await waitFor(() => expect(s.patches).toHaveLength(2), { timeout: 2000 });
+    expect(s.patches[1]).toMatchObject({ expected_revision: 4 });
+  });
+
+  it('shows a re-import resolution as the fields that changed, never as [object Object]', async () => {
+    // The server stores an accepted re-import as one correction whose raw/accepted values are field maps.
+    const fields = { normalized_code: 'ZZ 104', title: 'Synthetic calculus', credits: '2', term_id: '2024-25-II', instance_id: null };
+    const reimported = attempt({
+      id: 'a-calc',
+      normalized_code: 'ZZ 104',
+      title: 'Synthetic calculus',
+      credits: '2',
+      grade: 'A-',
+      term_id: '2024-25-II',
+      user_corrections: [{ field: 'reimport', raw: { ...fields, grade: 'B' }, accepted: { ...fields, grade: 'A-' }, justification: 'Grade revised after re-evaluation' }],
+    });
+    const s = server({ ...record, attempts: [...record.attempts, reimported] });
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Completed history' });
+    await userEvent.click(screen.getByRole('button', { name: 'Source for ZZ 104 (2024–25 Semester II)' }));
+    const dialog = screen.getByRole('dialog', { name: 'Source for ZZ 104' });
+    expect(dialog).toHaveTextContent('Re-import: grade “B” → “A-” — Grade revised after re-evaluation');
+    expect(dialog).not.toHaveTextContent('[object Object]');
+  });
+
+  it('shows an import prompt when there is no record yet', async () => {
+    const s = server({ ...record, attempts: [], revision: 0, reported_controls: [] });
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    expect(await screen.findByRole('link', { name: 'Import transcript or IMS grades' })).toHaveAttribute('href', '/record/import');
+  });
+});
