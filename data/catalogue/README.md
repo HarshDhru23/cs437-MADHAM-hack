@@ -1,0 +1,1 @@
+No reviewed catalogue is committed. Do not infer eligibility from department prefixes, titles, today's credits or timetable tags. CS 203/202, CS 421/431 and ES 242(N) require applicable reviewed decisions. The public API returns an empty catalogue with an explicit data gap.

@@ -1,0 +1,98 @@
+# Harsh — October 27 backend handoff
+
+Prepared 23 October 2026 (IST), on `feature/harsh-oct27-backend`, from committed
+baseline `372862a`. No checkpoint work existed beyond five placeholder functions;
+the initial five tests were run and failed before implementation. The committed
+roadmap, team instructions, contracts, source findings and Harsh card were read.
+No frontend, root orchestration, timetable adapter, other member's fixtures or
+untracked user documents were edited. The user subsequently authorized local use
+of the supplied PDF and IMS paste; no other uncommitted academic source was used.
+
+## Task IDs and completion limits
+
+These are implementation results, not fabricated peer approvals or release
+certification. The team's definition of done also requires browser integration,
+review by another teammate and a merged PR; those gates have not happened here.
+
+| Task | Implemented and verified | Remaining acceptance dependency |
+| --- | --- | --- |
+| H01 | All 34 SPEC IDs, immutable domain values, decimal serialization, v1 machine schema, synthetic examples and real API/schema checks. | Aaryan/Manashree contract review; source-specific independent row fixtures. |
+| H02 | Django accounts/session/password/CSRF/throttle, owned records/attempts/previews/plans, scenario/approval/snapshot models, migrations, transactional revision checks and real HTTP restart persistence. | Human/browser integration, hosted PostgreSQL tests and peer review. Scenario/export routes remain November scope. |
+| H03 | Coordinate-block PDF parser; wrapped titles, controls, profile candidates, duplicate-text deduplication, unsupported/encrypted/image-only handling and bounded subprocess extraction. Real supplied transcript controls pass. | Independent full-row oracle, more layouts/continuation samples and frontend review flow. Unanchored continuation layouts fail visibly rather than guessing. |
+| H04 | IMS table and bounded whitespace/multiline variants, shared code/term/grade normalization, original order/provenance, rejected rows, distinct registrations. Real paste controls pass. | Independent full-row oracle and frontend integration. |
+| H05 | Owned one-hour previews, selection/corrections with justifications/history, conflict resolution, same-source identity, reported vs extracted controls, atomic commit, rollback and confirmed current-enrolment input. Record corrections preserve source evidence. | Real UI review/commit flow; ambiguity review for same-term repeated registrations. Expired preview purging belongs to H14. |
+| H06 | Validating source/cohort/rule loader and staff CLI; reconciled 170-credit draft, hierarchical baskets, unresolved PE/viva obligations and draft grading metadata. | **Blocked for approved-data completion:** official committed source pages/amendments, catalogue memberships, equivalences and exceptional policies. No institutional review was invented. |
+| H07 | Deterministic exclusive bounded allocation; mandatory/all/any/course-count/credit/set rules; cap-aware search, ledger, deficits, exclusions and separate actual/current/projected results. | Real reviewed dataset, special-cap/approval/zero-credit policies and independent hand audit. Missing policies prevent unconditional completion. |
+| H08 | Legacy wrappers, immutable add/remove edits, full-plan PATCH for moves, downstream validation, nested AND/OR, explicit E exposure/co-requisites/minimum grade, conditional planned prerequisites and load checks. | Reviewed per-course prerequisite/repeat/load/standing data. No catalogue prefix inference; meetings/offerings remain not checked. |
+| H09 | Decimal cumulative/term points and denominators, contributing/excluded attempts, E/F inclusion, P/zero exclusion, explicit rounding/cap policy, missing-policy and repeat issues; source-reported controls kept separately. | Official applicable rounding/repeat/withdrawal/thesis/additional-learning policy. A numeric reconciliation alone does not verify those policies. |
+
+The independent coding portions of H01–H05 and H07–H09 are ready for review;
+H06 has only a draft and validation infrastructure. No entire H task or CP is
+claimed to meet the team's reviewed/merged/browser definition of done yet.
+H10–H15 remain the November 3 block, not silently included in this delivery.
+
+## Verification evidence
+
+Python 3.12.14 with Django 5.2.18 and the committed dependency lock was used for
+the final checks. Development tests were also run on Python 3.13.4.
+
+- `python -m unittest discover -s tests -v`: 38 tests with the opt-in real-input
+  check enabled; default CI explicitly skips that one private-source test.
+- `python server/manage.py test server.records -v 1`: 15 tests, including real
+  localhost HTTP and actual server process restart, owner isolation, CSRF,
+  password-change invalidation, stale revisions, PDF commit and database rollback.
+- `python server/manage.py check`; `makemigrations --check --dry-run`;
+  `git diff --check`: clean. Production `check --deploy` with ephemeral test
+  environment settings is checked separately; it does not connect to or verify
+  a hosted database.
+- TDD red runs preceded schema, account, parser, reconciliation, loader,
+  allocation, planning, metrics and endpoint implementations. Regression tests
+  also caught unknown-child roll-up, erased reported controls, unreasoned record
+  corrections, unsupported admission-year coercion and a missing security header.
+- A synthetic 40-attempt/10-basket allocation, including all three views:
+  median 8.22 ms, max 8.86 ms over ten local runs; 41 actual-view search nodes.
+  Default budgets: 100,000 nodes and 0.5 seconds per allocation view. Exhaustion
+  emits `ALLOCATION_UNRESOLVED`. This is not a benchmark on an approved real audit.
+
+The local source controls matched the committed roadmap: PDF 39 attempts,
+10/10/10/9 rows and credits 28/22/28/26 (104); IMS 40 attempts and credits
+28/23/28/26 (105); both preserve the two CS 299 registrations and ES 242(N).
+Both reproduce 849 points and 92 performance credits, whose two-decimal
+half-up arithmetic is 9.23. That rounding choice is explicitly synthetic in
+the test policy; the API leaves display recalculation unavailable until official
+rounding is supplied, and exposes the transcript's reported CPI separately.
+No private row list, identity header, PDF, paste or rendered inspection image is
+committed. The temporary inspection image was removed.
+
+## Data and integration dependencies
+
+- Manashree: obtain/review the official 2024 curriculum amendments, actual basket
+  membership/catalogue, equivalences (especially CS 203/202 and CS 421/431),
+  ES 242(N) treatment, repeated CS 299 and SC 372 classification, grading and
+  project/exposure/viva/load policies. The untracked advisory/timetable were not
+  used as sources under the user's committed-files constraint.
+- The supplied transcript confirms its printed grade legend and ordinary
+  arithmetic; it does not supply the missing exceptional/repeat policy. Source
+  approval and official catalogue completion are still open.
+- Aaryan: connect account, import/review, record, requirements, planner and metrics
+  screens to the implemented routes in `server/README.md`. Verify phone/keyboard,
+  correction→commit→reload and two real browser sessions. The actual HTTP test
+  is not substituted for browser/student acceptance.
+- Manashree: wire the actual backend commands into owned root setup/README/CI,
+  plus Aaryan's commands once they exist. No root scripts were invented here.
+  Run PostgreSQL concurrency/persistence in CI/staging and supply independent
+  anonymized row oracles. Root README still describes the historical scaffold.
+- Harsh: consume those reviewed versions through `load_rules`, fill catalogue/
+  prerequisite policies, rerun source-backed audit/performance and resolve
+  integration findings. Migrations `0001_initial` and
+  `0002_academicrecord_reported_controls` require the normal `migrate` step.
+- Aaryan is the proposed human reviewer for Harsh; no person was impersonated,
+  contacted, assigned or claimed to have approved this work. Record actual AI
+  assistance in Harsh's real class lab note after the class number is supplied;
+  no class number/interview/submission history was invented.
+
+Next handoff: Aaryan takes the schema/examples and real routes; Manashree takes
+the runnable commands, source gaps and independent-oracle request. Harsh's next
+dependent work is H06 source approval and the resulting H07/H09 validation,
+followed by peer review and the required PR merge. Do not count the October 27
+17/34 green gate until the full integration and reviewed merge actually pass.

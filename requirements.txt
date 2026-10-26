@@ -1,0 +1,2 @@
+# Exact transitive versions, including PDF fixture and schema test dependencies.
+-r requirements.lock

@@ -1,0 +1,1 @@
+{"schema_version":"1","data":{"current_revision":2,"action":"reload_compare"},"issues":[{"code":"REVISION_CONFLICT","severity":"error","message":"Another device saved a newer revision.","entity_refs":[],"source_refs":[],"suggested_action":"Reload and compare before saving."}]}

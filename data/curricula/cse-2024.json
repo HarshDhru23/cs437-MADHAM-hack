@@ -1,0 +1,51 @@
+{
+  "id": "cse-2024", "version": "cse-2024-draft-v1", "cohort": "BTECH_CSE-2024", "review_status": "draft", "total_credits": "170",
+  "sources": [{"id": "committed-roadmap", "kind": "student_example", "title": "Committed implementation roadmap (secondary planning evidence)", "version": "a53e7d3", "locator": "docs/implementation-roadmap.md sections 3.1-3.2 (describes advisory pp. 2,4,6,7,10,14,15,23)", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": null, "review_status": "draft", "authority": "example"}],
+  "missing_sources": ["Committed official January 2026 advisory and cohort amendments", "Reviewed catalogue and basket memberships", "Equivalence/substitution decisions", "Project/exposure/viva interpretation and approvals"],
+  "requirements": [
+    {"id": "institute-core", "label": "Institute core", "type": "minimum_credits", "minimum_credits": "31", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "materials", "label": "Materials choice", "type": "minimum_credits", "minimum_credits": "3", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "hss", "label": "HSS (GE included)", "type": "all_of", "minimum_credits": "28", "source_refs": ["committed-roadmap"], "children": [
+      {"id": "hs191", "type": "mandatory_course", "course_id": "HS 191", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
+      {"id": "hs192", "type": "mandatory_course", "course_id": "HS 192", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
+      {"id": "economics", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+      {"id": "philosophy", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+      {"id": "world-civilizations", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+      {"id": "ge", "type": "choose_courses", "minimum_courses": 2, "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+      {"id": "hss-other", "type": "minimum_credits", "minimum_credits": "8", "course_ids": null, "source_refs": ["committed-roadmap"]}
+    ]},
+    {"id": "math", "type": "all_of", "minimum_credits": "10", "source_refs": ["committed-roadmap"], "children": [
+      {"id": "ma103", "type": "mandatory_course", "course_id": "MA 103", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "ma104", "type": "mandatory_course", "course_id": "MA 104", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
+      {"id": "ma203", "type": "mandatory_course", "course_id": "MA 203", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
+      {"id": "math-choice", "type": "minimum_credits", "minimum_credits": "2", "course_ids": null, "source_refs": ["committed-roadmap"]}
+    ]},
+    {"id": "science-basket", "type": "minimum_credits", "minimum_credits": "8", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "bs-elective", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "cse-core", "type": "all_of", "minimum_credits": "36", "source_refs": ["committed-roadmap"], "children": [
+      {"id": "dsa", "type": "mandatory_course", "course_id": "ES 242", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "discrete", "type": "mandatory_course", "course_id": "ES 214", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "digital", "type": "mandatory_course", "course_id": "ES 204", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "organization", "type": "mandatory_course", "course_id": "ES 336", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "toc", "type": "mandatory_course", "course_id": "CS 201", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "os", "type": "mandatory_course", "course_id": "CS 330", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "tools", "type": "mandatory_course", "course_id": "CS 202", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "ai", "type": "mandatory_course", "course_id": "CS 329", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
+      {"id": "networks", "type": "mandatory_course", "course_id": "CS 331", "minimum_credits": "4", "source_refs": ["committed-roadmap"]}
+    ]},
+    {"id": "cse-electives", "type": "all_of", "minimum_credits": "26", "source_refs": ["committed-roadmap"], "children": [
+      {"id": "theory", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["ES 301", "CS 614", "CS 617", "CS 328"], "source_refs": ["committed-roadmap"]},
+      {"id": "systems", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["CS 327", "CS 332", "CS 431", "CS 432", "CS 434", "CS 435", "CS 615", "CS 616", "ES 668"], "source_refs": ["committed-roadmap"]},
+      {"id": "cse-general", "type": "minimum_credits", "minimum_credits": "10", "course_ids": null, "source_refs": ["committed-roadmap"]}
+    ]},
+    {"id": "open-electives", "type": "minimum_credits", "minimum_credits": "16", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "open-project", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
+    {"id": "foundation", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]}
+  ],
+  "noncredit_obligations": [{"id": "pe", "required_semesters": 4, "completion_policy": null, "source_refs": ["committed-roadmap"]}, {"id": "viva", "required_each_active_semester": true, "recorded_grades": ["P", "F"], "completion_policy": null, "source_refs": ["committed-roadmap"]}],
+  "caps": [
+    {"id": "project-online-elective", "tags_any": ["cs_project", "online"], "requirement_ids": ["theory", "systems", "cse-general"], "maximum_credits": "8", "source_refs": ["committed-roadmap"]},
+    {"id": "project-total", "tags_any": ["project"], "maximum_credits": "16", "source_refs": ["committed-roadmap"], "interaction_status": "unknown"},
+    {"id": "external-exposure", "tags_any": ["exposure"], "maximum_credits": "16", "source_refs": ["committed-roadmap"], "interaction_status": "unknown"}
+  ]
+}

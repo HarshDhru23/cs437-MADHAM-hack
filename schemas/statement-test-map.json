@@ -1,0 +1,470 @@
+{
+  "schema_version": "1",
+  "statements": [
+    {
+      "id": "CP-01",
+      "oct27_target": true,
+      "tests": [
+        "tests.test_requirements.RequirementsBeforeHistoryTests.test_cp01_all_requirements_are_grouped_without_academic_history"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-02",
+      "oct27_target": true,
+      "tests": [
+        "tests.test_academic_history.AcademicHistoryTests.test_cp02_record_all_supported_attempt_statuses",
+        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-03",
+      "oct27_target": true,
+      "tests": [
+        "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-04",
+      "oct27_target": true,
+      "tests": [
+        "tests.test_semester_plan.SemesterPlanTests.test_cp04_add_and_remove_courses_with_updated_semester_totals",
+        "tests.domain.test_planning.PlanningTests.test_cp04_move_revalidates_downstream_and_placeholders_separate"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-05",
+      "oct27_target": true,
+      "tests": [
+        "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-06",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
+        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-07",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance",
+        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-08",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_reconcile.ReconcileTests.test_cp08_preview_then_correct_preserve_raw_no_mutation",
+        "server.records.test_imports.ImportAPITests.test_cp08_commit_reload_and_unchanged_reimport"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-09",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_pdf.PDFTests.test_cp09_invalid_encrypted_image_only_and_limits",
+        "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-10",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-11",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_idempotent_reimport_correction_and_conflict"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-12",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_reconcile.ReconcileTests.test_cp12_totals_mismatch_and_unknown_grade_blocked",
+        "server.records.test_imports.ImportAPITests.test_pdf_preview_commit_retains_reported_controls_separately"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-13",
+      "oct27_target": true,
+      "tests": [
+        "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-14",
+      "oct27_target": true,
+      "tests": [
+        "tests.domain.test_performance.PerformanceTests.test_cp14_grade_completion_exposure_and_performance_separate"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-15",
+      "oct27_target": true,
+      "tests": [
+        "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-16",
+      "oct27_target": true,
+      "tests": [
+        "tests.domain.test_performance.PerformanceTests.test_cp16_weighted_terms_failed_denominator_p_and_zero_credit"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-17",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-18",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-19",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-20",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-21",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-22",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-23",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-24",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-25",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-26",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-27",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-28",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-29",
+      "oct27_target": true,
+      "tests": [
+        "server.records.tests.AccountPersistenceTests.test_cp29_second_device_save_reload_conflict_and_logout",
+        "server.records.test_live_http.LivePersistenceTests.test_cp29_http_cookie_sessions_and_process_restart"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-30",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-31",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-32",
+      "oct27_target": false,
+      "tests": [
+        "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_a_rule_certification"
+    },
+    {
+      "id": "CP-33",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    },
+    {
+      "id": "CP-34",
+      "oct27_target": false,
+      "tests": [],
+      "implementation_scope": "november_not_implemented",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete"
+    }
+  ],
+  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint."
+}
