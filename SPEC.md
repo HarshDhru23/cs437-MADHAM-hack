@@ -23,13 +23,39 @@ CoursePath will provide a requirements-first degree audit and a semester planner
 
 Initial scope: one IITGN B.Tech CSE curriculum/batch version, with manually entered academic history. The specific batch and official curriculum data still need to be confirmed. 
 
-## Checkable statements
+## October 16 checkable statements
 
-- **CP-01:** A student can view every graduation requirement of the supported curriculum grouped by its basket before entering any academic history.
-- **CP-02:** A student can manually record a course attempt as completed, in progress, or failed/not completed.
-- **CP-03:** A student can inspect the completed courses and credits counted toward each requirement in their degree audit.
-- **CP-04:** A student can add and remove courses in a future semester table that shows the semester's total credits.
-- **CP-05:** A student can see which prerequisite is unsatisfied when a planned course depends on a course that is neither completed nor planned in an earlier semester.
+| ID | Checkable statement | Primary evidence/test |
+| --- | --- | --- |
+| CP-01 | A student can inspect all CSE 2024 requirements grouped by basket before supplying history. | Existing test + requirements browser flow and approved-data completeness. |
+| CP-02 | A student can record/correct completed, in-progress and failed course attempts without losing prior attempts. | Existing test + edit/commit integration. |
+| CP-03 | A student can inspect counted completed courses/credits and remaining requirements. | Existing test + independently hand-audited record. |
+| CP-04 | A student can add/remove/move future courses and see semester credit totals. | Existing test + browser planner workflow. |
+| CP-05 | A student can see which prerequisite is missing when it is not completed or earlier planned. | Existing ordering matrix + visible issue. |
+| CP-06 | A student can import a supported transcript PDF with correct semester/code/credit/grade rows. | 39-row independent oracle, wrapped titles, repeated headers, multipage. |
+| CP-07 | A student can paste an IMS grade table and recover all valid rows in their proper terms. | 40-row oracle + tab/whitespace/line-ending variants. |
+| CP-08 | A student can review and correct candidate rows before accepting an import. | Browser preview; no pre-commit record mutation. |
+| CP-09 | A student can recover from an unsupported/invalid import with row-level explanations and the old record intact. | Malformed/encrypted/image-only/oversized input and atomicity tests. |
+| CP-10 | A student's course variants, zero-credit obligations and distinct repeated registrations are preserved. | ES 242(N), PE/IN and two CS 299 fixtures. |
+
+The table is the October 16 scope. Its evidence column describes the intended acceptance evidence, not completed verification. The October 9 test coverage below remains historical.
+
+## October 16 automated test coverage
+
+| Statement | Automated test |
+| --- | --- |
+| CP-01 | `tests/test_requirements.py::RequirementsBeforeHistoryTests.test_cp01_all_requirements_are_grouped_without_academic_history` |
+| CP-02 | `tests/test_academic_history.py::AcademicHistoryTests.test_cp02_record_all_supported_attempt_statuses` |
+| CP-03 | `tests/test_degree_audit.py::DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement` |
+| CP-04 | `tests/test_semester_plan.py::SemesterPlanTests.test_cp04_add_and_remove_courses_with_updated_semester_totals`; `tests/test_oct16_submission.py::October16SubmissionTests.test_cp04_move_preserves_courses_and_updates_both_semesters` |
+| CP-05 | `tests/test_prerequisites.py::PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order` |
+| CP-06 | `tests/test_oct16_submission.py::October16SubmissionTests.test_cp06_pdf_rows_keep_terms_codes_credits_and_grades` |
+| CP-07 | `tests/test_oct16_submission.py::October16SubmissionTests.test_cp07_ims_rows_keep_their_terms_across_line_endings` |
+| CP-08 | `tests/test_oct16_submission.py::October16SubmissionTests.test_cp08_review_and_correct_without_mutating_saved_record` |
+| CP-09 | `tests/test_oct16_submission.py::October16SubmissionTests.test_cp09_invalid_rows_are_explained_without_mutating_saved_record` |
+| CP-10 | `tests/test_oct16_submission.py::October16SubmissionTests.test_cp10_variants_zero_credits_and_repeats_survive_acceptance` |
+
+These are failing specification tests against the main-branch scaffold. Import tests load the future October 27 API inside each test, so missing implementations produce assertion failures rather than preventing test discovery. Fixtures are synthetic; official CSE 2024 completeness, browser workflows, the full transcript/paste oracles and the wider invalid-input matrix still require the evidence listed above.
 
 ## October 9 test coverage
 
