@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAnalysis, useRecord } from '../../api/hooks';
+import { useAnalysis, useCurriculum, useRecord } from '../../api/hooks';
 import type { CourseAttempt, Issue, PerformanceValue } from '../../api/types';
 import { RECORD_TABS, SubNav } from '../../app/AppShell';
 import { usePublishView } from '../../app/viewContext';
@@ -9,6 +9,9 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
 import { formatCredits, formatTerm, humanize } from '../../lib/format';
 
+/** A missing numerator or denominator was not calculated: say so instead of "Unknown" or 0. */
+const amount = (value: string | null | undefined) => (value === null || value === undefined ? 'Unavailable' : formatCredits(value));
+
 /** Server-computed CPI/SPI only. The browser never applies a grade formula. */
 export function PerformancePage() {
   const record = useRecord();
@@ -16,7 +19,8 @@ export function PerformancePage() {
   const analysis = useAnalysis(hasHistory ? record.data : null, null);
   const [open, setOpen] = useState<string | null>(null);
   const attempts = useMemo(() => new Map((record.data?.attempts ?? []).map((a) => [a.id, a])), [record.data]);
-  usePublishView({ ruleVersion: analysis.data?.rule_version ?? null, dataMode: 'actual', recordRevision: record.data?.revision ?? null });
+  const curriculum = useCurriculum();
+  usePublishView({ ruleVersion: analysis.data?.rule_version ?? null, reviewStatus: curriculum.data?.review_status ?? null, dataMode: 'actual', recordRevision: record.data?.revision ?? null });
 
   const header = (
     <>
@@ -77,11 +81,11 @@ export function PerformancePage() {
           </div>
           <div>
             <dt>Grade points</dt>
-            <dd>{formatCredits(cumulative.grade_points)}</dd>
+            <dd>{amount(cumulative.grade_points)}</dd>
           </div>
           <div>
             <dt>Performance credits (denominator)</dt>
-            <dd>{formatCredits(cumulative.performance_credits)}</dd>
+            <dd>{amount(cumulative.performance_credits)}</dd>
           </div>
           <div>
             <dt>Source-reported CPI</dt>
@@ -144,8 +148,8 @@ export function PerformancePage() {
                         </>
                       )}
                     </td>
-                    <td className="num" data-label="Grade points">{formatCredits(t.grade_points)}</td>
-                    <td className="num" data-label="Performance credits">{formatCredits(t.performance_credits)}</td>
+                    <td className="num" data-label="Grade points">{amount(t.grade_points)}</td>
+                    <td className="num" data-label="Performance credits">{amount(t.performance_credits)}</td>
                     <td data-label="Source-reported">{t.source_reported_value ?? <span className="muted">Not reported</span>}</td>
                     <td data-label="Details">
                       <button type="button" className="btn btn-small" aria-expanded={open === t.term_id} aria-label={`Attempts for ${formatTerm(t.term_id)}`} onClick={() => setOpen(open === t.term_id ? null : t.term_id)}>

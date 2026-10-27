@@ -434,7 +434,7 @@ function CandidateRow({
           {changed('term_id') ? <div>Term: {show('term_id', formatTerm(value('term_id')))}</div> : null}
         </td>
         <td data-label="Match / review state">
-          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : diff.status === 'unchanged' ? 'neutral' : 'success'}>{humanize(diff.status)}</Badge> : null}{' '}
+          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : 'neutral'} symbol={diff.status === 'new' ? '+' : undefined}>{humanize(diff.status)}</Badge> : null}{' '}
           {candidate.course_version_id ? <Badge tone="success">Catalogue matched</Badge> : <Badge tone="unknown" symbol="?">Unmatched</Badge>}
           {issues.map((i, n) => (
             <div key={n}>

@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ApiClient } from '../api/client';
 import { curriculum, plan, record } from '../test/fixtures';
@@ -55,6 +56,28 @@ describe('routes and shell (A01)', () => {
     renderAt('/plan/plan-1', true);
     const nav = await screen.findByRole('navigation', { name: 'Main' });
     expect(nav.querySelector('[aria-current="page"]')).toHaveTextContent('Plan');
+  });
+
+  it('keeps the page\'s data context and rule review status after in-app navigation to a protected page', async () => {
+    renderAt('/plan/plan-1', true);
+    await screen.findByRole('region', { name: '2026–27 Semester I' });
+    const context = screen.getByRole('region', { name: 'Data context' });
+    await waitFor(() => expect(context).toHaveTextContent('Projected plan (not completed)'));
+    expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)');
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'My record' }));
+    await screen.findByRole('heading', { level: 1, name: 'My record' });
+    await waitFor(() => expect(context).toHaveTextContent('Actual completed history'));
+    expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)');
+  });
+
+  it('keeps the page\'s data context when navigating from a public page to a protected one', async () => {
+    renderAt('/', true);
+    await screen.findByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' });
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Plan' }));
+    await screen.findByRole('heading', { level: 1, name: 'Plans' });
+    const context = screen.getByRole('region', { name: 'Data context' });
+    // With the defect, the shell's "no data" lands after the page's context in the same commit, so this never appears.
+    await waitFor(() => expect(context).toHaveTextContent('Projected plan (not completed)'));
   });
 
   it('renders a not-found page for unknown routes', async () => {

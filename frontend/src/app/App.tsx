@@ -15,42 +15,57 @@ import { AppShell, PLAN_TABS, RECORD_TABS, SubNav } from './AppShell';
 import { SessionProvider, useSession } from './session';
 import { usePublishView, ViewContextProvider } from './viewContext';
 
+/** Panels shown instead of a protected page publish "no data"; the page itself publishes its own context. */
+function NoData({ children }: { children: ReactNode }) {
+  usePublishView({ dataMode: 'none' });
+  return <>{children}</>;
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const session = useSession();
   const location = useLocation();
-  usePublishView({ dataMode: 'none' });
-  if (session.status === 'loading') return <StatePanel kind="loading" title="Checking your session…" />;
+  if (session.status === 'loading')
+    return (
+      <NoData>
+        <StatePanel kind="loading" title="Checking your session…" />
+      </NoData>
+    );
   if (session.status === 'error' && session.error)
     return (
-      <StatePanel
-        kind="error"
-        title="The CoursePath server could not be reached"
-        detail={session.error.message}
-        action={
-          <button type="button" className="btn" onClick={session.retryBootstrap}>
-            Try again
-          </button>
-        }
-      />
+      <NoData>
+        <StatePanel
+          kind="error"
+          title="The CoursePath server could not be reached"
+          detail={session.error.message}
+          action={
+            <button type="button" className="btn" onClick={session.retryBootstrap}>
+              Try again
+            </button>
+          }
+        />
+      </NoData>
     );
   if (!session.user) {
     const next = location.pathname;
     return (
-      <section className="panel">
-        <h1>Sign in required</h1>
-        <p>This page shows your personal record or plans. Sign in or create an account to continue. The public requirements stay available without an account.</p>
-        <div className="panel-row">
-          <Link className="btn btn-primary" to={`/login?next=${encodeURIComponent(next)}`}>
-            Sign in
-          </Link>
-          <Link className="btn" to={`/signup?next=${encodeURIComponent(next)}`}>
-            Create account
-          </Link>
-          <Link to="/">Browse requirements</Link>
-        </div>
-      </section>
+      <NoData>
+        <section className="panel">
+          <h1>Sign in required</h1>
+          <p>This page shows your personal record or plans. Sign in or create an account to continue. The public requirements stay available without an account.</p>
+          <div className="panel-row">
+            <Link className="btn btn-primary" to={`/login?next=${encodeURIComponent(next)}`}>
+              Sign in
+            </Link>
+            <Link className="btn" to={`/signup?next=${encodeURIComponent(next)}`}>
+              Create account
+            </Link>
+            <Link to="/">Browse requirements</Link>
+          </div>
+        </section>
+      </NoData>
     );
   }
+  // The protected page publishes its own data context; publishing here too would overwrite it.
   return <>{children}</>;
 }
 

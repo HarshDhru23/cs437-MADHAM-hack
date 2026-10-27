@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { endpoints } from '../../api/endpoints';
-import { useRecord } from '../../api/hooks';
+import { useCurriculum, useRecord } from '../../api/hooks';
 import { useResourceCache } from '../../api/resources';
 import type { AcademicRecord, CompletionStatus, CourseAttempt, CurrentEnrolment } from '../../api/types';
 import { useSaveQueue } from '../../api/useSaveQueue';
@@ -48,7 +48,8 @@ export function RecordPage() {
   const [editing, setEditing] = useState<CourseAttempt | null>(null);
   const [adding, setAdding] = useState(false);
   const [source, setSource] = useState<CourseAttempt | null>(null);
-  usePublishView({ ruleVersion: record.data?.profile.curriculum_version ?? null, dataMode: 'actual', recordRevision: record.data?.revision ?? null });
+  const curriculum = useCurriculum();
+  usePublishView({ ruleVersion: record.data?.profile.curriculum_version ?? null, reviewStatus: curriculum.data?.review_status ?? null, dataMode: 'actual', recordRevision: record.data?.revision ?? null });
 
   const onSaved = (next: AcademicRecord) => {
     cache.set(`record:${user?.id}`, { data: next, issues: [] });

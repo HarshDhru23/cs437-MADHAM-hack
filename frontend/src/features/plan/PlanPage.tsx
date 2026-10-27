@@ -91,7 +91,8 @@ export function PlanPage() {
   const session = useSession();
   const record = useRecord();
   const loaded = useResource(session.user ? `plan:${session.user.id}:${planId}` : null, (signal) => endpoints.plan(session.api, planId, { signal }));
-  usePublishView({ ruleVersion: record.data?.profile.curriculum_version ?? null, dataMode: 'projected', recordRevision: record.data?.revision ?? null });
+  const curriculum = useCurriculum();
+  usePublishView({ ruleVersion: record.data?.profile.curriculum_version ?? null, reviewStatus: curriculum.data?.review_status ?? null, dataMode: 'projected', recordRevision: record.data?.revision ?? null });
   if (loaded.loading || record.loading) return <StatePanel kind="loading" title="Loading plan…" />;
   if (loaded.error || !loaded.data)
     return loaded.error ? (
@@ -402,7 +403,7 @@ function SemesterTable({
       <div className="semester-head">
         <h2 id={headingId}>{label}</h2>
         <div className="panel-row">
-          {isCurrent ? <Badge tone="success" symbol="●">Current term</Badge> : null}
+          {isCurrent ? <Badge tone="neutral" symbol="●">Current term</Badge> : null}
           {isFuture ? <Badge tone="neutral">Future term — offerings and timetable not yet known</Badge> : null}
         </div>
       </div>

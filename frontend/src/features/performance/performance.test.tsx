@@ -37,6 +37,25 @@ describe('PerformancePage (A07, CP-15/16)', () => {
     expect(within(cpi).queryByText(/^0$/)).not.toBeInTheDocument();
   });
 
+  it('shows missing points or denominator as Unavailable, never Unknown or 0', async () => {
+    const missing: AnalysisResult = {
+      ...analysis,
+      performance: {
+        ...analysis.performance,
+        cumulative: { ...analysis.performance.cumulative, grade_points: null, performance_credits: null, display_value: null, unrounded_value: null },
+        terms: analysis.performance.terms.map((t) => ({ ...t, grade_points: null, performance_credits: null })),
+      },
+    };
+    setup(missing);
+    const cpi = await screen.findByRole('region', { name: 'Cumulative CPI' });
+    expect(within(cpi).getByText('Grade points').parentElement).toHaveTextContent('Unavailable');
+    expect(within(cpi).getByText(/Performance credits \(denominator\)/).parentElement).toHaveTextContent('Unavailable');
+    expect(within(cpi).queryByText('Unknown')).not.toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'Term SPI' });
+    expect(within(table).queryByText('Unknown')).not.toBeInTheDocument();
+    expect(within(table).getAllByText('Unavailable').length).toBeGreaterThanOrEqual(4);
+  });
+
   it('shows the CPI, points and credits printed by the imported document beside the server values', async () => {
     // The real API leaves the policy's source value null and returns the transcript's printed controls separately.
     const fromImport: AnalysisResult = {
