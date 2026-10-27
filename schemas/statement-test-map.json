@@ -9,11 +9,18 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with draft status and sources"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement grouped by basket before any history or sign-in",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows zero-credit PE/viva obligations with unknown completion policy, not as complete"
+      ]
     },
     {
       "id": "CP-02",
@@ -24,11 +31,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > accepted record keeps repeats, failed attempts and the correction (CP-02/10)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > requires a justification to correct an attempt and keeps the original evidence",
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > adds a manual in-progress or failed attempt without removing prior attempts",
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > marks credits of failed and in-progress attempts as not earned"
+      ]
     },
     {
       "id": "CP-03",
@@ -38,11 +53,20 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows server statuses; a full progress bar never turns needs-review into satisfied",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > expands to list counted attempts from the allocation ledger, with explanation",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > keeps failed/unknown attempts visible as not counted with reasons",
+        "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json"
+      ]
     },
     {
       "id": "CP-04",
@@ -53,11 +77,20 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > create a plan, add and move a course with the keyboard, see server totals (CP-04/05)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > shows every remaining semester through semester 8, current term distinct, with server totals",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > moves a course with a keyboard-accessible select and button, and can undo",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > removes a course",
+        "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/plan-validation.json"
+      ]
     },
     {
       "id": "CP-05",
@@ -71,7 +104,13 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > shows the server explanation of a nested unmet prerequisite and a duplicate on every affected item",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > groups validation issues; selecting one highlights the affected item and shows the remedy",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows show \"Not checked\" instead of the previous revision's eligibility and issues"
+      ]
     },
     {
       "id": "CP-06",
@@ -82,11 +121,17 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > uploads a chosen PDF as multipart with the expected revision (keyboard-accessible picker)"
+      ]
     },
     {
       "id": "CP-07",
@@ -97,11 +142,17 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > fills a synthetic sample and parses it with the record revision, then opens review"
+      ]
     },
     {
       "id": "CP-08",
@@ -112,11 +163,18 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > inline correction keeps raw evidence, highlights the change and needs a justification",
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > excluding a row keeps it listed with a way to include it again"
+      ]
     },
     {
       "id": "CP-09",
@@ -127,11 +185,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/pdf-import.spec.ts::an unreadable file keeps the prior record and offers alternatives (CP-09)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > explains an unparseable input, keeps the draft and the prior record, and offers alternatives",
+        "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > reports an oversized upload",
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > lists unparsed rows and blocks confirmation until they are explicitly omitted with a reason"
+      ]
     },
     {
       "id": "CP-10",
@@ -141,11 +207,17 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > accepted record keeps repeats, failed attempts and the correction (CP-02/10)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > keeps both repeated registrations and shows unresolved classification"
+      ]
     },
     {
       "id": "CP-11",
@@ -155,11 +227,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a changed grade must be resolved explicitly and never duplicates the attempt (CP-11)",
+        "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > requires a decision for each conflicting re-import row and shows the existing correction",
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > an excluded conflicting row keeps the saved version and needs no decision"
+      ]
     },
     {
       "id": "CP-12",
@@ -170,11 +250,18 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent",
+        "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > shows steps, row count, term groups and source-reported vs extracted totals"
+      ]
     },
     {
       "id": "CP-13",
@@ -184,11 +271,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > shows equivalence warnings that cannot be dismissed by editing",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > surfaces unresolved CS 203/CS 202 equivalence above the requirement list",
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > the correction dialog keeps an unknown status unknown and says a code change is not an equivalence"
+      ]
     },
     {
       "id": "CP-14",
@@ -198,11 +293,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)",
+        "e2e/tests/student-flow.spec.ts::student flow > accepted record keeps repeats, failed attempts and the correction (CP-02/10)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > expands a term to show included and excluded attempts; P is excluded from performance",
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > marks credits of failed and in-progress attempts as not earned"
+      ]
     },
     {
       "id": "CP-15",
@@ -212,11 +315,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows the server CPI with its points and performance-credit denominator",
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows Unavailable with the reason when the server has no display value, never 0",
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows missing points or denominator as Unavailable, never Unknown or 0"
+      ]
     },
     {
       "id": "CP-16",
@@ -226,11 +337,17 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > lists per-term SPI; a zero denominator is Unavailable with a reason"
+      ]
     },
     {
       "id": "CP-17",
@@ -244,7 +361,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-18",
@@ -258,7 +377,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-19",
@@ -272,7 +393,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-20",
@@ -286,7 +409,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-21",
@@ -300,7 +425,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-22",
@@ -314,7 +441,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-23",
@@ -326,7 +455,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-24",
@@ -338,7 +469,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-25",
@@ -350,7 +483,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-26",
@@ -362,7 +497,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-27",
@@ -374,7 +511,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-28",
@@ -386,7 +525,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-29",
@@ -397,11 +538,23 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > a second browser context sees the acknowledged save; a stale edit gets a 409 (CP-29)",
+        "e2e/tests/save-states.spec.ts::save states across devices > an offline plan edit is kept as an unsaved draft and saved on retry (CP-29)",
+        "e2e/tests/save-states.spec.ts::save states across devices > current enrolment confirmed on one device is loaded on another with the same revision (A04, CP-29)",
+        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
+      ],
+      "frontend_tests": [
+        "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
+        "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — stale record (CP-29) > after a 409 from analysis, \"Try again\" reloads the record and asks with its current revision"
+      ]
     },
     {
       "id": "CP-30",
@@ -413,7 +566,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-31",
@@ -425,7 +580,13 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/responsive.spec.ts::keyboard focus starts with the skip link and follows reading order",
+        "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone"
+      ],
+      "frontend_tests": [],
+      "release_evidence_note": "Automated keyboard/responsive checks only; the observed user session (M09/A10) is still required."
     },
     {
       "id": "CP-32",
@@ -439,7 +600,14 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "not_a_rule_certification"
+      "academic_data": "not_a_rule_certification",
+      "browser_tests": [
+        "e2e/tests/student-flow.spec.ts::student flow > another account cannot see the first account's plan; sign-out clears personal state (CP-32 foundation)"
+      ],
+      "frontend_tests": [
+        "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it"
+      ],
+      "release_evidence_note": "Account isolation and sign-out foundation only; export and deletion are November scope (A11/H14)."
     },
     {
       "id": "CP-33",
@@ -451,7 +619,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     },
     {
       "id": "CP-34",
@@ -463,8 +633,10 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete"
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     }
   ],
-  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint."
+  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged."
 }

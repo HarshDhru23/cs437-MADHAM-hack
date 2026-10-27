@@ -28,10 +28,17 @@ class AnalysisAPITests(AccountAPIMixin, TestCase):
         responses = [self.client.get('/api/v1/session'), self.client.get('/api/v1/record'), self.client.get('/api/v1/catalogue'),
                      self.client.get('/api/v1/curricula/cse-2024'), self.request(self.client, 'post', '/plans', {'semesters': []}),
                      self.request(self.client, 'post', '/analysis', {'record_revision': 0})]
+        # A plan with a course and a placeholder, so per-term workload and validation shapes are exercised too.
+        semesters = [{'term_id': '2026-27-I', 'courses': [{'id': 'c1', 'normalized_code': 'ZZ 100', 'credits': '4'}],
+                      'placeholders': [{'id': 'p1', 'requirement_id': 'hss', 'desired_credits': '4'}]}]
+        plan = self.request(self.client, 'post', '/plans', {'semesters': semesters}).json()['data']
+        responses += [self.request(self.client, 'post', f"/plans/{plan['id']}/validate", {'record_revision': 0, 'plan_revision': plan['revision']}),
+                      self.request(self.client, 'post', '/analysis', {'record_revision': 0, 'plan_id': plan['id'], 'plan_revision': plan['revision']})]
         validator = Draft202012Validator(SCHEMA, format_checker=FormatChecker())
         for result in responses:
+            self.assertLess(result.status_code, 300, result.content)
             errors = list(validator.iter_errors(result.json()))
-            self.assertFalse(errors, 'Published schema must accept the actual endpoint response shape')
+            self.assertFalse(errors, f'Published schema must accept the actual endpoint response shape: {[e.message for e in errors[:3]]}')
 
     def test_invalid_plan_never_saves_and_validation_uses_owned_revision(self):
         self.signup(self.client, 'planner')
