@@ -117,7 +117,7 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
-        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls"
+        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -131,6 +131,11 @@
       ],
       "frontend_tests": [
         "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > uploads a chosen PDF as multipart with the expected revision (keyboard-accessible picker)"
+      ],
+      "local_tests": [
+        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls",
+        "tests.reference.test_import_oracle.RealPdfTests.test_real_pdf_matches_oracle_rows",
+        "tests.reference.test_import_oracle.RealPdfTests.test_real_pdf_reported_controls_vs_extraction"
       ]
     },
     {
@@ -138,7 +143,9 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance",
-        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_parser_recovers_every_oracle_row_in_its_term",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_term_credit_sums_and_ims_difference",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -152,6 +159,10 @@
       ],
       "frontend_tests": [
         "frontend/src/features/import/import.test.tsx::ImportPage (A03, CP-06/07/09) > fills a synthetic sample and parses it with the record revision, then opens review"
+      ],
+      "local_tests": [
+        "tests.imports.test_private_inputs.PrivateInputTests.test_independent_committed_roadmap_controls",
+        "tests.reference.test_import_oracle.RealImsTests.test_real_ims_matches_oracle_rows"
       ]
     },
     {
@@ -223,7 +234,9 @@
       "id": "CP-11",
       "oct27_target": true,
       "tests": [
-        "tests.imports.test_reconcile.ReconcileTests.test_cp11_idempotent_reimport_correction_and_conflict"
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_idempotent_reimport_correction_and_conflict",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_reimport_of_same_source_does_not_duplicate_or_double_credit",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_changed_grade_on_reimport_is_a_conflict_not_a_silent_overwrite"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -239,6 +252,9 @@
       "frontend_tests": [
         "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > requires a decision for each conflicting re-import row and shows the existing correction",
         "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > an excluded conflicting row keeps the saved version and needs no decision"
+      ],
+      "local_tests": [
+        "tests.reference.test_import_oracle.RealPdfTests.test_pdf_and_ims_reconcile_without_duplicates_and_sc372_is_the_only_new_row"
       ]
     },
     {
@@ -289,7 +305,8 @@
       "id": "CP-14",
       "oct27_target": true,
       "tests": [
-        "tests.domain.test_performance.PerformanceTests.test_cp14_grade_completion_exposure_and_performance_separate"
+        "tests.domain.test_performance.PerformanceTests.test_cp14_grade_completion_exposure_and_performance_separate",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_p_grades_and_zero_credit_rows_excluded_with_reasons"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -311,7 +328,8 @@
       "id": "CP-15",
       "oct27_target": true,
       "tests": [
-        "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control"
+        "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control",
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -638,5 +656,5 @@
       "frontend_tests": []
     }
   ],
-  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged."
+  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."
 }

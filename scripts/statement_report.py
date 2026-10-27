@@ -1,12 +1,20 @@
 """Statement -> test report derived from actual outcomes.
 
-    python scripts/statement_report.py [--all] [--no-run]
+    python scripts/statement_report.py [--all] [--browser] [--frontend]
 
 Reads schemas/statement-test-map.json (owned by Harsh), runs the named tests and
 prints, per statement, whether ALL its tests passed (tests-green) separately from
 release evidence (browser flow, human review, merged PR) recorded in the map.
-Tests-green is never reported as release-complete. Exit 1 if any selected
-statement is not tests-green.
+Tests-green is never reported as release-complete.
+
+Columns besides tests-green: Browser (`browser_tests`, run with --browser: the
+Playwright suite on the real stack), Frontend (`frontend_tests`, run with
+--frontend: Vitest) and Local (`local_tests`: checks that need the private
+originals, so they run only where COURSEPATH_REAL_INPUT_DIR has them; they never
+count towards tests-green and a skip there is NOT RUN, not RED).
+
+Exit 1 if any selected statement is not tests-green, or any browser or frontend
+test that actually ran failed.
 """
 import argparse
 import json
@@ -40,6 +48,19 @@ def test_exists(root, test_id):
     return re.search(rf"^class {cls}\b", src, re.M) is not None and re.search(rf"def {method}\b", src) is not None
 
 
+def evidence_status(ids, outcomes, skipped_is="RED"):
+    """NONE (nothing mapped), NOT RUN, GREEN or RED for a list of mapped test ids."""
+    if not ids:
+        return "NONE"
+    if any(i not in outcomes for i in ids):
+        return "NOT RUN"
+    if any(outcomes[i] in ("FAIL", "ERROR") for i in ids):
+        return "RED"
+    if any(outcomes[i] == "skipped" for i in ids):
+        return skipped_is
+    return "GREEN"
+
+
 def summarize(statements, outcomes):
     rows = []
     for s in statements:
@@ -48,15 +69,11 @@ def summarize(statements, outcomes):
         missing = [t for t in tests if t not in outcomes]
         green = bool(tests) and not failing and not missing
         evidence = s.get("release_evidence", {})
-        browser = s.get("browser_tests", [])
-        if not browser:
-            browser_status = "NONE"
-        elif any(b not in outcomes for b in browser):
-            browser_status = "NOT RUN"
-        else:
-            browser_status = "GREEN" if all(outcomes[b] == "ok" for b in browser) else "RED"
+        browser_status = evidence_status(s.get("browser_tests", []), outcomes)
         rows.append({"id": s["id"], "target": s.get("oct27_target", False), "tests": len(tests),
                      "browser_status": browser_status,
+                     "frontend_status": evidence_status(s.get("frontend_tests", []), outcomes),
+                     "local_status": evidence_status(s.get("local_tests", []), outcomes, skipped_is="NOT RUN"),
                      "tests_status": "GREEN" if green else "RED", "failing": failing, "missing": missing,
                      "release_complete": green and bool(evidence) and all(evidence.values())})
     return rows
@@ -89,6 +106,35 @@ def parse_playwright(report):
     return out
 
 
+def parse_vitest(report, root):
+    """Vitest JSON reporter -> {"frontend/src/...::describe > test": status}."""
+    out = {}
+    base = Path(root).resolve()
+    for result in report.get("testResults", []):
+        try:
+            rel = Path(result["name"]).resolve().relative_to(base).as_posix()
+        except ValueError:
+            continue
+        for a in result.get("assertionResults", []):
+            status = {"passed": "ok", "failed": "FAIL"}.get(a.get("status"), "skipped")
+            out[f"{rel}::" + " > ".join([*a.get("ancestorTitles", []), a["title"]])] = status
+    return out
+
+
+def run_frontend(root):
+    import shutil
+    import tempfile
+    npm = shutil.which("npm")
+    if not npm or not (Path(root) / "frontend" / "node_modules").is_dir():
+        return {}
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "vitest.json"
+        # Run inside frontend/ so Vitest picks up its config (jsdom, setup files).
+        subprocess.run([npm, "exec", "--", "vitest", "run", "--reporter=json", f"--outputFile={out}"],
+                       cwd=Path(root) / "frontend", capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return parse_vitest(json.loads(out.read_text(encoding="utf-8")), root) if out.is_file() else {}
+
+
 def run_browser(root):
     import os
     import shutil
@@ -100,12 +146,12 @@ def run_browser(root):
         out = Path(tmp) / "pw.json"
         env = {**os.environ, "COURSEPATH_PYTHON": sys.executable, "PLAYWRIGHT_JSON_OUTPUT_NAME": str(out)}
         subprocess.run([npm, "--prefix", "e2e", "test", "--", "--reporter=json"], cwd=root, env=env,
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
         return parse_playwright(json.loads(out.read_text(encoding="utf-8"))) if out.is_file() else {}
 
 
 def run_outcomes(root, statements):
-    ids = sorted({t for s in statements for t in s["tests"]})
+    ids = sorted({t for s in statements for t in [*s["tests"], *s.get("local_tests", [])]})
     py = [t for t in ids if t.startswith("tests.")]
     dj = [t for t in ids if t.startswith("server.")]
     outcomes = {}
@@ -121,22 +167,29 @@ def run_outcomes(root, statements):
 def main(argv=None, root=ROOT):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--all", action="store_true", help="report all statements, not only the 27 Oct targets")
-    ap.add_argument("--browser", action="store_true", help="also run the e2e Playwright suite (needs ports 8000/4173 free)")
+    ap.add_argument("--browser", action="store_true", help="also run the e2e Playwright suite (needs its ports free)")
+    ap.add_argument("--frontend", action="store_true", help="also run the Vitest component tests")
     args = ap.parse_args(argv)
     statements = [s for s in load_map(root) if args.all or s.get("oct27_target")]
     outcomes = run_outcomes(root, statements)
+    if args.frontend:
+        outcomes.update(run_frontend(root))
     if args.browser:
         outcomes.update(run_browser(root))
     rows = summarize(statements, outcomes)
-    print("Statement  Tests  Tests-status  Browser   Release-complete  Notes")
+    print("Statement  Tests  Tests-status  Browser   Frontend  Local     Release-complete  Notes")
     for r in rows:
         note = ("failing: " + ", ".join(t.split(".")[-1] for t in r["failing"]) if r["failing"] else "") + \
                ("missing: " + ", ".join(t.split(".")[-1] for t in r["missing"]) if r["missing"] else "")
-        print(f"{r['id']:<10} {r['tests']:<6} {r['tests_status']:<13} {r['browser_status']:<9} {str(r['release_complete']):<17} {note}")
+        print(f"{r['id']:<10} {r['tests']:<6} {r['tests_status']:<13} {r['browser_status']:<9} {r['frontend_status']:<9} "
+              f"{r['local_status']:<9} {str(r['release_complete']):<17} {note}")
     t = totals(rows, target_only=False)
     print(f"\n{t['tests_green']}/{t['statements']} statements tests-green; {t['release_complete']} release-complete "
           "(needs browser flow, review and merged PR evidence from the map).")
-    return 0 if t["tests_green"] == t["statements"] else 1
+    broken = [r["id"] for r in rows if "RED" in (r["browser_status"], r["frontend_status"])]
+    if broken:
+        print("Browser or frontend evidence failed for: " + ", ".join(broken))
+    return 0 if t["tests_green"] == t["statements"] and not broken else 1
 
 
 if __name__ == "__main__":

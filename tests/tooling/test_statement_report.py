@@ -81,12 +81,51 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(sr.summarize([s], {"a": "ok", "x": "skipped"})[0]["browser_status"], "RED")
 
 
+class LocalAndFrontendTests(unittest.TestCase):
+    def test_local_only_checks_never_decide_tests_green(self):
+        s = {**stmt("CP-06", ["a"]), "local_tests": ["private"]}
+        skipped = sr.summarize([s], {"a": "ok", "private": "skipped"})[0]
+        self.assertEqual((skipped["tests_status"], skipped["local_status"]), ("GREEN", "NOT RUN"))
+        failed = sr.summarize([s], {"a": "ok", "private": "FAIL"})[0]
+        self.assertEqual((failed["tests_status"], failed["local_status"]), ("GREEN", "RED"))
+        self.assertEqual(sr.summarize([s], {"a": "ok", "private": "ok"})[0]["local_status"], "GREEN")
+
+    def test_frontend_status_is_reported_separately(self):
+        s = {**stmt("CP-05", ["a"]), "frontend_tests": ["f1", "f2"]}
+        self.assertEqual(sr.summarize([s], {"a": "ok", "f1": "ok", "f2": "FAIL"})[0]["frontend_status"], "RED")
+        self.assertEqual(sr.summarize([s], {"a": "ok", "f1": "ok", "f2": "ok"})[0]["frontend_status"], "GREEN")
+        self.assertEqual(sr.summarize([s], {"a": "ok"})[0]["frontend_status"], "NOT RUN")
+
+    def test_parse_vitest_json_builds_map_style_ids(self):
+        report = {"testResults": [{"name": str(ROOT / "frontend" / "src" / "x.test.tsx"), "assertionResults": [
+            {"ancestorTitles": ["Page"], "title": "works", "status": "passed"},
+            {"ancestorTitles": ["Page", "nested"], "title": "breaks", "status": "failed"},
+            {"ancestorTitles": [], "title": "later", "status": "skipped"}]}]}
+        self.assertEqual(sr.parse_vitest(report, ROOT), {
+            "frontend/src/x.test.tsx::Page > works": "ok",
+            "frontend/src/x.test.tsx::Page > nested > breaks": "FAIL",
+            "frontend/src/x.test.tsx::later": "skipped"})
+
+    def test_a_failing_browser_test_fails_the_report_even_when_tests_are_green(self):
+        statements = [{**stmt("CP-01", ["a"]), "browser_tests": ["x"]}]
+        original = (sr.load_map, sr.run_outcomes, sr.run_browser)
+        try:
+            sr.load_map = lambda root: statements
+            sr.run_outcomes = lambda root, s: {"a": "ok"}
+            sr.run_browser = lambda root: {"x": "FAIL"}
+            self.assertEqual(sr.main(["--browser"]), 1)
+            sr.run_browser = lambda root: {"x": "ok"}
+            self.assertEqual(sr.main(["--browser"]), 0)
+        finally:
+            sr.load_map, sr.run_outcomes, sr.run_browser = original
+
+
 class RealMapTests(unittest.TestCase):
     def test_every_mapped_test_id_points_at_an_existing_test_method(self):
         statements = sr.load_map(ROOT)
         self.assertEqual(len(statements), 34)
         for s in statements:
-            for tid in s["tests"]:
+            for tid in [*s["tests"], *s.get("local_tests", [])]:
                 self.assertTrue(sr.test_exists(ROOT, tid), f"{s['id']}: {tid} not found in source")
 
 
