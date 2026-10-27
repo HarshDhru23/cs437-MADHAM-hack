@@ -1,0 +1,41 @@
+{
+  "_basis": "docs/team/source-findings.md 'Supplied timetable'. The workbook itself is not in the repository, so these are documented controls, not values re-read from it.",
+  "source_id": "SRC-TIMETABLE",
+  "diagnostic_only": {
+    "course_pattern_rows": 330,
+    "distinct_literal_labels": 301,
+    "labels_occurring_more_than_once": 13,
+    "note": "Observed on the supplied workbook; a diagnostic, not an expected count for revised workbooks."
+  },
+  "teaching_slots": 30,
+  "slot_locator": "Time Slots!A1:F8",
+  "slots": {
+    "B1": {"weekday": 1, "start_minute": 510, "end_minute": 590},
+    "B2": {"weekday": 4, "start_minute": 510, "end_minute": 590},
+    "D1": {"weekday": 1, "start_minute": 600, "end_minute": 680},
+    "H2": {"weekday": 2, "start_minute": 690, "end_minute": 770},
+    "H1": {"weekday": 0, "start_minute": 1020, "end_minute": 1100},
+    "J2": {"weekday": 4, "start_minute": 840, "end_minute": 920},
+    "M2": {"weekday": 4, "start_minute": 930, "end_minute": 1010}
+  },
+  "rows": {
+    "CS 202": {"rows": [27, 110], "credits": "4", "lecture": "D1", "lab": "J2,M2"},
+    "CS 203": {"rows": [28], "credits": "4", "lecture": "C2", "lab": "K1,H1"},
+    "CS 330": {"rows": [111], "credits": "4", "lecture": "E1,E2", "lab": "H1"},
+    "CS 331": {"rows": [112], "credits": "4", "lecture": "G1,G2", "tutorial": "H2"},
+    "CS 329": {"rows": [64, 113], "credits": "4", "lecture": "P1,P2"},
+    "ES 667": {"rows": [250], "credits": "4", "lecture": "B1,B2"},
+    "PH 202": {"rows": [31], "credits": "4", "lecture": "B1,B2", "tutorial": "H2"},
+    "CS 437": {"rows": [242], "credits": "2", "lab": "K1,L1"}
+  },
+  "expected_overlaps": {
+    "PH 202 vs ES 667": [
+      {"kind": "lecture", "slots": ["B1", "B1"], "weekday": 1, "start_minute": 510, "end_minute": 590},
+      {"kind": "lecture", "slots": ["B2", "B2"], "weekday": 4, "start_minute": 510, "end_minute": 590}
+    ],
+    "PH 202 vs CS 331": [
+      {"kind": "tutorial", "slots": ["H2", "H2"], "weekday": 2, "start_minute": 690, "end_minute": 770}
+    ]
+  },
+  "overlap_caveat": "Real times of the CS 331 lecture slots (G1, G2) are not stated in the committed docs. Overlap applies only for the same active date range and selected sections."
+}

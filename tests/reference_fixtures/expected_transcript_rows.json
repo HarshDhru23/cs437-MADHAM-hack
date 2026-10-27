@@ -1,0 +1,64 @@
+{
+  "_basis": "SYNTHETIC. Same structure as the supplied transcript sample (rows and credits per term, the documented special rows, and the roadmap controls 104 earned / 92 performance credits / 849 points / CPI 9.23), but every other course code, title and every grade is invented. Totals below are recomputed by plain arithmetic, not by any parser. The real hand-transcribed oracle stays local and git-ignored. Row format: [code, title, credits, grade].",
+  "terms": {
+    "2024-25-I": [
+      ["ZZ 101", "Synthetic Course 1", "3", "A"],
+      ["ZZ 102", "Synthetic Course 2", "3", "A+"],
+      ["ZZ 103", "Synthetic Course 3", "5", "B"],
+      ["ZZ 104", "Synthetic Course 4", "3", "A+"],
+      ["FP 100", "Synthetic Foundation", "4", "P"],
+      ["ZZ 105", "Synthetic Course 5", "2", "A-"],
+      ["ZZ 106", "Synthetic Course 6", "4", "A+"],
+      ["IN 101", "Synthetic Viva Voce", "0", "P"],
+      ["ZZ 107", "Synthetic Course 7", "4", "C"],
+      ["PE 101", "Synthetic Physical Education", "0", "P"]
+    ],
+    "2024-25-II": [
+      ["ZZ 108", "Synthetic Course 8", "3", "A+"],
+      ["ZZ 109", "Synthetic Course 9", "3", "A"],
+      ["ZZ 110", "Synthetic Course 10", "3", "B-"],
+      ["ZZ 111", "Synthetic Course 11", "5", "A+"],
+      ["ZZ 112", "Synthetic Course 12", "2", "A+"],
+      ["GE 101", "Synthetic General Education I", "2", "P"],
+      ["ZZ 113", "Synthetic Course 13", "2", "A-"],
+      ["IN 102", "Synthetic Viva Voce", "0", "P"],
+      ["ZZ 114", "Synthetic Course 14", "2", "A"],
+      ["PE 102", "Synthetic Physical Education", "0", "P"]
+    ],
+    "2025-26-I": [
+      ["CS 299", "Synthetic Project", "4", "B-"],
+      ["ES 204", "Synthetic Digital Systems", "4", "A+"],
+      ["ZZ 115", "Synthetic Course 15", "4", "B"],
+      ["ES 242(N)", "Synthetic Data Structures", "4", "A+"],
+      ["ZZ 116", "Synthetic Course 16", "4", "C-"],
+      ["GE 201", "Synthetic General Education II", "2", "P"],
+      ["ZZ 117", "Synthetic Course 17", "4", "A"],
+      ["IN 103", "Synthetic Viva Voce", "0", "P"],
+      ["ZZ 118", "Synthetic Course 18", "2", "A-"],
+      ["PE 103", "Synthetic Physical Education", "0", "P"]
+    ],
+    "2025-26-II": [
+      ["ZZ 119", "Synthetic Course 19", "4", "C"],
+      ["CS 203", "Synthetic Tools Course", "4", "A+"],
+      ["CS 299", "Synthetic Project", "4", "A+"],
+      ["ZZ 120", "Synthetic Course 20", "4", "A-"],
+      ["ZZ 121", "Synthetic Course 21", "4", "A"],
+      ["ES 336", "Synthetic Architecture (pass/fail)", "4", "P"],
+      ["IN 104", "Synthetic Viva Voce", "0", "P"],
+      ["ZZ 122", "Synthetic Course 22", "2", "B-"],
+      ["PE 104", "Synthetic Physical Education", "0", "P"]
+    ]
+  },
+  "ims_only_rows": {
+    "2024-25-II": [["SC 372", "Synthetic Short Course", "1", "P"]]
+  },
+  "reported_by_transcript": {"total_credits_earned": "104", "credits_counted_towards_performance": "92", "total_cumulative_points": "849", "cpi": "9.23"},
+  "grade_points": {"A+": 11, "A": 10, "A-": 9, "B": 8, "B-": 7, "C": 6, "C-": 5, "D": 4, "E": 2, "F": 0},
+  "grade_points_source": "Transcript page 2 evaluation legend. P does not count towards CPI.",
+  "expected_per_term": {
+    "2024-25-I": {"rows": 10, "credits": "28", "performance_credits": "24", "points": "222", "spi_unrounded": "9.25"},
+    "2024-25-II": {"rows": 10, "credits": "22", "performance_credits": "20", "points": "199", "spi_unrounded": "9.95"},
+    "2025-26-I": {"rows": 10, "credits": "28", "performance_credits": "26", "points": "226", "spi_unrounded": "8.6923076923"},
+    "2025-26-II": {"rows": 9, "credits": "26", "performance_credits": "22", "points": "202", "spi_unrounded": "9.1818181818"}
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "_basis": "docs/team/source-findings.md 'Example graduation plan'. Synthetic restatement: no student identity, no grade history. Totals in the source were typed values, so they are recomputed from the items below by the tests.",
+  "source_id": "SRC-GRADPLAN",
+  "semesters": [
+    {
+      "semester": 5,
+      "source_locator": "Graduation Plan!A2:E8",
+      "items": [
+        {"code": "HS 151", "credits": "4"}, {"code": "CS 330", "credits": "4"},
+        {"code": "CS 331", "credits": "4"}, {"code": "CS 202", "credits": "4"},
+        {"code": "CS 329", "credits": "4"}, {"code": "ES 667", "credits": "4"},
+        {"code": "PH 202", "credits": "4"}
+      ]
+    },
+    {
+      "semester": 6,
+      "source_locator": "Graduation Plan!A9:E14",
+      "items": [
+        {"code": "ES 301", "credits": "4"}, {"code": "CS 421", "credits": "4"},
+        {"code": "CS 303", "credits": "4"},
+        {"placeholder": "online-credit HSS", "code": "XX XXX", "credits": "4"},
+        {"placeholder": "science basket", "code": "XX XXX", "credits": "4"},
+        {"placeholder": "BS elective", "code": "XX XXX", "credits": "4"}
+      ]
+    }
+  ],
+  "internship_proposal": {
+    "semester": 7,
+    "source_locator": "Graduation Plan!A16:C16",
+    "duration": "six months",
+    "proposed_credits": {"open_elective": "12", "hss": "4"},
+    "approved_credits": "0",
+    "dates": null,
+    "approval_evidence": null
+  },
+  "reported": {
+    "planned_total_cell": "Graduation Plan!C18",
+    "planned_total": "68",
+    "remaining_cell": "D14",
+    "remaining": "66",
+    "completed": "104",
+    "required": "170"
+  },
+  "expected": {
+    "semester_5_credits": "28",
+    "semester_6_credits": "24",
+    "internship_proposed_credits": "16",
+    "planned_total": "68",
+    "surplus_over_reported_remaining": "2"
+  },
+  "ambiguity_cases": {
+    "cs203_cs202": "CS 202 is planned after CS 203 appears in the transcript; no equivalence is approved.",
+    "cs421_vs_cs431": "CS 421 is not renamed CS 431.",
+    "es112_credits": {"historical_attempt": "3", "current_offering": "4"}
+  }
+}
