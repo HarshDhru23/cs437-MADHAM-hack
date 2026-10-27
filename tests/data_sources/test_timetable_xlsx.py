@@ -118,7 +118,8 @@ class CourseRowTests(Base):
     def test_blank_formatted_rows_create_no_offerings(self):
         snap, rep = self.build([course_row("CS 101", "X", 4, "B1")], blank_rows=1000)
         self.assertEqual(len(snap["offerings"]), 1)
-        self.assertEqual(rep["issues"], [])
+        # Only the sheet-level note that columns O/Q are empty; no issue for any of the 1000 formatted rows.
+        self.assertEqual([i for i in rep["issues"] if i["code"] != "SOURCE_COLUMN_EMPTY"], [])
 
     def test_section_rows_skipped_unrecognized_rows_reported(self):
         snap, rep = self.build([

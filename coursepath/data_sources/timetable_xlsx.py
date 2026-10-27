@@ -27,11 +27,15 @@ HEADER_SCAN_ROWS = 15
 TERM_RE = re.compile(r"^\d{4}-\d{2}-(I|II|SUMMER)$")
 LABEL_RE = re.compile(r"^([A-Za-z]{2,3})\s*(\d{3})(\s*)(.*)$")
 SLOT_RE = re.compile(r"^[A-Za-z]\d$")
-SEGMENT_SPLIT_RE = re.compile(r"[,;\n+&]")
-SEGMENT_SLOT_RE = re.compile(r"^([A-Za-z]\d)\b[\s\-:]*(.*)$")
+# One slot token, optionally followed by its own parenthesised rooms, then an optional separator.
+SLOT_ITEM_RE = re.compile(r"\s*([A-Za-z]\d)\b[\s\-:]*(?:\(([^)]*)\))?\s*[,;&+]?")
+PAREN_RE = re.compile(r"^\((.*)\)$")
 TIME_RE = re.compile(r"(\d{1,2})[:.](\d{2})\s*(?:[-‐-―−]|to)\s*(\d{1,2})[:.](\d{2})")
 DELIVERY_RE = re.compile(r"^\(?(online|remote|hybrid)\)?$", re.I)
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+# The supplied slot sheet uses "M, T, W, Th, F"; "T" is Tuesday and "Th" Thursday.
+WEEKDAY_ALIASES = {"m": 0, "mon": 0, "t": 1, "tu": 1, "tue": 1, "tues": 1, "w": 2, "wed": 2, "th": 3, "thu": 3,
+                   "thur": 3, "thurs": 3, "f": 4, "fri": 4, "sa": 5, "sat": 5, "su": 6, "sun": 6}
 
 
 def _text(value):
@@ -40,16 +44,27 @@ def _text(value):
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", str(value))).strip()
 
 
+def _lines(value):
+    """Cell text as normalized non-empty lines; line breaks carry meaning in meeting and section cells."""
+    if value is None:
+        return []
+    text = unicodedata.normalize("NFKC", str(value)).replace("\r", "\n")
+    return [re.sub(r"\s+", " ", line).strip() for line in text.split("\n") if line.strip()]
+
+
 def _norm(value):
     return _text(value).casefold()
 
 
 def _weekday(value):
-    n = _norm(value)
-    for i, name in enumerate(WEEKDAYS):
-        if n in (name, name[:3], name[:3] + "."):
-            return i
-    return None
+    n = _norm(value).rstrip(".")
+    if n in WEEKDAYS:
+        return WEEKDAYS.index(n)
+    return WEEKDAY_ALIASES.get(n)
+
+
+def _rooms(text):
+    return [r.strip() for r in text.split(",") if r.strip()]
 
 
 class _Report:
@@ -247,32 +262,75 @@ def _parse_credits(value, rep, locator):
     return format(d.normalize(), "f")
 
 
-def _parse_meeting_cell(raw, slot_map, rep, locator):
-    """Return (segments, notes, unresolved, all_resolved)."""
-    segments, notes, unresolved = [], [], []
-    for part in SEGMENT_SPLIT_RE.split(raw):
-        seg = part.strip()
-        if not seg:
+def _apply_extra(entries, extra):
+    """Room pool or delivery note that applies to every slot of a line still lacking one."""
+    if DELIVERY_RE.match(extra) or DELIVERY_RE.match(f"({extra})"):
+        for e in entries:
+            e["delivery_note"] = extra.strip("()")
+        return True
+    paren = PAREN_RE.match(extra)
+    if paren and entries:
+        rooms = _rooms(paren[1])
+        if len(rooms) == 1 and DELIVERY_RE.match(rooms[0]):
+            for e in entries:
+                e["delivery_note"] = rooms[0]
+            return True
+        for e in entries:
+            if not e["room_options"]:
+                e["room_options"] = list(rooms)
+        return True
+    return False
+
+
+def _parse_meeting_cell(value, slot_map, rep, locator):
+    """Return (segments, notes, unresolved).
+
+    Supplied formats: "B1,B2" then a "(room, room)" line shared by those slots, or one line per slot with its
+    own rooms ("J2 (10/103,10/104)"). Rooms are never paired with a slot unless the cell says so; a slot with
+    several possible rooms keeps them as room_options and no single room."""
+    segments, notes, unresolved, previous = [], [], [], []
+    for line in _lines(value):
+        pos, entries = 0, []
+        while True:
+            m = SLOT_ITEM_RE.match(line, pos)
+            if not m or m.end() == pos:
+                break
+            entries.append({"slot": m[1].upper(), "room_options": _rooms(m[2]) if m[2] is not None else []})
+            pos = m.end()
+        rest = line[pos:].strip()
+        if entries:
+            for e in entries:
+                e["delivery_note"] = None
+            # "B1,B2 (x)" on one line: a parenthesis after the last of several bare slots is that line's pool.
+            if len(entries) > 1 and all(not e["room_options"] for e in entries[:-1]) and entries[-1]["room_options"]:
+                pool = entries[-1]["room_options"]
+                for e in entries:
+                    e["room_options"] = list(pool)
+            for e in entries:
+                if len(e["room_options"]) == 1 and DELIVERY_RE.match(e["room_options"][0]):
+                    e["delivery_note"], e["room_options"] = e["room_options"][0], []
+            if rest and not _apply_extra(entries, rest):
+                notes.append(rest)
+                unresolved.append(rest)
+                rep.add("MEETING_TEXT_UNPARSED", "warning", f"Meeting text '{rest}' has no slot token.", locator=locator)
+            previous = entries
+        elif previous and _apply_extra(previous, line):
             continue
-        m = SEGMENT_SLOT_RE.match(seg)
-        if not m:
-            notes.append(seg)
-            if not DELIVERY_RE.match(seg):
-                rep.add("MEETING_TEXT_UNPARSED", "warning", f"Meeting text '{seg}' has no slot token.",
-                        locator=locator)
-                unresolved.append(seg)
+        else:
+            notes.append(line)
+            if not DELIVERY_RE.match(line):
+                unresolved.append(line)
+                rep.add("MEETING_TEXT_UNPARSED", "warning", f"Meeting text '{line}' has no slot token.", locator=locator)
             continue
-        token, rest = m[1].upper(), m[2].strip()
-        if token not in slot_map:
-            unresolved.append(token)
-            if slot_map:
-                rep.add("SLOT_UNKNOWN", "warning", f"Slot '{token}' is not in the slot sheet.", locator=locator)
-            continue
-        room, delivery = rest.strip("()- ").strip() or None, None
-        if room and DELIVERY_RE.match(room):
-            room, delivery = None, room
-        if not any(s["slot"] == token for s in segments):
-            segments.append({"slot": token, "room": room, "delivery_note": delivery})
+        for e in entries:
+            if e["slot"] not in slot_map:
+                unresolved.append(e["slot"])
+                if slot_map:
+                    rep.add("SLOT_UNKNOWN", "warning", f"Slot '{e['slot']}' is not in the slot sheet.", locator=locator)
+            elif not any(x["slot"] == e["slot"] for x in segments):
+                segments.append(e)
+    for e in segments:
+        e["room"] = e["room_options"][0] if len(e["room_options"]) == 1 else None
     return segments, notes, unresolved
 
 
@@ -320,10 +378,10 @@ def _row_offering(ws, r, m, values, slot_map, source_id, rep):
     display = code + ((" " if m[3] else "") + suffix if suffix else "")
     groups = []
     for kind, col in COL_MEETINGS.items():
-        raw = _text(values[col])
+        raw = "\n".join(_lines(values[col]))
         if not raw:
             continue
-        segs, notes, unresolved = _parse_meeting_cell(raw, slot_map, rep, loc(col))
+        segs, notes, unresolved = _parse_meeting_cell(values[col], slot_map, rep, loc(col))
         if not slot_map:
             unresolved = unresolved or [s["slot"] for s in segs] or notes
             segs = []
@@ -341,10 +399,11 @@ def _row_offering(ws, r, m, values, slot_map, source_id, rep):
             "start_minute": slot_map[s["slot"]]["start_minute"],
             "end_minute": slot_map[s["slot"]]["end_minute"],
             "active_start_date": None, "active_end_date": None,
-            "room": s["room"], "delivery_note": s["delivery_note"], "original_slot": s["slot"],
-            "source_refs": [ref(col)],
+            "room": s["room"], "room_options": s["room_options"], "delivery_note": s["delivery_note"],
+            "original_slot": s["slot"], "source_refs": [ref(col)],
         } for s in segs]
-        groups.append({"kind": kind, "raw_text": raw, "selection_semantics": semantics,
+        # The sheet lists sections per course (column J), not per meeting group.
+        groups.append({"kind": kind, "raw_text": raw, "selection_semantics": semantics, "section_labels": [],
                        "notes": notes, "unresolved": unresolved, "meetings": meetings,
                        "source_refs": [ref(col)]})
     link_cell = ws[loc(COL_LINK).split("!")[1]]
@@ -354,13 +413,13 @@ def _row_offering(ws, r, m, values, slot_map, source_id, rep):
     link = None
     if link_text or target:
         link = {"target": target, "display_text": link_text or None, "locator": loc(COL_LINK)}
-    sections = _text(values[COL_SECTIONS])
+    sections = _lines(values[COL_SECTIONS])
     tags = _text(values[COL_TAGS])
     return {
         "code": code, "display_code": display, "raw_label": _text(values["A"]), "suffix": suffix or None,
         "title": _text(values[COL_TITLE]) or None,
         "credits": _parse_credits(values[COL_CREDITS], rep, loc(COL_CREDITS)),
-        "section_labels": [sections] if sections else [],
+        "section_labels": sections,
         "meeting_groups": groups,
         "course_plan_link": link,
         "preferred_knowledge": _text(values[COL_PREF]) or None,
@@ -381,7 +440,7 @@ def _signature(o):
     return (o["display_code"], o["title"], o["credits"], tuple(o["section_labels"]),
             tuple((g["kind"], g["raw_text"]) for g in o["meeting_groups"]),
             (o["course_plan_link"] or {}).get("target"), o["preferred_knowledge"],
-            o["minor_hint"], tuple(o["classification_tag_candidates"]))
+            o["minor_hint"], o["remarks"], tuple(o["classification_tag_candidates"]))
 
 
 def _merge_and_finalize(entries, term_id, snapshot, rep, stats):
@@ -411,12 +470,21 @@ def _merge_and_finalize(entries, term_id, snapshot, rep, stats):
                     locator=variants[0]["source_refs"][0]["locator"], entity_refs=[v["id"] for v in variants],
                     action="Decide which variant is authoritative or whether they are separate sections.")
     for o in ordered:
+        o["term_id"] = term_id
         for g in o["meeting_groups"]:
             g["id"] = f"{o['id']}:{g['kind']}"
             for m in g["meetings"]:
                 m["id"] = f"{g['id']}:{m['original_slot']}"
+                m["offering_id"], m["group_id"] = o["id"], g["id"]
         del o["_row"]
     snapshot["offerings"] = ordered
+    for field, col, meaning in [("preferred_knowledge", COL_PREF, "preferred knowledge"), ("minor_hint", COL_MINOR, "minor hints")]:
+        empty = sum(1 for o in ordered if o[field] is None)
+        if empty:
+            rep.add("SOURCE_COLUMN_EMPTY", "unknown",
+                    f"Column {col} ({meaning}) is empty for {empty} of {len(ordered)} offerings. An empty cell says nothing "
+                    "about prerequisites or minor eligibility; prerequisites stay unknown.",
+                    action="Obtain the approved prerequisite and minor lists; do not read an empty cell as 'none'.")
 
 
 def _check_availability(ws, snapshot, rep):
@@ -435,16 +503,22 @@ def _check_availability(ws, snapshot, rep):
                 codes.append(f"{m[1].upper()} {m[2]}")
             elif SLOT_RE.match(t):
                 tokens.append(t.upper())
-        if len(codes) != 1 or not tokens:
+        first = _text(ws.cell(r, 1).value)
+        if SLOT_RE.match(first):
+            # Supplied layout: slot in column A, one column per room, course codes in the cells.
+            pairs = [(code, first.upper()) for code in dict.fromkeys(codes)]
+        elif len(codes) == 1 and tokens:
+            pairs = [(codes[0], token) for token in tokens]
+        else:
             continue
-        for token in tokens:
-            if codes[0] not in by_code:
+        for code, token in pairs:
+            if code not in by_code:
                 rep.add("AVAILABILITY_MISMATCH", "warning",
-                        f"Availability lists {codes[0]} in {token}, but the course is not in the Time table.",
+                        f"Availability lists {code} in {token}, but the course is not in the Time table.",
                         locator=f"{ws.title}!A{r}", action="Review; Availability does not add offerings.")
-            elif token not in by_code[codes[0]]:
+            elif token not in by_code[code]:
                 rep.add("AVAILABILITY_MISMATCH", "warning",
-                        f"Availability lists {codes[0]} in {token}, which its Time table row does not use.",
+                        f"Availability lists {code} in {token}, which its Time table row does not use.",
                         locator=f"{ws.title}!A{r}", action="Review; the Time table row is kept unchanged.")
 
 

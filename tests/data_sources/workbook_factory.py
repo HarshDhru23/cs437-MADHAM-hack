@@ -11,6 +11,8 @@ HEADERS = [
     "Preferred Knowledge", "Remarks", "Minor", "HSS/BS",
 ]
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+# The supplied workbook's own header: "Slot, M, T, W, Th, F" (T = Tuesday, Th = Thursday).
+SUPPLIED_WEEKDAYS = ["M", "T", "W", "Th", "F"]
 TIME_ROWS = [
     "08:30 – 09:50", "10:00 – 11:20", "11:30 – 12:50",
     "LUNCH", "14:00 – 15:20", "15:30 – 16:50", "17:00 – 18:20",
@@ -34,10 +36,10 @@ def slot_grid():
     return grid
 
 
-def add_time_slots(wb, grid=None):
+def add_time_slots(wb, grid=None, weekdays=None, corner="Time"):
     ws = wb.create_sheet("Time Slots")
-    ws.cell(1, 1, "Time")
-    for c, day in enumerate(WEEKDAYS):
+    ws.cell(1, 1, corner)
+    for c, day in enumerate(weekdays or WEEKDAYS):
         ws.cell(1, c + 2, day)
     grid = slot_grid() if grid is None else grid
     for r, label in enumerate(TIME_ROWS):
@@ -56,7 +58,7 @@ def course_row(code, title, credits, lecture="", tutorial="", lab="", *,
 
 
 def build_workbook(path, rows, *, time_slots=True, availability=True,
-                   header_row=2, place=None, grid=None, blank_rows=0):
+                   header_row=2, place=None, grid=None, blank_rows=0, weekdays=None):
     """rows: course_row dicts, None (empty row) or str (section row), placed
     from the row after the header. place: {row_number: row_dict} for fixed
     source locators."""
@@ -82,7 +84,7 @@ def build_workbook(path, rows, *, time_slots=True, availability=True,
                 if ws.cell(rn, cn).value is None:
                     ws.cell(rn, cn).fill = fill
     if time_slots:
-        add_time_slots(wb, grid)
+        add_time_slots(wb, grid, weekdays, corner="Slot" if weekdays else "Time")
     if availability:
         wb.create_sheet("Availability").cell(1, 1, "Room availability")
     wb.save(path)
