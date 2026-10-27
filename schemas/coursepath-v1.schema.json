@@ -237,7 +237,9 @@
       "required": [
         "attempts",
         "revision",
-        "profile"
+        "profile",
+        "current_enrolment",
+        "reported_controls"
       ],
       "properties": {
         "revision": {
@@ -344,7 +346,8 @@
         "status",
         "required_credits",
         "counted_credits",
-        "source_refs"
+        "source_refs",
+        "children"
       ],
       "properties": {
         "id": {
@@ -416,7 +419,13 @@
         "actual",
         "current",
         "projected",
-        "ledger"
+        "ledger",
+        "current_ledger",
+        "projected_ledger",
+        "excluded_attempts",
+        "issues",
+        "complete",
+        "rule_version"
       ],
       "properties": {
         "actual": {
@@ -447,13 +456,40 @@
           "type": "integer"
         },
         "excluded_attempts": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "attempt_id",
+              "reason"
+            ],
+            "properties": {
+              "attempt_id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
         },
         "complete": {
           "type": "boolean"
         },
         "issues": {
           "type": "array"
+        },
+        "current_ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/allocation"
+          }
+        },
+        "projected_ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/allocation"
+          }
         }
       }
     },
@@ -466,7 +502,30 @@
       ],
       "properties": {
         "workload": {
-          "type": "object"
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/term_id"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "selected_credits",
+              "placeholder_credits",
+              "target_credits"
+            ],
+            "properties": {
+              "selected_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "placeholder_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "target_credits": {
+                "$ref": "#/$defs/decimal"
+              }
+            },
+            "additionalProperties": false
+          }
         },
         "per_course": {
           "type": "array"
@@ -480,6 +539,16 @@
         },
         "issues": {
           "type": "array"
+        },
+        "completion_term": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/term_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
