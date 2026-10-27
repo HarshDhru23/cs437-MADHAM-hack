@@ -261,6 +261,32 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/not validated yet/);
   });
 
+  it('leaving the page within the save delay still sends the edit', async () => {
+    const s = server();
+    const view = render(s);
+    await screen.findByRole('region', { name: '2026–27 Semester II' });
+    await userEvent.click(within(semester('2026–27 Semester II')).getByRole('button', { name: 'Remove ZZ 331' }));
+    view.unmount();
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
+    expect(s.current.semesters.find((x) => x.term_id === '2026-27-II')?.courses).toEqual([]);
+  });
+
+  it('an unsaved draft whose save failed is still there when the student comes back to the plan', async () => {
+    const s = server({ offlineOnce: true });
+    const first = render(s);
+    await screen.findByRole('region', { name: '2026–27 Semester II' });
+    await userEvent.click(within(semester('2026–27 Semester II')).getByRole('button', { name: 'Remove ZZ 331' }));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Offline'), { timeout: 2000 });
+    first.unmount();
+    render(s);
+    await screen.findByRole('region', { name: '2026–27 Semester II' });
+    expect(within(semester('2026–27 Semester II')).queryByText('ZZ 331')).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Offline');
+    await userEvent.click(screen.getByRole('button', { name: 'Retry save' }));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Saved'), { timeout: 2000 });
+    expect(s.current.semesters.find((x) => x.term_id === '2026-27-II')?.courses).toEqual([]);
+  });
+
   it('shows offline state, keeps the draft and retries on request', async () => {
     const s = server({ offlineOnce: true });
     render(s);

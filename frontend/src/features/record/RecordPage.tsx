@@ -373,6 +373,7 @@ function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { record:
       onSaved(result.data);
       return { value: result.data.current_enrolment, revision: result.data.revision };
     },
+    user?.id ?? null,
   );
   const [code, setCode] = useState('');
   const [credits, setCredits] = useState('');

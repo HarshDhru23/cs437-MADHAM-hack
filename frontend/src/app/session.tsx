@@ -1,12 +1,13 @@
 /**
  * Session/auth state. Owns the single ApiClient instance. Personal cached state
- * is cleared on sign-out, expiry and user switch; an unsaved import draft
- * survives expiry for the same user (or an anonymous draft) only.
+ * is cleared on sign-out, expiry and user switch; unsaved import, plan and
+ * enrolment drafts survive expiry for the same user (or an anonymous draft) only.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ApiClient, ApiError } from '../api/client';
 import { endpoints, type Credentials } from '../api/endpoints';
 import { useResourceCache } from '../api/resources';
+import { saveRegistry } from '../api/saveRegistry';
 import type { SessionUser } from '../api/types';
 import { importDraftStore } from '../features/import/draftStore';
 import { previewStore } from '../features/import/previewStore';
@@ -66,7 +67,10 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
         if (!active) return;
         userRef.current = session.user;
         setUser(session.user);
-        if (session.user) importDraftStore.adoptFor(session.user.id);
+        if (session.user) {
+          importDraftStore.adoptFor(session.user.id);
+          saveRegistry.adoptFor(session.user.id);
+        }
         setStatus('ready');
       })
       .catch((e: unknown) => {
@@ -88,6 +92,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       if (!session.user) throw new ApiError('auth', 401, 'Sign-in did not create a session.', []);
       if (!previous || previous.id !== session.user.id) cacheRef.current.clear();
       importDraftStore.adoptFor(session.user.id);
+      saveRegistry.adoptFor(session.user.id);
       userRef.current = session.user;
       setUser(session.user);
       setExpired(false);
@@ -106,6 +111,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       cacheRef.current.clear();
       importDraftStore.clear();
       previewStore.clear();
+      saveRegistry.clear();
       await api.bootstrap().catch(() => undefined);
     }
   }, [api]);

@@ -123,7 +123,7 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
     cache.invalidate('analysis:');
     cache.invalidate('plans:');
     return { revision: result.data.revision, value: planPayload(result.data) };
-  });
+  }, session.user?.id ?? null);
   const plan = queue.value ?? planPayload(initial);
   const revision = queue.state?.revision ?? initial.revision;
 

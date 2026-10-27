@@ -91,6 +91,22 @@ export class SaveQueue<T> {
     this.schedule(0);
   }
 
+  /** A (re)mounted view takes over this queue: future saves and state changes go to it. */
+  rebind(save: SaveQueueOptions<T>['save'], onChange: SaveQueueOptions<T>['onChange']): void {
+    this.options.save = save;
+    this.listen(onChange);
+  }
+
+  /** Replace only the state-change listener (the save function is kept). */
+  listen(onChange: SaveQueueOptions<T>['onChange']): void {
+    this.options.onChange = onChange;
+  }
+
+  /** The view went away: send a waiting draft immediately instead of dropping it. */
+  sendNow(): void {
+    if (this.current.draft !== null && this.current.status === 'pending') this.schedule(0);
+  }
+
   dispose(): void {
     this.clearTimer();
     this.controller?.abort();

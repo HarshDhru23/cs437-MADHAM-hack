@@ -1,7 +1,9 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, beforeEach } from 'vitest';
-import { ApiClient } from '../api/client';
+import { ApiClient, ApiError } from '../api/client';
 import { ResourceCacheProvider, useResource } from '../api/resources';
+import { SaveQueue } from '../api/saveQueue';
+import { saveRegistry } from '../api/saveRegistry';
 import { endpoints } from '../api/endpoints';
 import { importDraftStore } from '../features/import/draftStore';
 import { SessionProvider, useSession } from './session';
@@ -103,6 +105,37 @@ describe('SessionProvider', () => {
     expect(importDraftStore.get().text).toBe('pending paste');
     await act(() => controls!.login({ username: 'alice', password: 'x' }));
     expect(importDraftStore.get().text).toBe('pending paste');
+  });
+
+  it('kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user', async () => {
+    const server = fakeServer();
+    renderWith(server.fetchImpl);
+    await act(() => controls!.login({ username: 'alice', password: 'x' }));
+    const keepDraft = (id: string) => {
+      const queue = new SaveQueue<string>({ revision: 0, value: 'saved', save: () => Promise.reject(new ApiError('auth', 401, 'expired', [])) });
+      saveRegistry.attach(id, '1', queue);
+      queue.edit('alice unsaved');
+      saveRegistry.release(id, queue);
+    };
+    keepDraft('plan:p1');
+    await waitFor(() => expect(saveRegistry.hasUnsaved()).toBe(true));
+    server.expire();
+    await act(async () => controls!.refreshPersonal());
+    await waitFor(() => expect(screen.getByText('expired:true')).toBeInTheDocument());
+    await act(() => controls!.login({ username: 'alice', password: 'x' }));
+    expect(saveRegistry.hasUnsaved()).toBe(true);
+
+    await act(() => controls!.logout());
+    expect(saveRegistry.hasUnsaved()).toBe(false);
+
+    await act(() => controls!.login({ username: 'alice', password: 'x' }));
+    keepDraft('plan:p2');
+    await waitFor(() => expect(saveRegistry.hasUnsaved()).toBe(true));
+    server.expire();
+    await act(async () => controls!.refreshPersonal());
+    await waitFor(() => expect(screen.getByText('expired:true')).toBeInTheDocument());
+    await act(() => controls!.login({ username: 'bob', password: 'x' }));
+    expect(saveRegistry.hasUnsaved()).toBe(false);
   });
 
   it('a different user signing in after expiry does not inherit the previous draft', async () => {

@@ -102,8 +102,9 @@ export function AppShell() {
       </section>
       {session.expired ? (
         <div className="callout" data-tone="warning" role="alert" style={{ maxWidth: '72rem', margin: '1rem auto 0' }}>
-          Your session ended. Unsaved changes on this page are kept in this tab.{' '}
-          <NavLink to={`/login?next=${encodeURIComponent(location.pathname)}`}>Sign in again</NavLink> to continue.
+          Your session ended. Unsaved plan, enrolment and import changes are kept in this tab (not if you close or reload it).{' '}
+          <NavLink to={`/login?next=${encodeURIComponent(location.pathname)}`}>Sign in again</NavLink> with the same account to save them; another account
+          starts without them.
         </div>
       ) : null}
       <main id="main" tabIndex={-1}>
