@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -122,6 +123,30 @@ class TestRunnerTests(unittest.TestCase):
         self.assertEqual(self.t.exit_code([R("a", "PASS")]), 0)
         self.assertEqual(self.t.exit_code([]), 1)
 
+    def test_django_suite_that_runs_no_tests_fails(self):
+        files = dict(self.PASSING)
+        files["server/manage.py"] = "print('Ran 0 tests in 0.000s')\nprint()\nprint('OK')\n"
+        r = self.t.run_django_suite(self.make_root(files))
+        self.assertEqual((r.status, r.tests), ("FAIL", 0))
+        self.assertIn("no Django tests ran", r.detail)
+
+    def test_vitest_count_survives_colour_codes(self):
+        coloured = "\x1b[2m      Tests \x1b[22m \x1b[1m\x1b[32m230 passed\x1b[39m\x1b[22m\x1b[90m (230)\x1b[39m"
+        self.assertEqual(self.t.vitest_passed(coloured), 230)
+        self.assertEqual(self.t.vitest_passed("      Tests  2 failed | 228 passed (230)"), 228)
+        self.assertEqual(self.t.vitest_passed("no summary"), 0)
+
+    def test_e2e_api_port_can_be_moved_off_a_busy_8000(self):
+        old = os.environ.pop("COURSEPATH_E2E_API_PORT", None)
+        try:
+            self.assertEqual(self.t.e2e_ports(), (8000, 4173))
+            os.environ["COURSEPATH_E2E_API_PORT"] = "8010"
+            self.assertEqual(self.t.e2e_ports(), (8010, 4173))
+        finally:
+            os.environ.pop("COURSEPATH_E2E_API_PORT", None)
+            if old is not None:
+                os.environ["COURSEPATH_E2E_API_PORT"] = old
+
 
 class RunScriptTests(unittest.TestCase):
     @classmethod
@@ -204,6 +229,34 @@ class RunScriptTests(unittest.TestCase):
             self.r._pump("web", child)
         child.wait()
         self.assertIn(b"[web] web", raw.getvalue())
+
+    def test_unapplied_migrations_are_a_setup_problem(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / "server").mkdir()
+        # Stand-in manage.py: `migrate --check` exits 1, as Django does when migrations are unapplied.
+        (root / "server" / "manage.py").write_text("import sys\nsys.exit(1 if sys.argv[1:3] == ['migrate', '--check'] else 0)\n")
+        self.assertIn("python server/manage.py migrate", "\n".join(self.r.check_prerequisites(root)))
+        (root / "server" / "manage.py").write_text("import sys\nsys.exit(0)\n")
+        self.assertNotIn("migrate", "\n".join(self.r.check_prerequisites(root)))
+
+    def test_busy_port_stops_before_starting_anything(self):
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            s.listen()
+            busy = s.getsockname()[1]
+            self.assertEqual(self.r.busy_ports([busy, free_port()]), [busy])
+            problems = self.r.port_problems(self.r.parse_args(["--api-port", str(busy), "--web-port", str(free_port())]))
+            self.assertTrue(problems and str(busy) in problems[0] and "--api-port" in problems[0])
+
+    def test_termination_signals_stop_the_supervisor(self):
+        stop = threading.Event()
+        installed = self.r.install_stop_handlers(stop)
+        self.addCleanup(lambda: [signal.signal(sig, old) for sig, old in installed.items()])
+        self.assertIn(signal.SIGTERM, installed)
+        signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+        self.assertTrue(stop.is_set())
 
     def test_ports_can_be_overridden(self):
         a = self.r.parse_args(["--api-port", "9001", "--web-port", "9002"])

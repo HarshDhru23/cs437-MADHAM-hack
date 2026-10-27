@@ -80,6 +80,8 @@ def run_django_suite(root):
     detail = f"{skipped[1]} skipped" if skipped else ""
     if code != 0 or not ran:
         return Result("django", "FAIL", int(ran[1]) if ran else 0, _tail(out))
+    if int(ran[1]) == 0:
+        return Result("django", "FAIL", 0, "no Django tests ran (discovery found nothing under server/)")
     return Result("django", "PASS", int(ran[1]), detail)
 
 
@@ -88,6 +90,15 @@ def _npm_scripts(pkg):
         return json.loads(pkg.read_text(encoding="utf-8")).get("scripts", {})
     except (OSError, ValueError):
         return {}
+
+
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def vitest_passed(out):
+    """Passed-test count from Vitest's summary line; Vitest colours it on Windows and in CI."""
+    m = re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", ANSI_RE.sub("", out))
+    return int(m[1]) if m else 0
 
 
 def run_frontend_suite(root):
@@ -110,12 +121,15 @@ def run_frontend_suite(root):
         if code != 0:
             return Result("frontend", "FAIL", count, f"npm run {step}:\n{_tail(out)}")
         if step == "test":
-            m = re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", out)
-            count = int(m[1]) if m else 0
+            count = vitest_passed(out)
     return Result("frontend", "PASS", count, "typecheck, test, build")
 
 
-E2E_PORTS = (8000, 4173)  # fixed by e2e/playwright.config.ts
+def e2e_ports():
+    """(Django API, production preview) ports used by e2e/playwright.config.ts.
+
+    The API port defaults to 8000; set COURSEPATH_E2E_API_PORT when 8000 is taken."""
+    return int(os.environ.get("COURSEPATH_E2E_API_PORT", "8000")), 4173
 
 
 def busy_ports(ports):
@@ -139,10 +153,15 @@ def run_e2e_suite(root):
     if not (root / "e2e" / "node_modules").is_dir():
         return Result("e2e", "FAIL", detail="dependencies not installed: run `npm ci --prefix e2e` then "
                                             "`npm run install-browsers --prefix e2e`")
-    busy = busy_ports(E2E_PORTS)
+    busy = busy_ports(e2e_ports())
     if busy:
         return Result("e2e", "FAIL", detail="port(s) in use, the browser suite starts its own servers: "
-                                            + ", ".join(map(str, busy)))
+                                            + ", ".join(map(str, busy))
+                                            + " (set COURSEPATH_E2E_API_PORT to move the API port)")
+    if "typecheck" in _npm_scripts(pkg):
+        code, out = _run([npm, "--prefix", "e2e", "run", "typecheck"], root)
+        if code != 0:
+            return Result("e2e", "FAIL", detail=f"npm run typecheck --prefix e2e:\n{_tail(out)}")
     # Playwright starts an isolated temporary-SQLite Django and the production build itself.
     code, out = _run([npm, "--prefix", "e2e", "test"], root, {"COURSEPATH_PYTHON": sys.executable})
     passed = re.search(r"(\d+) passed", out)

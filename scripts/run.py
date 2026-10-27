@@ -2,8 +2,9 @@
 
     python scripts/run.py [--api-port 8000] [--web-port 5173]
 
-Never installs anything. If setup is incomplete it prints what is missing and
-exits 2. Ctrl+C stops both servers. This starts development servers only; the
+Never installs anything. If setup is incomplete (dependencies, unapplied
+migrations, a port already in use) it prints what is missing and exits 2.
+Ctrl+C, closing the terminal or a termination signal stops both servers. This starts development servers only; the
 Django dev server is not the hosted production server.
 """
 import argparse
@@ -46,6 +47,12 @@ def check_prerequisites(root):
         code = subprocess.run([sys.executable, "-c", "import django"], capture_output=True).returncode
         if code != 0:
             problems.append("Django is not installed for this Python: pip install -r requirements.txt")
+        else:
+            migrated = subprocess.run([sys.executable, str(root / "server" / "manage.py"), "migrate", "--check"],
+                                      cwd=root, capture_output=True).returncode
+            if migrated != 0:
+                problems.append("The database is missing migrations (needed after a fresh clone or a pull): "
+                                "python server/manage.py migrate")
     if not (root / "frontend" / "package.json").is_file():
         problems.append("Frontend not found (frontend/package.json). It is Aaryan's; merge it first.")
     else:
@@ -104,6 +111,31 @@ def _listening(port):
         return False
 
 
+def busy_ports(ports):
+    return [p for p in ports if _listening(p)]
+
+
+def port_problems(args):
+    """A port already in use would let another program look like a ready CoursePath server."""
+    flags = {args.api_port: "--api-port", args.web_port: "--web-port"}
+    return [f"Port {p} is already in use by another program; stop it or choose another port with {flags[p]}."
+            for p in busy_ports([args.api_port, args.web_port])]
+
+
+def install_stop_handlers(stop):
+    """Treat termination like Ctrl+C so the servers are always cleaned up. Returns the previous handlers."""
+    installed = {}
+    for name in ("SIGTERM", "SIGHUP", "SIGBREAK"):
+        sig = getattr(signal, name, None)
+        if sig is None:
+            continue
+        try:
+            installed[sig] = signal.signal(sig, lambda *_: stop.set())
+        except (ValueError, OSError):  # not the main thread, or not supported on this platform
+            pass
+    return installed
+
+
 def supervise(services, ready_timeout, stop, pids, url):
     """Run services until `stop` is set or one exits. Returns an exit code."""
     procs = {}
@@ -155,6 +187,8 @@ def build_services(root, args, npm):
 def main(argv=None, root=ROOT):
     args = parse_args(argv)
     problems = check_prerequisites(root)
+    if not problems:
+        problems = port_problems(args)
     if problems:
         print("Cannot start CoursePath yet:", file=sys.stderr)
         for p in problems:
@@ -162,7 +196,9 @@ def main(argv=None, root=ROOT):
         print("See README.md > Setup.", file=sys.stderr)
         return 2
     services = build_services(Path(root), args, shutil.which("npm"))
-    return supervise(services, args.ready_timeout, threading.Event(), {}, f"http://localhost:{args.web_port}")
+    stop = threading.Event()
+    install_stop_handlers(stop)
+    return supervise(services, args.ready_timeout, stop, {}, f"http://localhost:{args.web_port}")
 
 
 if __name__ == "__main__":
