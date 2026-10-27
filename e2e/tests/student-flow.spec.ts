@@ -53,6 +53,12 @@ test.describe.serial('student flow', () => {
     await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Actual completed history');
     await expect(page.getByRole('region', { name: 'Attempts not counted' })).toContainText('ZZ 105');
     await expect(page.getByRole('region', { name: 'Unresolved decisions and issues' })).toBeVisible();
+    // Expected from the reviewed rule data, not from the app: CS 202 is a mandatory core course and CS 203 has
+    // no approved equivalence, so "tools" can never be satisfied; most core courses are absent, so no completion.
+    await expect(page.getByRole('region', { name: 'Overview' }).getByText('Overall verdict').locator('..')).toContainText('Not complete');
+    const tools = page.getByRole('list', { name: 'Requirements' }).getByRole('heading', { name: 'Tools', exact: true }).locator('xpath=ancestor::li[1]');
+    await expect(tools).toContainText('CS 202');
+    await expect(tools).not.toContainText('Satisfied');
   });
 
   test('accepted record keeps repeats, failed attempts and the correction (CP-02/10)', async () => {
@@ -73,9 +79,18 @@ test.describe.serial('student flow', () => {
     await page.goto('/performance');
     const cpi = page.getByRole('region', { name: 'Cumulative CPI' });
     await expect(cpi).toBeVisible();
-    // The draft backend leaves display rounding unavailable; it must not render 0.
-    await expect(cpi.getByText('CPI (server)').locator('..')).toContainText(/Unavailable|\d/);
-    await expect(page.getByRole('table', { name: 'Term SPI' })).toContainText('2024–25 Semester I');
+    // Independent arithmetic on IMS_TEXT with the roadmap points (A 10, A- 9, B 8, F 0; P excluded):
+    // ZZ 299 A 4x10 + CS 203 A 4x10 + ZZ 104 B 2x8 + ZZ 105 F 4x0 + ES 242(N) A- 4x9 = 132 over 18 credits.
+    // The draft backend has no official rounding policy, so the displayed CPI must be Unavailable, never 0.
+    const value = (label: string | RegExp) => cpi.getByText(label, { exact: typeof label === 'string' }).locator('xpath=following-sibling::dd[1]');
+    await expect(value('CPI (server)')).toContainText('Unavailable');
+    await expect(value('CPI (server)')).not.toHaveText(/^0(\.0+)?\b/);
+    await expect(value('Grade points')).toHaveText('132');
+    await expect(value(/Performance credits \(denominator\)/)).toHaveText('18');
+    // 2025-26 Semester I has only a P attempt: no denominator, so its SPI is unavailable rather than 0.
+    const spi = page.getByRole('table', { name: 'Term SPI' });
+    await expect(spi).toContainText('2024–25 Semester I');
+    await expect(spi.getByRole('row', { name: /2025–26 Semester I\b/ }).first()).toContainText('Unavailable');
   });
 
   test('create a plan, add and move a course with the keyboard, see server totals (CP-04/05)', async () => {
@@ -158,14 +173,25 @@ test.describe.serial('student flow', () => {
     await signup(other, uniqueUser('e2e_other'));
     await other.goto(new URL(planUrl).pathname);
     await expect(other.getByText('Plan not found')).toBeVisible();
+    // A malformed id never reaches an API view (Django answers with an HTML 404); it is still "not found".
+    await other.goto('/plan/not-a-plan-id');
+    await expect(other.getByText('Plan not found')).toBeVisible();
     await other.goto('/record');
     await expect(other.getByRole('region', { name: 'Academic history' })).not.toContainText('ZZ 299');
     await other.close();
 
+    // Sign out in the same tab, then use the public page without reloading: nothing personal may remain.
+    await pageA.getByRole('link', { name: 'Requirements', exact: true }).click();
+    await expect(pageA.getByRole('region', { name: 'Overview' })).toBeVisible();
     await pageA.getByRole('button', { name: 'Sign out' }).click();
     await expect(pageA.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
-    await pageA.goto('/record');
-    await expect(pageA.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeVisible();
+    await expect(pageA.getByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeVisible();
+    await expect(pageA.getByRole('region', { name: 'Overview' })).toHaveCount(0);
+    await expect(pageA.getByRole('region', { name: 'Attempts not counted' })).toHaveCount(0);
+    await expect(pageA.getByRole('region', { name: 'Data context' })).toContainText('Public requirements (no personal data)');
+    await expect(pageA.getByRole('region', { name: 'Data context' })).not.toContainText('Record revision');
     await expect(pageA.getByText('ZZ 299')).toHaveCount(0);
+    await pageA.getByRole('link', { name: 'My record', exact: true }).click();
+    await expect(pageA.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeVisible();
   });
 });

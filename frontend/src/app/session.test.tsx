@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { ApiClient, ApiError } from '../api/client';
-import { ResourceCacheProvider, useResource } from '../api/resources';
+import { ResourceCacheProvider, useResource, useResourceCache } from '../api/resources';
 import { SaveQueue } from '../api/saveQueue';
 import { saveRegistry } from '../api/saveRegistry';
 import { endpoints } from '../api/endpoints';
@@ -44,9 +44,11 @@ function fakeServer() {
 }
 
 let controls: ReturnType<typeof useSession> | null = null;
+let cacheProbe: ReturnType<typeof useResourceCache> | null = null;
 function Probe() {
   const session = useSession();
   controls = session;
+  cacheProbe = useResourceCache();
   const record = useResource(session.user ? `record:${session.user.id}` : null, (signal) => endpoints.record(session.api, { signal }));
   return (
     <div>
@@ -82,8 +84,11 @@ describe('SessionProvider', () => {
     await act(() => controls!.login({ username: 'alice', password: 'x' }));
     await screen.findByText('record:alice-record');
     importDraftStore.update({ kind: 'ims', text: 'alice grades', ownerId: '1' });
+    expect(cacheProbe!.get('record:1')).toBeDefined();
     await act(() => controls!.logout());
     expect(screen.getByText('record:none')).toBeInTheDocument();
+    // The cached record itself is gone, not just hidden behind a user-scoped key.
+    expect(cacheProbe!.get('record:1')).toBeUndefined();
     expect(importDraftStore.get().text).toBe('');
     await act(() => controls!.login({ username: 'bob', password: 'x' }));
     await screen.findByText('record:bob-record');

@@ -11,9 +11,10 @@ type Patch = PlanPayload & { expected_revision: number };
 function validationFor(p: AcademicPlan, extraIssues: PlanValidation['issues'] = [], eligibility: PlanValidation['per_course'][number]['eligibility'] = 'unknown'): PlanValidation {
   const workload: PlanValidation['workload'] = {};
   for (const s of p.semesters) {
-    // Fixture-side totals stand in for the server's authoritative arithmetic.
-    const sel = s.courses.reduce((a, c) => a + Number(c.credits), 0);
-    const ph = s.placeholders.reduce((a, c) => a + Number(c.desired_credits), 0);
+    // The fake server's totals deliberately differ from a naive sum of the listed credits (+0.5 each), so a
+    // planner that adds credits itself instead of showing the server's numbers fails these tests.
+    const sel = s.courses.reduce((a, c) => a + Number(c.credits), 0) + 0.5;
+    const ph = s.placeholders.reduce((a, c) => a + Number(c.desired_credits), 0) + 0.5;
     workload[s.term_id] = { selected_credits: String(sel), placeholder_credits: String(ph), target_credits: String(sel + ph) };
   }
   return {
@@ -88,8 +89,10 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     const current = await screen.findByRole('region', { name: '2026–27 Semester I' });
     expect(within(current).getByText('Current term')).toBeInTheDocument();
     expect(within(semester('2027–28 Semester II')).getByText(/Future term/)).toBeInTheDocument();
-    await waitFor(() => expect(within(semester('2026–27 Semester II')).getByText(/Selected courses: 4 credits/)).toBeInTheDocument());
-    expect(within(semester('2026–27 Semester II')).getByText(/Placeholder target: 4 credits/)).toBeInTheDocument();
+    // Server values (fake: 4.5 / 4.5 / 9), not the 4 + 4 a browser-side sum would give.
+    await waitFor(() => expect(within(semester('2026–27 Semester II')).getByText(/Selected courses: 4\.5 credits/)).toBeInTheDocument());
+    expect(within(semester('2026–27 Semester II')).getByText(/Placeholder target: 4\.5 credits/)).toBeInTheDocument();
+    expect(within(semester('2026–27 Semester II')).getByText(/Target workload: 9 credits/)).toBeInTheDocument();
   });
 
   it('extends the plan by one term on request, without a hardcoded maximum', async () => {
