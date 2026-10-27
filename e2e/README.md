@@ -24,7 +24,7 @@ Environment variables:
 - `COURSEPATH_BACKEND_DIR` — checkout containing `server/manage.py` (default: this repository root, which has Harsh's merged `server/` since `a51399e`).
 - `COURSEPATH_REAL_INPUT_DIR` — optional local directory holding the two supplied private inputs (same convention as `tests/imports/test_private_inputs.py`). Only `private-inputs.spec.ts` reads it; without it that spec is skipped.
 
-Ports 8000 and 4173 must be free. Django throttles account actions to 10 per IP per 15 minutes; the default suite uses 9 on its fresh database, so retries are disabled. Run the private check on its own so it gets a fresh database and budget:
+Ports 8000 and 4173 must be free; if 8000 is taken, set `COURSEPATH_E2E_API_PORT` (for example `8010`) and the preview proxy follows it. Django throttles account actions to 10 per IP per 15 minutes; the default suite uses 9 on its fresh database, so retries are disabled. Run the private check on its own so it gets a fresh database and budget:
 
 ```powershell
 $env:COURSEPATH_REAL_INPUT_DIR = 'D:\private-inputs'   # any local folder outside the repository
