@@ -41,3 +41,12 @@ export function latestTerm(terms: string[]): string | null {
   if (terms.length === 0) return null;
   return [...terms].sort(compareTerms).at(-1) ?? null;
 }
+
+/**
+ * Latest term with a completed attempt. In-progress, failed-only or unknown
+ * rows do not prove a later term has finished, so they never advance the
+ * current term on their own.
+ */
+export function latestCompletedTerm(attempts: { term_id: string; completion_status: string }[]): string | null {
+  return latestTerm(attempts.filter((a) => a.completion_status === 'completed').map((a) => a.term_id));
+}

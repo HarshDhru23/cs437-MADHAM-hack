@@ -18,7 +18,7 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge, EvidenceBadge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
-import { latestTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
+import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
 import { requirementLabel } from '../requirements/RequirementTree';
 
 const DEFAULT_LAST_SEMESTER = 8;
@@ -40,7 +40,7 @@ export function PlanIndexPage() {
 
   const create = async () => {
     if (!record.data) return;
-    const latest = latestTerm([...record.data.attempts.map((a) => a.term_id)]);
+    const latest = latestCompletedTerm(record.data.attempts);
     const start = (latest && nextRegularTerm(latest)) ?? `${record.data.profile.admission_year}-${String((record.data.profile.admission_year + 1) % 100).padStart(2, '0')}-I`;
     const terms = regularTermsThrough(start, record.data.profile.admission_year, DEFAULT_LAST_SEMESTER);
     const payload: PlanPayload = { label: 'My plan', semesters: (terms.length ? terms : [start]).map((term_id) => ({ term_id, courses: [], placeholders: [] })) };
@@ -100,7 +100,7 @@ export function PlanPage() {
         <ErrorPanel error={loaded.error} onRetry={loaded.reload} />
       )
     ) : null;
-  return <Planner key={loaded.data.id} initial={loaded.data} recordRevision={record.data?.revision ?? null} latestCompleted={latestTerm((record.data?.attempts ?? []).map((a) => a.term_id))} />;
+  return <Planner key={loaded.data.id} initial={loaded.data} recordRevision={record.data?.revision ?? null} latestCompleted={latestCompletedTerm(record.data?.attempts ?? [])} />;
 }
 
 type Dialogs = { kind: 'course'; term: string } | { kind: 'placeholder'; term: string } | { kind: 'resolve'; term: string; placeholderId: string } | null;
@@ -259,8 +259,7 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
               isCurrent={s.term_id === currentTerm}
               isFuture={currentTerm !== null && compareTerms(s.term_id, currentTerm) > 0}
               validation={stale ? null : (validation?.data ?? null)}
-              lastValidation={validation?.data ?? null}
-              issues={issues}
+              issues={stale ? [] : issues}
               highlight={highlight}
               requirementName={(id) => requirementLabel(requirementOptions.find((r) => r.id === id), undefined)}
               onMove={(itemId, to) => move(s.term_id, itemId, to)}
@@ -277,7 +276,12 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
         </div>
         <section className="panel" aria-label="Plan validation">
           <h2>Validation</h2>
-          {stale ? <p className="muted">Re-evaluating… showing results for revision {validation?.revision}.</p> : null}
+          {stale ? (
+            <p className="muted" role="status">
+              Your latest changes are not validated yet; the results below are for saved revision {validation?.revision}. Planned rows show “Not checked” until the
+              server validates the new revision.
+            </p>
+          ) : null}
           {validationError ? <ErrorPanel error={validationError} /> : null}
           {!validation && !validationError ? <StatePanel kind="loading" title="Validating on the server…" /> : null}
           {validation ? (
@@ -360,7 +364,6 @@ function SemesterTable({
   isCurrent,
   isFuture,
   validation,
-  lastValidation,
   issues,
   highlight,
   requirementName,
@@ -375,8 +378,8 @@ function SemesterTable({
   allTerms: string[];
   isCurrent: boolean;
   isFuture: boolean;
+  /** Null while loading or while the plan has unvalidated edits: every check then reads "Not checked". */
   validation: PlanValidation | null;
-  lastValidation: PlanValidation | null;
   issues: Issue[];
   highlight: Set<string>;
   requirementName: (id: string) => string;
@@ -391,7 +394,7 @@ function SemesterTable({
   const label = formatTerm(semester.term_id);
   const workload = validation?.workload[semester.term_id];
   const termIssues = issues.filter((i) => i.entity_refs.includes(semester.term_id));
-  const perCourse = new Map((lastValidation?.per_course ?? []).map((p) => [p.id, p]));
+  const perCourse = new Map((validation?.per_course ?? []).map((p) => [p.id, p]));
   const itemIssues = (id: string) => issues.filter((i) => i.entity_refs.includes(id));
   return (
     <section className="panel semester" aria-labelledby={headingId} data-current={isCurrent ? 'true' : undefined}>
@@ -453,10 +456,10 @@ function SemesterTable({
                     </td>
                     <td data-label="Requirement intent">{c.intended_allocation ? requirementName(c.intended_allocation) : <span className="muted">Not set</span>}</td>
                     <td data-label="Prerequisites">
-                      <EvidenceBadge value={pc?.eligibility ?? 'unknown'} />
+                      <EvidenceBadge value={pc?.eligibility ?? 'not_checked'} />
                     </td>
                     <td data-label="Offering / sections">
-                      <EvidenceBadge value={pc?.offering_status ?? 'unknown'} /> <EvidenceBadge value={pc?.meeting_check_status ?? 'not_checked'} />
+                      <EvidenceBadge value={pc?.offering_status ?? 'not_checked'} /> <EvidenceBadge value={pc?.meeting_check_status ?? 'not_checked'} />
                       {c.section_ids?.length ? <div>Sections: {c.section_ids.join(', ')}</div> : null}
                     </td>
                     <td data-label="Issues">

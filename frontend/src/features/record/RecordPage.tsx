@@ -17,7 +17,7 @@ import { SourcePanel } from '../../components/SourcePanel';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
-import { latestTerm, nextRegularTerm } from '../../lib/terms';
+import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
 
 const STATUS_LABEL: Record<CompletionStatus, string> = {
   completed: 'Completed',
@@ -56,7 +56,7 @@ export function RecordPage() {
   const data = record.data;
   const completed = data.attempts;
   const terms = [...new Set(completed.map((a) => a.term_id))].sort(compareTerms);
-  const latestCompleted = latestTerm(completed.filter((a) => a.completion_status === 'completed').map((a) => a.term_id));
+  const latestCompleted = latestCompletedTerm(completed);
 
   const submitAttempts = async (attempts: CourseAttempt[], justifications?: Record<string, string>) => {
     const result = await endpoints.patchRecord(api, { expected_revision: data.revision, attempts, ...(justifications ? { correction_justifications: justifications } : {}) });

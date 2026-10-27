@@ -2,13 +2,13 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { AcademicPlan, PlanPayload, PlanValidation } from '../../api/types';
-import { curriculum, plan, record } from '../../test/fixtures';
+import { attempt, curriculum, plan, record } from '../../test/fixtures';
 import { fakeApi, issue, renderApp } from '../../test/harness';
 import { PlanIndexPage, PlanPage } from './PlanPage';
 
 type Patch = PlanPayload & { expected_revision: number };
 
-function validationFor(p: AcademicPlan, extraIssues: PlanValidation['issues'] = []): PlanValidation {
+function validationFor(p: AcademicPlan, extraIssues: PlanValidation['issues'] = [], eligibility: PlanValidation['per_course'][number]['eligibility'] = 'unknown'): PlanValidation {
   const workload: PlanValidation['workload'] = {};
   for (const s of p.semesters) {
     // Fixture-side totals stand in for the server's authoritative arithmetic.
@@ -19,7 +19,7 @@ function validationFor(p: AcademicPlan, extraIssues: PlanValidation['issues'] = 
   return {
     workload,
     per_course: p.semesters.flatMap((s) =>
-      s.courses.map((c) => ({ id: c.id, term_id: s.term_id, eligibility: 'unknown' as const, prerequisite_proof: { status: 'unknown', missing: [], proof: [], source_refs: [] }, offering_status: 'unknown', meeting_check_status: 'not_checked' as const })),
+      s.courses.map((c) => ({ id: c.id, term_id: s.term_id, eligibility, prerequisite_proof: { status: 'unknown', missing: [], proof: [], source_refs: [] }, offering_status: 'unknown', meeting_check_status: 'not_checked' as const })),
     ),
     issues: [
       ...p.semesters.flatMap((s) => s.placeholders.map((ph) => issue('PLACEHOLDER_UNRESOLVED', 'unknown', [ph.id], 'Select actual courses before eligibility or completion can be established.') as PlanValidation['issues'][number])),
@@ -30,17 +30,26 @@ function validationFor(p: AcademicPlan, extraIssues: PlanValidation['issues'] = 
   };
 }
 
-function server(opts: { conflictOnce?: boolean; offlineOnce?: boolean; extraIssues?: (p: AcademicPlan) => PlanValidation['issues'] } = {}) {
+function server(
+  opts: {
+    conflictOnce?: boolean;
+    offlineOnce?: boolean;
+    extraIssues?: (p: AcademicPlan) => PlanValidation['issues'];
+    eligibility?: PlanValidation['per_course'][number]['eligibility'];
+    record?: typeof record;
+  } = {},
+) {
   let current: AcademicPlan = structuredClone(plan);
+  const validate = (p: AcademicPlan) => validationFor(p, opts.extraIssues?.(p), opts.eligibility);
   const patches: Patch[] = [];
   let conflict = opts.conflictOnce ?? false;
   let offline = opts.offlineOnce ?? false;
   const api = fakeApi({
-    'GET /record': () => ({ data: record }),
+    'GET /record': () => ({ data: opts.record ?? record }),
     'GET /curricula/cse-2024': () => ({ data: curriculum }),
     'GET /catalogue': () => ({ data: { courses: [], coverage: 'unknown', review_status: 'draft' }, issues: [issue('CATALOGUE_MISSING')] }),
     'GET /plans/:id': () => ({ data: current }),
-    'POST /plans/:id/validate': () => ({ data: validationFor(current, opts.extraIssues?.(current)) }),
+    'POST /plans/:id/validate': () => ({ data: validate(current) }),
     'PATCH /plans/:id': (req) => {
       const body = req.body as Patch;
       patches.push(body);
@@ -53,7 +62,7 @@ function server(opts: { conflictOnce?: boolean; offlineOnce?: boolean; extraIssu
         return { status: 409, data: { current_revision: current.revision + 5, action: 'reload_compare' }, issues: [issue('REVISION_CONFLICT', 'error')] };
       }
       current = { id: current.id, revision: current.revision + 1, label: body.label, semesters: body.semesters };
-      return { data: { ...current, validation: validationFor(current, opts.extraIssues?.(current)) } };
+      return { data: { ...current, validation: validate(current) } };
     },
   });
   // A thrown TypeError inside a handler should behave like a network failure.
@@ -226,6 +235,32 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     await waitFor(() => expect(within(semester('2026–27 Semester II')).getByText('ZZ 331')).toBeInTheDocument());
   });
 
+  it('an in-progress attempt does not move the current term past the semester being taken', async () => {
+    const inProgress = { ...record, attempts: [...record.attempts, attempt({ id: 'a-now', normalized_code: 'ZZ 330', term_id: '2026-27-I', grade: '', completion_status: 'in_progress' })] };
+    render(server({ record: inProgress }));
+    const sem1 = await screen.findByRole('region', { name: '2026–27 Semester I' });
+    expect(within(sem1).getByText('Current term')).toBeInTheDocument();
+    expect(within(semester('2026–27 Semester II')).queryByText('Current term')).not.toBeInTheDocument();
+  });
+
+  it('after an unsaved edit, rows show "Not checked" instead of the previous revision\'s eligibility and issues', async () => {
+    const s = server({ offlineOnce: true, eligibility: 'eligible', extraIssues: () => [issue('DUPLICATE_COURSE', 'error', ['c-os'], 'Synthetic duplicate on ZZ 330.')] });
+    render(s);
+    const sem1 = await screen.findByRole('region', { name: '2026–27 Semester I' });
+    const before = within(sem1).getByText('ZZ 330').closest('tr') as HTMLElement;
+    await waitFor(() => expect(within(before).getByText('Eligible')).toBeInTheDocument());
+    expect(within(before).getByText('Synthetic duplicate on ZZ 330.')).toBeInTheDocument();
+    await userEvent.selectOptions(within(sem1).getByLabelText('Move ZZ 330 to'), '2027-28-I');
+    await userEvent.click(within(sem1).getByRole('button', { name: 'Move ZZ 330' }));
+    // The save fails (offline), so no newer validation arrives: old results must not stay on the row.
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Offline'), { timeout: 2000 });
+    const moved = within(semester('2027–28 Semester I')).getByText('ZZ 330').closest('tr') as HTMLElement;
+    expect(within(moved).queryByText('Eligible')).not.toBeInTheDocument();
+    expect(within(moved).queryByText('Synthetic duplicate on ZZ 330.')).not.toBeInTheDocument();
+    expect(within(moved).getAllByText('Not checked').length).toBeGreaterThan(0);
+    expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/not validated yet/);
+  });
+
   it('shows offline state, keeps the draft and retries on request', async () => {
     const s = server({ offlineOnce: true });
     render(s);
@@ -253,5 +288,22 @@ describe('PlanIndexPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Create a plan' }));
     await screen.findByText('navigated-away');
     expect(created[0]?.semesters.map((x) => x.term_id)).toEqual(['2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II']);
+  });
+
+  it('starts a new plan at the semester currently in progress, not after it', async () => {
+    const created: PlanPayload[] = [];
+    const inProgress = { ...record, attempts: [...record.attempts, attempt({ id: 'a-now', normalized_code: 'ZZ 330', term_id: '2026-27-I', grade: '', completion_status: 'in_progress' })] };
+    const { fetchImpl } = fakeApi({
+      'GET /record': () => ({ data: inProgress }),
+      'GET /plans': () => ({ data: [] }),
+      'POST /plans': (req) => {
+        created.push(req.body as PlanPayload);
+        return { status: 201, data: { ...(req.body as PlanPayload), id: 'new-plan', revision: 0, validation: { workload: {}, per_course: [], issues: [], meeting_check_status: 'not_checked', completion_term: null } } };
+      },
+    });
+    renderApp(<PlanIndexPage />, { fetchImpl, route: '/plan', path: '/plan' });
+    await userEvent.click(await screen.findByRole('button', { name: 'Create a plan' }));
+    await screen.findByText('navigated-away');
+    expect(created[0]?.semesters[0]?.term_id).toBe('2026-27-I');
   });
 });
