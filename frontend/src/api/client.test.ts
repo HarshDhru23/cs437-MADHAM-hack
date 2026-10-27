@@ -37,6 +37,11 @@ describe('ApiClient envelope handling', () => {
     await expect(api.get('/record')).rejects.toMatchObject({ kind: 'server', status: 502 });
   });
 
+  it('maps a non-JSON error page to its HTTP status kind (Django HTML 404 for a malformed id)', async () => {
+    const { api } = client(() => new Response('<html><title>Not Found</title></html>', { status: 404, headers: { 'Content-Type': 'text/html' } }));
+    await expect(api.get('/plans/not-a-uuid')).rejects.toMatchObject({ kind: 'not_found', status: 404 });
+  });
+
   it('reports a network failure as offline/network, not as empty data', async () => {
     const { api } = client(() => {
       throw new TypeError('Failed to fetch');

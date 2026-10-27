@@ -62,6 +62,34 @@ const personalRoutes = {
   'POST /analysis': () => ({ data: analysis, issues: analysis.audit.issues }),
 };
 
+describe('RequirementsPage — stale record (CP-29)', () => {
+  it('after a 409 from analysis, "Try again" reloads the record and asks with its current revision', async () => {
+    // Another tab saves right after this tab read the record: the first read is revision 3, the server is at 4.
+    let recordReads = 0;
+    const analysisRevisions: number[] = [];
+    const { fetchImpl } = fakeApi({
+      ...publicRoutes,
+      'GET /record': () => ({ data: { ...record, revision: recordReads++ === 0 ? 3 : 4 } }),
+      'GET /plans': () => ({ data: [plan] }),
+      'POST /analysis': (req) => {
+        const asked = (req.body as { record_revision: number }).record_revision;
+        analysisRevisions.push(asked);
+        if (asked !== 4) return { status: 409, data: { current_revision: 4, action: 'reload_compare' }, issues: [issue('REVISION_CONFLICT', 'error', [], 'The record changed since it was loaded.')] };
+        return { data: { ...analysis, record_revision: 4 }, issues: analysis.audit.issues };
+      },
+    });
+    renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByText('Saved elsewhere');
+    expect(analysisRevisions).toEqual([3]);
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('region', { name: 'Overview' });
+    // The record was read again and the successful evaluation used its current revision.
+    expect(recordReads).toBeGreaterThanOrEqual(2);
+    expect(analysisRevisions.at(-1)).toBe(4);
+    expect(screen.queryByText('Saved elsewhere')).not.toBeInTheDocument();
+  });
+});
+
 describe('RequirementsPage — personal audit (CP-03, CP-13, CP-20)', () => {
   it('shows server statuses; a full progress bar never turns needs-review into satisfied', async () => {
     const { fetchImpl } = fakeApi(personalRoutes);

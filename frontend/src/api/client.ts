@@ -153,6 +153,10 @@ export class ApiClient {
       parsed = null;
     }
     if (!parsed || typeof parsed !== 'object' || !('schema_version' in parsed)) {
+      // Some failures never reach an API view (Django's HTML 404 for a malformed
+      // id, a proxy's 413): keep their status meaning, never treat them as data.
+      const known = response.ok ? undefined : STATUS_KIND[response.status];
+      if (known && known !== 'auth') throw new ApiError(known, response.status, `Request failed (HTTP ${response.status}).`, []);
       throw new ApiError('server', response.status, `Unexpected response from the server (HTTP ${response.status}).`, []);
     }
     if (parsed.schema_version !== SCHEMA_VERSION) {
