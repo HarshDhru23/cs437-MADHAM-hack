@@ -19,6 +19,7 @@ import { Badge, EvidenceBadge, SeverityBadge } from '../../components/StatusBadg
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
 import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
+import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
 
 const DEFAULT_LAST_SEMESTER = 8;
@@ -577,7 +578,7 @@ function PlaceholderDialog({
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!requirement) return setError('Choose the requirement this placeholder is meant to fill.');
-    if (!/^\d+(\.\d+)?$/.test(credits.trim())) return setError('Enter target credits as a number.');
+    if (!isDecimalString(credits.trim())) return setError('Enter target credits as a number, for example 4 (no leading zeros, at most 4 decimal places).');
     setError(null);
     onAdd({ id: newId('placeholder'), requirement_id: requirement, desired_credits: credits.trim(), ...(label.trim() ? { label: label.trim() } : {}) });
   };

@@ -30,7 +30,7 @@ describe('RecordPage (CP-02, A04)', () => {
   it('separates completed history (by term, chronological) from current enrolment', async () => {
     const s = server();
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
-    const history = await screen.findByRole('region', { name: 'Completed history' });
+    const history = await screen.findByRole('region', { name: 'Academic history' });
     const captions = within(history).getAllByRole('table').map((t) => t.querySelector('caption')?.textContent);
     expect(captions).toEqual(['2024–25 Semester I', '2024–25 Semester II', '2025–26 Semester I', '2025–26 Semester II']);
     expect(screen.getByRole('region', { name: 'Current enrolment' })).toHaveTextContent(/No confirmed current courses/);
@@ -41,7 +41,7 @@ describe('RecordPage (CP-02, A04)', () => {
   it('keeps both repeated registrations and shows unresolved classification', async () => {
     const s = server();
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
-    await screen.findByRole('region', { name: 'Completed history' });
+    await screen.findByRole('region', { name: 'Academic history' });
     expect(screen.getAllByText('ZZ 299')).toHaveLength(2);
     expect(screen.getAllByText('Not matched to a reviewed catalogue').length).toBeGreaterThan(0);
   });
@@ -49,7 +49,7 @@ describe('RecordPage (CP-02, A04)', () => {
   it('requires a justification to correct an attempt and keeps the original evidence', async () => {
     const s = server();
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
-    await screen.findByRole('region', { name: 'Completed history' });
+    await screen.findByRole('region', { name: 'Academic history' });
     await userEvent.click(screen.getByRole('button', { name: 'Correct CS 203 (2025–26 Semester II)' }));
     const dialog = screen.getByRole('dialog', { name: /Correct CS 203/ });
     const title = within(dialog).getByLabelText('Title');
@@ -72,7 +72,7 @@ describe('RecordPage (CP-02, A04)', () => {
   it('adds a manual in-progress or failed attempt without removing prior attempts', async () => {
     const s = server();
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
-    await screen.findByRole('region', { name: 'Completed history' });
+    await screen.findByRole('region', { name: 'Academic history' });
     await userEvent.click(screen.getByRole('button', { name: 'Add an attempt' }));
     const dialog = screen.getByRole('dialog', { name: 'Add an attempt' });
     await userEvent.type(within(dialog).getByLabelText('Course code'), 'ZZ 401');
@@ -154,11 +154,53 @@ describe('RecordPage (CP-02, A04)', () => {
     });
     const s = server({ ...record, attempts: [...record.attempts, reimported] });
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
-    await screen.findByRole('region', { name: 'Completed history' });
+    await screen.findByRole('region', { name: 'Academic history' });
     await userEvent.click(screen.getByRole('button', { name: 'Source for ZZ 104 (2024–25 Semester II)' }));
     const dialog = screen.getByRole('dialog', { name: 'Source for ZZ 104' });
     expect(dialog).toHaveTextContent('Re-import: grade “B” → “A-” — Grade revised after re-evaluation');
     expect(dialog).not.toHaveTextContent('[object Object]');
+  });
+
+  it('marks credits of failed and in-progress attempts as not earned', async () => {
+    const s = server({ ...record, attempts: [...record.attempts, attempt({ id: 'a-now', normalized_code: 'ZZ 330', term_id: '2026-27-I', grade: '', completion_status: 'in_progress' })] });
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    const history = await screen.findByRole('region', { name: 'Academic history' });
+    const failed = within(history).getByRole('row', { name: /ZZ 103/ });
+    expect(within(failed).getByText(/not earned/)).toBeInTheDocument();
+    const now = within(history).getByRole('row', { name: /ZZ 330/ });
+    expect(within(now).getByText(/not earned/)).toBeInTheDocument();
+    const done = within(history).getByRole('row', { name: /CS 203/ });
+    expect(within(done).queryByText(/not earned/)).not.toBeInTheDocument();
+  });
+
+  it('the correction dialog keeps an unknown status unknown and says a code change is not an equivalence', async () => {
+    const s = server({ ...record, attempts: [attempt({ id: 'a-unk', normalized_code: 'ZZ 372', grade: '', completion_status: 'unknown' })] });
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Academic history' });
+    await userEvent.click(screen.getByRole('button', { name: 'Correct ZZ 372 (2024–25 Semester I)' }));
+    const dialog = screen.getByRole('dialog', { name: /Correct ZZ 372/ });
+    expect(within(dialog).getByLabelText('Status')).toHaveValue('unknown');
+    expect(within(dialog).getByText(/does not approve a course equivalence/)).toBeInTheDocument();
+  });
+
+  it('rejects a course code or credit value the server would reject, before saving', async () => {
+    const s = server();
+    renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Academic history' });
+    await userEvent.click(screen.getByRole('button', { name: 'Add an attempt' }));
+    const dialog = screen.getByRole('dialog', { name: 'Add an attempt' });
+    await userEvent.type(within(dialog).getByLabelText('Course code'), 'ZZ 401A');
+    await userEvent.type(within(dialog).getByLabelText('Title'), 'Synthetic');
+    await userEvent.type(within(dialog).getByLabelText('Credits'), '4');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add attempt' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(/course code/);
+    await userEvent.clear(within(dialog).getByLabelText('Course code'));
+    await userEvent.type(within(dialog).getByLabelText('Course code'), 'ZZ 401');
+    await userEvent.clear(within(dialog).getByLabelText('Credits'));
+    await userEvent.type(within(dialog).getByLabelText('Credits'), '04');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add attempt' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(/credits/i);
+    expect(s.patches).toHaveLength(0);
   });
 
   it('shows an import prompt when there is no record yet', async () => {

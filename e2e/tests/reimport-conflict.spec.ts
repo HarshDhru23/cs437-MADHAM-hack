@@ -19,7 +19,7 @@ async function parseIms(page: Page, text: string) {
   await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
 }
 
-const calculusRow = (page: Page) => page.getByRole('region', { name: 'Completed history' }).getByRole('row', { name: /ZZ 104/ });
+const calculusRow = (page: Page) => page.getByRole('region', { name: 'Academic history' }).getByRole('row', { name: /ZZ 104/ });
 
 test.describe.serial('re-import conflicts', () => {
   let page: Page;
@@ -51,7 +51,7 @@ test.describe.serial('re-import conflicts', () => {
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
     await page.goto('/record');
-    await expect(page.getByRole('region', { name: 'Completed history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
+    await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
     await expect(calculusRow(page)).toContainText('A-');
     await page.getByRole('button', { name: /Source for ZZ 104/ }).click();
     const source = page.getByRole('dialog', { name: 'Source for ZZ 104' });
@@ -66,7 +66,7 @@ test.describe.serial('re-import conflicts', () => {
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
     await page.goto('/record');
     await expect(calculusRow(page)).toContainText('A-');
-    await expect(page.getByRole('region', { name: 'Completed history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
+    await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
   });
 
   test('a commit against a record saved in another tab is refused and changes nothing (409)', async () => {
@@ -91,7 +91,7 @@ test.describe.serial('re-import conflicts', () => {
     await expect(alert.getByRole('link', { name: 'Start a new import' })).toBeVisible();
 
     await page.goto('/record');
-    await expect(page.getByRole('region', { name: 'Completed history' })).not.toContainText('ZZ 201');
+    await expect(page.getByRole('region', { name: 'Academic history' })).not.toContainText('ZZ 201');
     await expect(page.getByRole('region', { name: 'Current enrolment' })).toContainText('ZZ 330');
   });
 });

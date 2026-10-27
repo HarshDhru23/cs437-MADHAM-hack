@@ -34,7 +34,7 @@ test('PDF import shows every semester and source totals; re-import is idempotent
   await page.getByRole('button', { name: 'Confirm record' }).click();
   await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
   await page.goto('/record');
-  await expect(page.getByRole('region', { name: 'Completed history' }).getByText('ES 242(N)', { exact: true })).toHaveCount(4);
+  await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ES 242(N)', { exact: true })).toHaveCount(4);
 });
 
 test('an unreadable file keeps the prior record and offers alternatives (CP-09)', async ({ page }) => {

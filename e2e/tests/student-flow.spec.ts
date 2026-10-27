@@ -58,7 +58,7 @@ test.describe.serial('student flow', () => {
   test('accepted record keeps repeats, failed attempts and the correction (CP-02/10)', async () => {
     const page = pageA;
     await page.getByRole('link', { name: 'My record', exact: true }).click();
-    const history = page.getByRole('region', { name: 'Completed history' });
+    const history = page.getByRole('region', { name: 'Academic history' });
     await expect(history.getByText('ZZ 299', { exact: true })).toHaveCount(2);
     await expect(history).toContainText('ES 242(N)');
     await expect(history).toContainText('Failed / not completed');
@@ -159,7 +159,7 @@ test.describe.serial('student flow', () => {
     await other.goto(new URL(planUrl).pathname);
     await expect(other.getByText('Plan not found')).toBeVisible();
     await other.goto('/record');
-    await expect(other.getByRole('region', { name: 'Completed history' })).not.toContainText('ZZ 299');
+    await expect(other.getByRole('region', { name: 'Academic history' })).not.toContainText('ZZ 299');
     await other.close();
 
     await pageA.getByRole('button', { name: 'Sign out' }).click();

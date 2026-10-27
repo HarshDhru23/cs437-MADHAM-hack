@@ -1,6 +1,7 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
 import type { CatalogueCourse } from '../api/types';
 import { formatCredits } from '../lib/format';
+import { isCourseCode, isDecimalString, normalizeCode } from '../lib/validation';
 import { EvidenceBadge } from './StatusBadge';
 
 export interface PickedCourse {
@@ -17,8 +18,6 @@ interface CoursePickerProps {
   submitLabel?: string;
 }
 
-const CREDIT = /^\d+(\.\d+)?$/;
-const CODE = /^[A-Za-z]{2,4}\s?\d{3}[A-Za-z]?(\([A-Za-z]\))?$/;
 
 /**
  * Search the server catalogue by code/title/basket/department. When no reviewed
@@ -41,13 +40,13 @@ export function CoursePicker({ courses, coverage, onPick, submitLabel = 'Add cou
 
   const submitManual = (event: FormEvent) => {
     event.preventDefault();
-    const trimmed = code.trim().toUpperCase().replace(/^([A-Z]{2,4})\s?(\d)/, '$1 $2');
-    if (!CODE.test(trimmed)) {
-      setError('Enter a course code such as "CS 330".');
+    const trimmed = normalizeCode(code);
+    if (!isCourseCode(code)) {
+      setError('Enter a course code such as "CS 330" or "ES 242(N)".');
       return;
     }
-    if (!CREDIT.test(credits.trim())) {
-      setError('Enter credits as a number, for example 4 or 1.5.');
+    if (!isDecimalString(credits.trim())) {
+      setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
       return;
     }
     setError(null);

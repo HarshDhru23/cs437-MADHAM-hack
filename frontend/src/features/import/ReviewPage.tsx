@@ -12,6 +12,7 @@ import { IssueList } from '../../components/IssueList';
 import { SourcePanel } from '../../components/SourcePanel';
 import { Badge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
+import { isDecimalString } from '../../lib/validation';
 import { importDraftStore } from './draftStore';
 import { Steps } from './ImportPage';
 import { previewStore } from './previewStore';
@@ -528,7 +529,7 @@ function InlineEditor({ candidate, correction, onApply, onCancel }: { candidate:
     event.preventDefault();
     const fields: Partial<Record<EditableField, string>> = {};
     for (const { key } of FIELDS) if (values[key].trim() !== String(candidate[key] ?? '')) fields[key] = values[key].trim();
-    if (fields.credits !== undefined && !/^\d+(\.\d+)?$/.test(fields.credits)) return setError('Enter credits as a number.');
+    if (fields.credits !== undefined && !isDecimalString(fields.credits)) return setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
     if (Object.keys(fields).length > 0 && !justification.trim()) return setError('Explain what you checked before correcting a row.');
     setError(null);
     onApply({ fields, justification: justification.trim() });

@@ -18,6 +18,7 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
+import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
 
 const STATUS_LABEL: Record<CompletionStatus, string> = {
   completed: 'Completed',
@@ -33,8 +34,11 @@ function newId(prefix: string): string {
   return `${prefix}-${random}`;
 }
 
-function normalizeCode(raw: string): string {
-  return raw.trim().toUpperCase().replace(/\s+/g, ' ').replace(/^([A-Z]{2,4})\s?(\d)/, '$1 $2');
+/** Only completed attempts earn credit; the others keep their reported credits for the record. */
+function creditsCell(a: CourseAttempt): string {
+  if (a.completion_status === 'completed') return formatCredits(a.credits);
+  const note = a.completion_status === 'failed' || a.completion_status === 'withdrawn' ? 'not earned' : 'not earned yet';
+  return `${formatCredits(a.credits)} (${note})`;
 }
 
 export function RecordPage() {
@@ -105,9 +109,9 @@ export function RecordPage() {
         </div>
       ) : null}
 
-      <section aria-label="Completed history" className="stack">
+      <section aria-label="Academic history" className="stack">
         <div className="panel-row" style={{ justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0 }}>Completed history</h2>
+          <h2 style={{ margin: 0 }}>Academic history</h2>
           {completed.length > 0 ? (
             <div className="panel-row">
               <Link className="btn" to="/record/import">
@@ -119,7 +123,10 @@ export function RecordPage() {
             </div>
           ) : null}
         </div>
-        <p className="muted">Every attempt is kept, including failed attempts and repeated registrations. Corrections keep the original source text.</p>
+        <p className="muted">
+          Every accepted attempt is kept, including failed attempts and repeated registrations; only completed attempts earn credit. Corrections keep the original
+          source text.
+        </p>
         {terms.map((term) => (
           <DataTable
             key={term}
@@ -130,7 +137,7 @@ export function RecordPage() {
             columns={[
               { key: 'code', header: 'Code', rowHeader: true, render: (a) => <span className="mono">{a.normalized_code}</span> },
               { key: 'title', header: 'Title', render: (a) => a.title },
-              { key: 'credits', header: 'Credits', numeric: true, render: (a) => formatCredits(a.credits) },
+              { key: 'credits', header: 'Credits', numeric: true, render: creditsCell },
               { key: 'grade', header: 'Grade', render: (a) => a.grade || <span className="muted">Blank</span> },
               { key: 'status', header: 'Status', render: (a) => STATUS_LABEL[a.completion_status] ?? a.completion_status },
               {
@@ -259,9 +266,9 @@ function AttemptDialog({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!/^[A-Z]{2,4} \d{3}[A-Z]?(\([A-Z]\))?$/.test(normalizeCode(code))) return setError('Enter a course code such as "CS 330".');
+    if (!isCourseCode(code)) return setError('Enter a course code such as "CS 330" or "ES 242(N)".');
     if (!titleText.trim()) return setError('Enter the course title.');
-    if (!/^\d+(\.\d+)?$/.test(credits.trim())) return setError('Enter credits as a number, for example 4 or 1.5.');
+    if (!isDecimalString(credits.trim())) return setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
     if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setError('Enter the term as, for example, 2025-26-II.');
     if (requireJustification && !justification.trim()) return setError('Explain what you checked before correcting a record.');
     setError(null);
@@ -329,6 +336,7 @@ function AttemptDialog({
               <option value="failed">Failed / not completed</option>
               <option value="withdrawn">Withdrawn</option>
               <option value="incomplete">Incomplete</option>
+              <option value="unknown">Unknown / needs review</option>
             </select>
           </div>
           <div className="field">
@@ -343,6 +351,12 @@ function AttemptDialog({
           </div>
         ) : null}
         <p className="muted">The server decides whether the grade and status are consistent and how the attempt counts.</p>
+        {initial ? (
+          <p className="muted">
+            A correction fixes a transcription error only. Changing the code does not approve a course equivalence or substitution (for example, CS 203 does not
+            become CS 202).
+          </p>
+        ) : null}
         {error ? (
           <p className="field-error" role="alert">
             {error}
@@ -392,8 +406,8 @@ function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { record:
   const add = (event: FormEvent) => {
     event.preventDefault();
     const normalized = normalizeCode(code);
-    if (!/^[A-Z]{2,4} \d{3}[A-Z]?(\([A-Z]\))?$/.test(normalized)) return setError('Enter a course code such as "CS 330".');
-    if (!/^\d+(\.\d+)?$/.test(credits.trim())) return setError('Enter credits as a number, for example 4.');
+    if (!isCourseCode(code)) return setError('Enter a course code such as "CS 330" or "ES 242(N)".');
+    if (!isDecimalString(credits.trim())) return setError('Enter credits as a number, for example 4 (no leading zeros, at most 4 decimal places).');
     if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setError('Enter the term, for example 2026-27-I.');
     if (!confirmed) return setError('Confirm that you are enrolled in this course this term.');
     setError(null);
