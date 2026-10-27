@@ -1,12 +1,15 @@
-"""Row-level oracle for the supplied transcript/IMS samples (M01.3, M05).
+"""Row-level oracles for the supplied transcript/IMS samples (M01.3, M05).
 
-Expected rows come from tests/reference_fixtures/expected_transcript_rows.json,
-transcribed by hand from the sources, never from parser output. The parsers,
-reconciliation and performance code under test are Harsh's public services.
-
-Real-file tests read the originals from COURSEPATH_REAL_INPUT_DIR (default: the
-repository root, where they are git-ignored). They are skipped, visibly, when
-the files are absent; the synthetic IMS tests always run."""
+Two oracles, neither produced by a parser:
+- tests/reference_fixtures/synthetic_transcript_rows.json (committed): the
+  sample's structure and public controls with invented courses and grades.
+  The synthetic IMS tests use it and always run, including in CI.
+- real_transcript_oracle.json (never committed): the rows hand-transcribed from
+  the real transcript, kept beside the private originals in
+  COURSEPATH_REAL_INPUT_DIR (default: the repository root, git-ignored). The
+  real-file tests compare the parsers against it and are skipped, visibly,
+  when it or the originals are absent.
+The parsers, reconciliation and performance code under test are Harsh's public services."""
 import json
 import os
 import unittest
@@ -20,10 +23,12 @@ from coursepath.imports.reconcile import reconcile_import
 from coursepath.performance import calculate_performance
 
 ROOT = Path(__file__).resolve().parents[2]
-ORACLE = json.loads((ROOT / "tests" / "reference_fixtures" / "expected_transcript_rows.json").read_text(encoding="utf-8"))
+ORACLE = json.loads((ROOT / "tests" / "reference_fixtures" / "synthetic_transcript_rows.json").read_text(encoding="utf-8"))
 REAL_DIR = Path(os.environ.get("COURSEPATH_REAL_INPUT_DIR") or ROOT)
 REAL_PDF = REAL_DIR / "24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf"
 REAL_IMS = REAL_DIR / "copied_input.txt"
+REAL_ORACLE_PATH = REAL_DIR / "real_transcript_oracle.json"
+REAL_ORACLE = json.loads(REAL_ORACLE_PATH.read_text(encoding="utf-8")) if REAL_ORACLE_PATH.is_file() else None
 
 # Independent grade table, from the transcript legend (not imported from the engine).
 POINTS = {k: Decimal(v) for k, v in ORACLE["grade_points"].items()}
@@ -32,12 +37,13 @@ POLICY = {"id": "oracle-policy", "review_status": "reviewed", "points": {k: str(
           "repeat_policy": "count_all", "additional_learning_policy": "include", "source_refs": ["oracle"]}
 
 
-def oracle_rows(with_ims_extra):
+def oracle_rows(with_ims_extra, oracle=None):
+    oracle = oracle or ORACLE
     out = []
-    for term, rows in ORACLE["terms"].items():
+    for term, rows in oracle["terms"].items():
         out += [(term, *r) for r in rows]
     if with_ims_extra:
-        for term, rows in ORACLE["ims_only_rows"].items():
+        for term, rows in oracle["ims_only_rows"].items():
             out += [(term, *r) for r in rows]
     return sorted(out)
 
@@ -115,7 +121,9 @@ class SyntheticImsParserTests(unittest.TestCase):
         attempts = parse_ims(ims_text(oracle_rows(True)), "s")["candidate_attempts"]
         result = calculate_performance(attempts, POLICY)
         cum = result["cumulative"]
-        self.assertEqual((cum["grade_points"], cum["performance_credits"], cum["display_value"]), ("849", "92", "9.23"))
+        rep = ORACLE["reported_by_transcript"]
+        self.assertEqual((cum["grade_points"], cum["performance_credits"], cum["display_value"]),
+                         (rep["total_cumulative_points"], rep["credits_counted_towards_performance"], rep["cpi"]))
         got = {t["term_id"]: (t["grade_points"], t["performance_credits"], t["display_value"]) for t in result["terms"]}
         for term, exp in ORACLE["expected_per_term"].items():
             spi = Decimal(exp["spi_unrounded"]).quantize(Decimal("0.01"), ROUND_HALF_UP)
@@ -163,26 +171,26 @@ class SyntheticImsParserTests(unittest.TestCase):
         self.assertEqual(len(result["unparsed_rows"]), 1)
 
 
-@unittest.skipUnless(REAL_IMS.is_file(), f"real IMS paste not found at {REAL_IMS}")
+@unittest.skipUnless(REAL_IMS.is_file() and REAL_ORACLE, f"real IMS paste or local oracle not found in {REAL_DIR}")
 class RealImsTests(unittest.TestCase):
     def test_real_ims_matches_oracle_rows(self):
         result = parse_ims(REAL_IMS.read_text(encoding="utf-8-sig"), "local-ims")
-        self.assertEqual(parsed_rows(result), oracle_rows(True))
+        self.assertEqual(parsed_rows(result), oracle_rows(True, REAL_ORACLE))
         self.assertEqual(result["unparsed_rows"], [])
 
 
-@unittest.skipUnless(REAL_PDF.is_file(), f"real transcript PDF not found at {REAL_PDF}")
+@unittest.skipUnless(REAL_PDF.is_file() and REAL_ORACLE, f"real transcript PDF or local oracle not found in {REAL_DIR}")
 class RealPdfTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.result = parse_pdf(REAL_PDF.read_bytes(), "local-pdf")
 
     def test_real_pdf_matches_oracle_rows(self):
-        self.assertEqual(parsed_rows(self.result), oracle_rows(False))
+        self.assertEqual(parsed_rows(self.result), oracle_rows(False, REAL_ORACLE))
         self.assertEqual(self.result["unparsed_rows"], [])
 
     def test_real_pdf_reported_controls_vs_extraction(self):
-        rep = ORACLE["reported_by_transcript"]
+        rep = REAL_ORACLE["reported_by_transcript"]
         c = self.result["extracted_controls"]
         self.assertEqual((c["attempt_count"], c["raw_credits"], c["performance_credits"], c["grade_points"]),
                          (39, rep["total_credits_earned"], rep["credits_counted_towards_performance"], rep["total_cumulative_points"]))

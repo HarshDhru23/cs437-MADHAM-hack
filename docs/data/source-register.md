@@ -2,7 +2,7 @@
 
 Machine-readable twin: [`data/source-manifest.json`](../../data/source-manifest.json) (checked by `tests/reference/test_source_manifest.py`).
 
-**Read this first.** Only the roadmap, team docs and the hackathon page are committed. On 26 Oct the transcript, IMS paste and advisory PDF were supplied locally (git-ignored, never committed) and hashed; the transcript and IMS rows were checked against the oracle in `tests/reference_fixtures/expected_transcript_rows.json`. The advisory's page map is still from the roadmap, not re-read. The timetable and graduation-plan workbooks have not been supplied. Every review state remains `draft` until Harsh reviews. Items marked *not recorded* still need the owner's file.
+**Read this first.** Only the roadmap, team docs and the hackathon page are committed. On 26 Oct the transcript, IMS paste and advisory PDF were supplied locally (git-ignored, never committed) and hashed; the transcript and IMS rows were checked against a hand-transcribed oracle kept locally as `real_transcript_oracle.json` (git-ignored, never committed). The committed `tests/reference_fixtures/synthetic_transcript_rows.json` copies only its structure and the roadmap controls. The advisory's page map is still from the roadmap, not re-read. The timetable and graduation-plan workbooks have not been supplied. Every review state remains `draft` until Harsh reviews. Items marked *not recorded* still need the owner's file.
 
 | Source ID | Title | Kind / authority | Cohort / term | Effective / revision date | Hash or URL | Locator | Review |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ Machine-readable twin: [`data/source-manifest.json`](../../data/source-manifest.
 
 - Download or modified time is never used as an effective date. Where no date is stated the cell says so.
 - Originals were not touched. The adapter opens workbooks read-only and never saves them.
-- Student-identifying records stay local. Fixtures under `tests/reference_fixtures/` hold course rows, grades and totals only; name, roll number and dates are excluded, and `tests/reference/` checks the fixtures for roll numbers, e-mail addresses and absolute paths.
+- Student-identifying records stay local, including any row-level transcription of them: a real grade history is identifiable even without the name because the source file name carries the roll number. Fixtures under `tests/reference_fixtures/` hold synthetic rows and documented totals only, and `tests/reference/` checks the fixtures for roll numbers, e-mail addresses and absolute paths.
 - Web sources carry a URL only; "retrieved" dates belong to whoever fetches them, so they are blank here rather than copied from the roadmap.
 
 ## Open items

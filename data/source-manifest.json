@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "_note": "Fields follow SourceReference in docs/team/contracts.md section 2, plus in_repository and url. Hashes are null where the original file is not in the repository. Only the transcript and IMS paste were checked against the originals (row-level, see tests/reference/test_import_oracle.py); nothing else was verified against originals; every review_status is 'draft'. Roll numbers and student names are deliberately omitted from titles/locators.",
+  "_note": "Fields follow SourceReference in docs/team/contracts.md section 2, plus in_repository and url. Hashes are null where the original file is not in the repository. Only the transcript and IMS paste were checked against the originals (row-level, against a local git-ignored oracle; see tests/reference/test_import_oracle.py); nothing else was verified against originals; every review_status is 'draft'. Roll numbers and student names are deliberately omitted from titles/locators.",
   "sources": [
     {
       "id": "SRC-ADVISORY",

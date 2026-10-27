@@ -1,5 +1,5 @@
 {
-  "_basis": "Control values stated in docs/implementation-roadmap.md section 4.1 and 4.4 (derived by the roadmap author from the supplied transcript and IMS paste). The originals are not in the repository, so row-level expected records are NOT provided; see docs/data/data-gaps.md GAP-01.",
+  "_basis": "Control values stated in docs/implementation-roadmap.md section 4.1 and 4.4 (derived by the roadmap author from the supplied transcript and IMS paste). The originals are not in the repository. Row-level expected records exist only as a local git-ignored oracle (real_transcript_oracle.json); the committed synthetic_transcript_rows.json has the same structure. See docs/data/data-gaps.md GAP-01.",
   "transcript": {
     "source_id": "SRC-TRANSCRIPT",
     "attempts": 39,
