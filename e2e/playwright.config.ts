@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const frontend = path.join(here, '..', 'frontend');
+// Django API port; set COURSEPATH_E2E_API_PORT when 8000 is taken. The preview proxy follows it.
+const apiPort = process.env.COURSEPATH_E2E_API_PORT ?? '8000';
+const apiOrigin = `http://127.0.0.1:${apiPort}`;
 
 /**
  * Browser acceptance against the real stack: Django API (isolated temporary
@@ -34,7 +37,7 @@ export default defineConfig({
     {
       command: 'node start-backend.mjs',
       cwd: here,
-      url: 'http://127.0.0.1:8000/api/v1/session',
+      url: `${apiOrigin}/api/v1/session`,
       reuseExistingServer: false,
       timeout: 120_000,
       stdout: 'pipe',
@@ -43,6 +46,7 @@ export default defineConfig({
     {
       command: 'npm run build && npm run preview',
       cwd: frontend,
+      env: { COURSEPATH_API_ORIGIN: apiOrigin },
       url: 'http://127.0.0.1:4173/',
       reuseExistingServer: false,
       timeout: 180_000,

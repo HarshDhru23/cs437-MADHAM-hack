@@ -1,0 +1,29 @@
+{
+  "_basis": "Control values stated in docs/implementation-roadmap.md section 4.1 and 4.4 (derived by the roadmap author from the supplied transcript and IMS paste). The originals are not in the repository. Row-level expected records exist only as a local git-ignored oracle (real_transcript_oracle.json); the committed synthetic_transcript_rows.json has the same structure. See docs/data/data-gaps.md GAP-01.",
+  "transcript": {
+    "source_id": "SRC-TRANSCRIPT",
+    "attempts": 39,
+    "terms": ["2024-25-I", "2024-25-II", "2025-26-I", "2025-26-II"],
+    "rows_per_term": [10, 10, 10, 9],
+    "credits_per_term": ["28", "22", "28", "26"],
+    "reported_earned_credits": "104",
+    "performance_credits": "92",
+    "grade_points_total": "849",
+    "cpi_display": "9.23",
+    "cpi_scale_max": "10",
+    "preserved_cases": {
+      "repeated_course": {"code": "CS 299", "instances": 2, "terms": ["2025-26-I", "2025-26-II"]},
+      "variant": {"label": "ES 242(N)", "credits": "4"},
+      "non_credit_rows": "all PE and IN entries retained"
+    }
+  },
+  "ims": {
+    "source_id": "SRC-IMS",
+    "attempts": 40,
+    "credits_per_term": ["28", "23", "28", "26"],
+    "raw_credits": "105",
+    "extra_vs_transcript": {"code": "SC 372", "credits": "1", "term": "2024-25-II"}
+  },
+  "grade_points": {"A+": 11, "A": 10, "A-": 9, "B": 8, "B-": 7, "C": 6, "C-": 5, "D": 4, "E": 2, "F": 0},
+  "grade_points_note": "From roadmap section 5 (transcript legend p. 2). P has no performance contribution. Legend page not independently re-read."
+}

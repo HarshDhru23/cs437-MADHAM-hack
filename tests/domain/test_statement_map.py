@@ -50,7 +50,7 @@ class StatementTestMapTests(unittest.TestCase):
 
     def test_every_mapped_test_exists(self):
         for statement in self.map:
-            for test_id in statement['tests']:
+            for test_id in [*statement['tests'], *statement.get('local_tests', [])]:
                 with self.subTest(statement=statement['id'], test=test_id):
                     self.assertIsNone(_resolve_python(test_id))
             for test_id in statement.get('frontend_tests', []):
@@ -67,6 +67,14 @@ class StatementTestMapTests(unittest.TestCase):
                     self.assertTrue(statement.get('browser_tests'), 'browser evidence needs a real-stack browser test')
                 if statement.get('browser_tests') and not statement['release_evidence']['browser']:
                     self.assertTrue(statement.get('release_evidence_note'), 'explain why mapped browser tests are not full evidence')
+
+    def test_ci_evidence_never_depends_on_private_inputs(self):
+        # Private-input checks skip in CI and on a fresh clone; they belong in local_tests only.
+        for statement in self.map:
+            for test_id in statement['tests']:
+                with self.subTest(statement=statement['id'], test=test_id):
+                    self.assertNotIn('test_private_inputs', test_id)
+                    self.assertNotRegex(test_id, r'\.Real(Pdf|Ims)Tests\.')
 
     def test_resolver_rejects_a_renamed_test(self):
         # Guard against a resolver that accepts anything.

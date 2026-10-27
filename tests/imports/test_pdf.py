@@ -1,4 +1,6 @@
 from io import BytesIO
+import json
+from pathlib import Path
 import unittest
 from reportlab.pdfgen import canvas
 from reportlab.lib.pdfencrypt import StandardEncryption
@@ -31,7 +33,54 @@ def transcript(encrypted=False, text=True, malformed=False, admission_year=2024)
     return output.getvalue()
 
 
+ORACLE_PATH = Path(__file__).resolve().parents[1] / 'reference_fixtures' / 'synthetic_transcript_rows.json'
+
+
+def oracle_transcript(oracle):
+    """The 39-row synthetic oracle drawn in the supported four-block, two-column layout; long titles wrap."""
+    output = BytesIO()
+    pdf = canvas.Canvas(output, pagesize=(640, 800))
+    pdf.setFont('Helvetica', 8)
+    pdf.drawString(20, 780, 'Programme B.Tech CSE | Admission 2024 | SYNTHETIC')
+    for (x, y), (term, rows) in zip([(20, 750), (340, 750), (20, 400), (340, 400)], oracle['terms'].items()):
+        year, short, half = term.split('-')
+        pdf.drawString(x, y, f'Academic Period: {year}-{short} Semester {half}')
+        for offset, header in [(0, 'Course No'), (72, 'Course Name'), (230, 'Credit'), (270, 'Grade')]:
+            pdf.drawString(x + offset, y - 18, header)
+        row_y = y - 36
+        for code, title, credits, grade in rows:
+            words, first = title.split(), ''
+            while words and len(f'{first} {words[0]}'.strip()) <= 22:
+                first = f'{first} {words.pop(0)}'.strip()
+            for offset, value in [(0, code), (72, first), (230, credits), (270, grade)]:
+                pdf.drawString(x + offset, row_y, value)
+            if words:
+                pdf.drawString(x + 72, row_y - 9, ' '.join(words))
+            row_y -= 30
+    reported = oracle['reported_by_transcript']
+    pdf.drawString(20, 30, f"Earned Credits: {reported['total_credits_earned']}  Performance Credits: "
+                           f"{reported['credits_counted_towards_performance']}  Points: {reported['total_cumulative_points']}  CPI: {reported['cpi']}")
+    pdf.showPage()
+    pdf.save()
+    return output.getvalue()
+
+
 class PDFTests(unittest.TestCase):
+    def test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle(self):
+        # Expected rows come from the committed synthetic oracle (tests/reference_fixtures), not from the parser.
+        oracle = json.loads(ORACLE_PATH.read_text(encoding='utf-8'))
+        parsed = parse_pdf(oracle_transcript(oracle), 'synthetic-pdf')
+        expected = sorted((term, *row) for term, rows in oracle['terms'].items() for row in rows)
+        got = sorted((a['term_id'], a['normalized_code'], ' '.join(a['title'].split()), a['credits'], a['grade'])
+                     for a in parsed['candidate_attempts'])
+        self.assertEqual(got, expected)
+        self.assertEqual(len(got), 39)
+        self.assertEqual(parsed['unparsed_rows'], [])
+        self.assertEqual([parsed['extracted_controls']['terms'][t]['attempt_count'] for t in sorted(oracle['terms'])], [10, 10, 10, 9])
+        self.assertEqual([parsed['extracted_controls']['terms'][t]['raw_credits'] for t in sorted(oracle['terms'])], ['28', '22', '28', '26'])
+        self.assertEqual(parsed['reported_controls']['earned_credits'], oracle['reported_by_transcript']['total_credits_earned'])
+        self.assertTrue(any(len(row[1]) > 22 for rows in oracle['terms'].values() for row in rows), 'the layout must exercise wrapped titles')
+
     def test_cp06_coordinate_blocks_wrapped_titles_and_controls(self):
         parsed = parse_pdf(transcript(), 'synthetic-pdf')
         self.assertEqual(len(parsed['candidate_attempts']), 8)

@@ -1,2 +1,2 @@
-# Exact transitive versions, including PDF fixture and schema test dependencies.
+# Exact transitive versions, including PDF fixture, schema test and timetable (openpyxl) dependencies.
 -r requirements.lock

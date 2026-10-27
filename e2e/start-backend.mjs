@@ -1,5 +1,5 @@
 // Starts the real Django API for browser acceptance runs: migrates an isolated
-// temporary SQLite database, then serves on 127.0.0.1:8000. No mocks.
+// temporary SQLite database, then serves on 127.0.0.1:8000 (COURSEPATH_E2E_API_PORT overrides). No mocks.
 //   COURSEPATH_PYTHON       Python interpreter with the backend requirements (default: python)
 //   COURSEPATH_BACKEND_DIR  Repository checkout containing server/manage.py (default: repo root)
 import { spawn, spawnSync } from 'node:child_process';
@@ -30,7 +30,8 @@ const dbDir = mkdtempSync(path.join(tmpdir(), 'coursepath-e2e-'));
 const env = { ...process.env, COURSEPATH_ENV: 'development', COURSEPATH_SQLITE_PATH: path.join(dbDir, 'e2e.sqlite3'), PYTHONUNBUFFERED: '1' };
 const migrate = spawnSync(python, [manage, 'migrate', '--noinput'], { cwd: backend, env, stdio: 'inherit' });
 if (migrate.status !== 0) process.exit(migrate.status ?? 1);
-const server = spawn(python, [manage, 'runserver', '127.0.0.1:8000', '--noreload'], { cwd: backend, env, stdio: 'inherit' });
+const port = process.env.COURSEPATH_E2E_API_PORT ?? '8000';
+const server = spawn(python, [manage, 'runserver', `127.0.0.1:${port}`, '--noreload'], { cwd: backend, env, stdio: 'inherit' });
 const stop = () => server.kill();
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);

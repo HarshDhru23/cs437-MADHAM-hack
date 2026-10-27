@@ -4,8 +4,10 @@ cffi==2.1.1
 charset-normalizer==3.5.2
 cryptography==50.0.2
 Django==5.2.18
+et-xmlfile==2.0.0
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
+openpyxl==3.1.5
 pdfminer.six==20260107
 pdfplumber==0.11.10
 pillow==13.0.0
