@@ -1,0 +1,3 @@
+# data/source-manifest.json pins the SHA-256 of this file. Fix its line endings
+# so Windows (core.autocrlf=true) and Linux CI checkouts have identical bytes.
+docs/reference/hackathon-2026-10-09.html text eol=lf
