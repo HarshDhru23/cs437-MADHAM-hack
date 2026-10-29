@@ -12,6 +12,7 @@ The documents below remain the source of truth. If this skill and a document dis
 | Need | Source of truth |
 | --- | --- |
 | Product scope, academic rules, architecture | `docs/implementation-roadmap.md` |
+| Approved academic interpretations: course identity, buckets, caps, grades, prerequisites | `docs/academic-decisions.md` (wins over the roadmap's §3 and §5 where they differ) |
 | Ownership, checkpoints, definition of done | `docs/team/README.md` |
 | Field names, types, API routes, error codes | `docs/team/contracts.md`, then `schemas/coursepath-v1.schema.json` + `examples/` once merged |
 | The current person's task cards | `docs/team/harsh.md`, `aaryan.md`, `manashree.md` |
@@ -50,16 +51,22 @@ A CP counts as done only when all of these hold: its tests are green, it worked 
 
 **Academic correctness** (judges will "break something your spec promises")
 
-- Never invent an academic rule, equivalence, prerequisite, basket membership, internship credit or approval. If evidence is missing, use `null` plus an Issue with severity `unknown` or `approval_required`. The affected requirement must never roll up as satisfied.
+- Never invent an academic rule, equivalence, prerequisite, basket membership, internship credit or approval. Every rule must come from an advisory page or a numbered decision in `docs/academic-decisions.md`. If neither covers it, use `null` plus an Issue with severity `unknown` or `approval_required`, and the affected requirement must never roll up as satisfied. A new interpretation needs Harsh's decision recorded there first.
 - Unknown, empty and clear are three different things. Unknown prerequisites are not "none". A missing timetable is `not_checked`, never "no clashes". A missing denominator is "unavailable", not 0.
-- Known traps:
-  - CS 203 is not CS 202; that equivalence is unresolved.
-  - Keep the `(N)` in ES 242(N).
-  - The two CS 299 registrations are distinct attempts.
-  - The classification of SC 372 is unresolved.
-  - P earns credit but is excluded from CPI.
-  - E is a fail for credit; it counts as exposure only where a rule says so.
-  - A 3- or 6-month internship grants no credit by itself.
+- Known traps (decision IDs from `docs/academic-decisions.md`):
+  - **Course identity.** Same code or same normalized name means the same course. Partial name matches need review. Project and special-topics courses are never merged by name (D-01).
+  - **CS 203 is not CS 202** (D-03). CS 203 counts as a discipline elective, and the CS 202 core stays pending until CS 202 is passed.
+  - **ES 242(N) is DSA I** (D-04). Keep the raw code as imported, and resolve identity before matching requirements or prerequisites.
+  - **Two CS 299 registrations are two separate attempts**, never a repeat (D-01, D-10).
+  - **Discipline electives:** any CS-coded course, plus the p. 15 table (D-06).
+  - **A course is never split between buckets.** Overflow beyond a requirement is surplus (D-07).
+  - **SC 372 is a one-credit short course.** Keep it on the record; it never counts toward graduation (D-08).
+  - **P earns credit but is excluded from CPI.** A P on a normally letter-graded course is a pass/fail conversion and uses up the online pool. FP 100, GE, PE, IN records and the viva are always P/F, never conversions (D-11, D-12).
+  - **Repeated courses:** the best grade counts (D-15).
+  - **E is a fail for credit.** It counts as exposure only where a rule says so.
+  - **The viva needs a P in every active semester** (D-16).
+  - **Prerequisites are team recommendations,** shown as warnings that never block a plan. A course with no entry is `unknown` (D-17).
+  - **A 3- or 6-month internship grants no credit by itself.**
 - The server is authoritative for every academic number. The frontend formats values; it never computes totals, CPI, eligibility or allocations.
 
 **Data and engineering**

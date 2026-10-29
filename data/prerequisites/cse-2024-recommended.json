@@ -1,0 +1,42 @@
+{
+  "id": "cse-2024-recommended-prerequisites",
+  "version": "draft-2026-10-29",
+  "cohort": "BTECH_CSE-2024",
+  "review_status": "draft",
+  "authority": "team_recommendation",
+  "severity": "warning",
+  "decision_ref": "docs/academic-decisions.md#6-prerequisites",
+  "notes": [
+    "Recommended preparation chosen by the CoursePath team (D-17), not institute prerequisites. Never block a plan on these.",
+    "course_id values are current codes. Resolve course identity (D-01, D-04) before evaluating, so ES 242(N) satisfies ES 242.",
+    "A course not listed here has no recommendation recorded: report PREREQUISITE_UNKNOWN, never 'no prerequisites'.",
+    "Checked against the ADV13 p. 23 sample path: no listed preparation is scheduled there in the same or a later semester than the course that needs it."
+  ],
+  "sources": [
+    {"id": "team-recommendation", "kind": "team_decision", "title": "CoursePath team recommended preparation", "version": "draft-2026-10-29", "review_status": "draft", "authority": "team"}
+  ],
+  "courses": [
+    {"course_id": "CS 201", "title": "Theory of Computing", "expression": {"type": "course", "course_id": "ES 214", "source_refs": ["team-recommendation"]}, "rationale": "Proofs, sets and relations from Discrete Mathematics."},
+    {"course_id": "CS 202", "title": "Software Tools and Techniques for CSE", "expression": {"type": "course", "course_id": "ES 112", "source_refs": ["team-recommendation"]}, "rationale": "Programming experience from Computing."},
+    {"course_id": "ES 336", "title": "Computer Organization & Architecture", "expression": {"type": "course", "course_id": "ES 204", "source_refs": ["team-recommendation"]}, "rationale": "Logic design from Digital Systems."},
+    {"course_id": "CS 330", "title": "Operating Systems", "expression": {"type": "course", "course_id": "ES 242", "source_refs": ["team-recommendation"]}, "rationale": "Data structures used throughout OS internals."},
+    {"course_id": "CS 331", "title": "Computer Networks", "expression": {"type": "course", "course_id": "ES 242", "source_refs": ["team-recommendation"]}, "rationale": "Data structures and algorithms for routing and protocols."},
+    {"course_id": "CS 329", "title": "Foundations of AI: Multiagent Systems", "expression": {"type": "and", "children": [{"type": "course", "course_id": "ES 242"}, {"type": "course", "course_id": "ES 114"}], "source_refs": ["team-recommendation"]}, "rationale": "Search algorithms and probability."},
+    {"course_id": "ES 301", "title": "Data Structures & Algorithms II", "expression": {"type": "course", "course_id": "ES 242", "source_refs": ["team-recommendation"]}, "rationale": "Continuation of DSA I."},
+    {"course_id": "CS 614", "title": "Advanced Algorithms", "expression": {"type": "course", "course_id": "ES 301", "source_refs": ["team-recommendation"]}, "rationale": "Builds on DSA II."},
+    {"course_id": "CS 617", "title": "Computational Complexity Theory", "expression": {"type": "course", "course_id": "CS 201", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Theory of Computing."},
+    {"course_id": "CS 328", "title": "Introduction to Data Science", "expression": {"type": "course", "course_id": "ES 114", "source_refs": ["team-recommendation"]}, "rationale": "Probability and statistics."},
+    {"course_id": "CS 327", "title": "Compilers", "expression": {"type": "and", "children": [{"type": "course", "course_id": "CS 201"}, {"type": "course", "course_id": "ES 242"}], "source_refs": ["team-recommendation"]}, "rationale": "Automata and grammars from Theory of Computing; data structures."},
+    {"course_id": "CS 332", "title": "Principles of Programming Languages", "expression": {"type": "course", "course_id": "ES 242", "source_refs": ["team-recommendation"]}, "rationale": "Programming and data structures."},
+    {"course_id": "CS 431", "title": "Computer and Network Security", "expression": {"type": "course", "course_id": "CS 331", "source_refs": ["team-recommendation"]}, "rationale": "Network protocols from Computer Networks."},
+    {"course_id": "CS 432", "title": "Databases", "expression": {"type": "course", "course_id": "ES 242", "source_refs": ["team-recommendation"]}, "rationale": "Indexing and query processing use DSA."},
+    {"course_id": "CS 434", "title": "Software Engineering and Testing", "expression": {"type": "course", "course_id": "CS 202", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Software Tools and Techniques for CSE."},
+    {"course_id": "CS 615", "title": "Advanced Networks", "expression": {"type": "course", "course_id": "CS 331", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Computer Networks."},
+    {"course_id": "CS 616", "title": "Parallel and Distributed Systems", "expression": {"type": "course", "course_id": "CS 330", "source_refs": ["team-recommendation"]}, "rationale": "Processes, concurrency and scheduling from Operating Systems."},
+    {"course_id": "ES 335", "title": "Machine Learning", "expression": {"type": "course", "course_id": "ES 114", "source_refs": ["team-recommendation"]}, "rationale": "Probability and statistics."},
+    {"course_id": "ES 661", "title": "Probabilistic Machine Learning", "expression": {"type": "course", "course_id": "ES 335", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Machine Learning."},
+    {"course_id": "ES 666", "title": "Computer Vision", "expression": {"type": "course", "course_id": "ES 335", "source_refs": ["team-recommendation"]}, "rationale": "Learning methods from Machine Learning."},
+    {"course_id": "ES 667", "title": "Deep Learning", "expression": {"type": "course", "course_id": "ES 335", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Machine Learning."},
+    {"course_id": "ES 669", "title": "Advanced Computer Architecture and Systems", "expression": {"type": "course", "course_id": "ES 336", "source_refs": ["team-recommendation"]}, "rationale": "Builds on Computer Organization & Architecture."}
+  ]
+}

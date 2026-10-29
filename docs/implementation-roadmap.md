@@ -72,6 +72,8 @@ CSE cross-disciplinary elective examples explicitly listed on p. 15 include ES 3
 
 ### 3.2 Important unresolved academic details
 
+> **Update 29 Oct 2026:** most items below are now decided in [Academic decisions](academic-decisions.md), which takes precedence over this section and the related parts of §5 (see its "Superseded text").
+
 - The sample has **CS 203**, while the CSE core lists **CS 202**. Keep CS 203 as imported; do not mark the CS 202 requirement complete without an approved substitution/equivalence.
 - Preserve **ES 242(N)**. The public catalogue distinguishes credit variants; removing the suffix and substituting another version's credits would corrupt the audit.
 - **CS 299 occurs in two semesters**. These are separate reported registrations, not duplicate import rows. Whether both count, and toward which requirements, needs project policy/evidence.
