@@ -29,7 +29,7 @@ Exceptions, because these titles are reused for different content and repeated r
 
 **D-02. A same-named course with different credits satisfies the requirement; the student earns the credits actually taken** (TEAM). Example: old ES 242 DSA I (3 credits) satisfies the DSA I core, and the student earns 3 credits. Any shortfall or surplus shows up only in the degree total (170) and the parent subtotals, never as a second copy of the requirement.
 
-**D-03. CS 203 is not CS 202.** CSE-CAT and TT-2026-I list both in the same term with different titles: CS 202 "Software Tools and Techniques for CSE" and CS 203 "Software Tools & Techniques for AI". CS 203 does **not** satisfy the CS 202 core, which stays pending until CS 202 is passed. CS 203 credits count as an **open elective** (D-07).
+**D-03. CS 203 is not CS 202.** CSE-CAT and TT-2026-I list both in the same term with different titles: CS 202 "Software Tools and Techniques for CSE" and CS 203 "Software Tools & Techniques for AI". CS 203 does **not** satisfy the CS 202 core, which stays pending until CS 202 is passed. CS 203 is CS-coded, so its credits count as a **discipline elective** (D-06).
 
 **D-04. Known identity groups.** These follow from D-01 and D-02, and the catalogue data should encode them as identity groups. The first code in each row is the current one (ADV13 p. 23, TT-2026-I).
 
@@ -72,17 +72,27 @@ These pairs only partly match, so each one is flagged `needs_review` and not mer
 | Foundations of AI: Multiagent Systems | CS 329 |
 | Computer Networks | CS 331 |
 
-**D-06. Discipline electives: 26 credits, only from this list** (ADV13 p. 15 + TEAM). At least 8 credits must come from the Theory & Algorithms basket and at least 8 from the Systems basket. Basket credits count inside the 26, not on top of it. Same-course codes from D-04 also qualify.
+**D-06. Discipline electives: 26 credits, from any CS-coded course or the p. 15 table** (ADV13 p. 15, row "All CS Elective Courses" + TEAM). At least 8 credits must come from the Theory & Algorithms basket and at least 8 from the Systems basket. Basket credits count inside the 26, not on top of it.
+
+These courses qualify:
+- **Every CS-coded course, at any level.** This includes CS 101, CS 203, CS 421, CS 613, CS 437 and special topics (CS 391, CS 491, CS 691-x). It excludes the nine core courses (D-05), which can never count twice. CS project courses also qualify, within the D-09 and D-10 project rules.
+- **Every course in the table below.**
+- **Any course that D-04 makes the same course** as one of these.
 
 | Group | Courses |
 | --- | --- |
-| General | ES 335, ES 404, ES 615, ES 627, ES 637, ES 645, ES 659, ES 661, ES 666, ES 667, ES 669, ES 670, ES 676 |
+| General (non-CS) | ES 335, ES 404, ES 615, ES 627, ES 637, ES 645, ES 659, ES 661, ES 666, ES 667, ES 669, ES 670, ES 676 |
 | Theory & Algorithms basket | ES 301, CS 614, CS 617, CS 328 |
 | Systems basket | CS 327, CS 332, CS 431, CS 432, CS 434, CS 435, CS 615, CS 616, ES 668 |
 
-p. 15 lists the rows "All CS Elective Courses" and the courses above as a "tentative" list. **Team decision:** the "All CS Elective Courses" row does **not** make other CS courses discipline electives (D-07). Read literally, the advisory could allow more, so this reading may undercount discipline electives for a student who took unlisted CS courses. The audit must cite TEAM for this rule, and it should be confirmed with a faculty advisor.
+A CS course outside the two baskets counts toward the 26 but not toward either 8-credit basket minimum.
 
-**D-07. Every other CS course is an open elective** (TEAM). This includes CS 203, CS 421 Information Security, CS 613 Natural Language Processing and CS 437. It excludes the core courses (D-05) and project courses (D-09). Open electives total 16 credits (ADV13 p. 2, item 9).
+**D-07. Open electives, and courses are never split** (ADV13 p. 2, item 9 + TEAM).
+- **Open electives total 16 credits.** Any course not claimed by another requirement can count, in any discipline.
+- **A whole course goes to exactly one bucket.** Its credits are never split between buckets: a 4-credit course cannot put 2 credits in discipline electives and 2 in open electives.
+- **Surplus credits.** If placing a course pushes a bucket past its required credits, all of that course's credits stay in that bucket and the excess is **surplus**. Surplus is earned and shown, but fills no other requirement. Example: seven 4-credit discipline electives give 28 credits against 26, so 2 credits are surplus.
+- **Whole extra courses.** A course a requirement doesn't need at all may be placed whole in another eligible bucket, such as an eighth discipline-elective course going to open electives.
+- **Allocation goal.** Choose placements that satisfy the most requirements and leave the least surplus. Report every placement, and every surplus credit, in the audit ledger.
 
 **D-08. One-credit short courses earn no graduation credit** (ADV13 p. 7). SC 372 (1 credit, IMS paste only) is a one-credit short course. Keep it in the record, show it as excluded with the reason, and never count it toward 170.
 
@@ -156,7 +166,6 @@ Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, 
 | Are IN 101 to IN 104 the viva records (D-16)? | CP-14, CP-20 | Treated as the viva, labelled TEAM |
 | SPI of a term whose course was later repeated: unchanged or recalculated? | CP-16 | Unchanged (historical SPI) |
 | CPI display rounding (2 decimals, round or truncate?) | CP-15 | Unrounded value stored, 2 decimals shown |
-| Is the D-06 reading of "All CS Elective Courses" right? | CP-17 | D-06 |
 | AI minor document, CSE honours list | CP-25 to CP-27 | Deferred (D-18) |
 
 ## Implementation follow-ups
@@ -170,7 +179,8 @@ Each item goes through the normal reviewed PR. Owners are from `docs/team/README
 | Set `repeat_policy: best_grade` and the always-P/F list in `data/grading/reported-v1.json`; add the online pool and conversion inference | D-11, D-12, D-15 | Harsh | CP-14, 15, 16 |
 | Reword SPEC CP-05 and CP-22 to "recommended prerequisite"; add a recommendation severity (`warning`) and keep `PREREQUISITE_UNKNOWN` for courses without an entry. This is a `[contract]` change | D-17 | Harsh (SPEC, domain), Aaryan (UI wording) | CP-05, 22 |
 | Mark AMB-01 to 05, 08, 09, 15 and GAP-04, 05, 09, 10 resolved by these decisions; GAP-06 partly (D-15); AMB-07 and GAP-07 deferred (D-18) | all | Manashree (`docs/data/`) | none |
-| UI: label TEAM decisions, the online pool, inferred P/F conversions and recommended prerequisites | D-06, D-11, D-12, D-17 | Aaryan | CP-14, 18, 22 |
+| Report surplus credits per requirement in the audit result, and add a test that a course is never split. `coursepath/rules/allocation.py` already places each attempt whole | D-06, D-07 | Harsh | CP-17 |
+| UI: label TEAM decisions, surplus credits, the online pool, inferred P/F conversions and recommended prerequisites | D-07, D-11, D-12, D-17 | Aaryan | CP-14, 17, 18, 22 |
 
 ## Superseded text
 
