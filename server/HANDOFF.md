@@ -22,7 +22,7 @@ ADV13 PDF as the curriculum source. It needs three companion changes before it
 can merge, because it intentionally changes behavior other owners' tests pin:
 
 ```markdown
-To: Aaryan · From: Harsh · Task: H06 · Blocks: CP-01, CP-03
+To: Aaryan Â· From: Harsh Â· Task: H06 Â· Blocks: CP-01, CP-03
 Need: e2e/tests/public.spec.ts expects "These rules are a draft" and version
 cse-2024-draft-v1; the curriculum is now cse-2024-v1, review_status reviewed,
 with no SOURCE_MISSING issue. e2e/tests/student-flow.spec.ts finds the heading
@@ -35,7 +35,7 @@ Until then I will: keep the branch unmerged; nothing else in the UI broke
 ```
 
 ```markdown
-To: Manashree · From: Harsh · Task: H06 · Blocks: CP-03
+To: Manashree Â· From: Harsh Â· Task: H06 Â· Blocks: CP-03
 Need: tests/reference/test_service_regression.py
 test_draft_curriculum_never_certifies_the_sample_record assumes a draft
 curriculum (no requirement satisfied). Proposed: keep assertFalse(complete),
