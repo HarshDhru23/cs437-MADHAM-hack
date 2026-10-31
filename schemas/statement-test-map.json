@@ -466,8 +466,12 @@
     {
       "id": "CP-23",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_snapshot_coverage_and_review_decide_availability",
+        "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_current_snapshot_never_confirms_a_later_term",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,
@@ -480,8 +484,20 @@
     {
       "id": "CP-24",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_ph202_es667_lectures_clash_on_both_weekly_meetings",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_tutorial_clash_is_reported_when_lectures_differ",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_touching_and_distinct_times_are_clear",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_half_semester_dates_decide_and_unknown_dates_stay_conditional",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_alternative_groups_need_a_selection_before_a_clash_is_certain",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_unknown_lab_semantics_report_possible_clash_but_clear_when_none_can_clash",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_missing_snapshot_meetings_or_variant_choice_is_not_checked",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_duplicated_source_meetings_do_not_double_conflicts",
+        "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_validation_reports_term_checks_and_keeps_history_credits",
+        "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_without_snapshot_never_reports_clear",
+        "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,

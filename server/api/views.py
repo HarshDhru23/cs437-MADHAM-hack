@@ -237,10 +237,36 @@ def _curriculum_for(record=None):
     return validate_curriculum(stored.payload) if stored else load_curriculum()
 
 
+def _offering_snapshots():
+    """Latest reviewed snapshot per term, else the latest draft."""
+    from server.records.models import OfferingSnapshot
+    latest = {}
+    for stored in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at'):
+        latest.setdefault(stored.term_id, stored.payload)
+    return latest
+
+
 def _validate_owned_plan(owner, plan):
     from coursepath.semester_plan import validate_plan
     record = AcademicRecord.objects.get(owner=owner)
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': {}, 'standing': record.profile.get('standing', 'unknown')}, plan.payload)
+    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': {}, 'standing': record.profile.get('standing', 'unknown')},
+                         plan.payload, list(_offering_snapshots().values()))
+
+
+@endpoint({'GET'}, public=True)
+def offerings(request):
+    from coursepath.models import validate_term_id
+    term = validate_term_id(request.GET.get('term_id', ''))
+    snapshot = _offering_snapshots().get(term)
+    if snapshot is None:
+        return response({'id': None, 'term_id': term, 'coverage': 'unknown', 'review_status': None, 'offerings': [], 'slot_map': {}, 'source_refs': []},
+                        [issue('OFFERING_UNKNOWN', f'No timetable snapshot is loaded for {term}; availability and clashes are unknown.')])
+    gaps = []
+    if snapshot['review_status'] != 'reviewed':
+        gaps.append(issue('OFFERING_SNAPSHOT_UNREVIEWED', 'This timetable snapshot has not been reviewed; offerings are tentative.', 'warning'))
+    if snapshot['coverage'] != 'complete':
+        gaps.append(issue('OFFERING_COVERAGE_PARTIAL', 'Coverage is not complete: a course missing here may still be offered.'))
+    return response(snapshot, gaps)
 
 
 @endpoint({'GET'}, public=True)
