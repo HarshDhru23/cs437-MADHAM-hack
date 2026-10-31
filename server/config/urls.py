@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/v1/plans/<uuid:plan_id>/validate', views.plan_validate),
     path('api/v1/offerings', views.offerings),
     path('api/v1/export', views.export),
+    path('api/v1/account/data', views.account_data),
     path('api/v1/scenarios', views.scenarios),
     path('api/v1/scenarios/compare', views.scenarios_compare),
     path('api/v1/scenarios/<uuid:scenario_id>', views.scenario_detail),

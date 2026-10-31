@@ -82,6 +82,7 @@ Implemented routes:
 | `POST /scenarios/{id}/apply-plan` | `{expected_plan_revision}`; writes drop/postpone/replace edits to the saved plan only; `not_applied` lists hypothetical fail/grade/cap/internship changes. 409 when the scenario or plan is stale. Never changes the record. |
 | `GET /export?kind=json` | Owned backup download: `kind: "coursepath-backup"`, `backup_version: "1"`, account username, rule version/review status/sources/missing sources, grading policy ID, record (with revision), plans and scenarios. No password, session or CSRF data. |
 | `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version, owner, cohort, attempts and plans, and returns a diff. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
+| `DELETE /account/data` | `{expected_revision, password, confirm: "delete my data", delete_account?}`. Re-authenticates (403 `REAUTH_FAILED`), then deletes the owner's attempts, current enrolment, reported controls, plans, scenarios, import previews and approval evidence; with `delete_account: true` also deletes the account and ends every session. Returns counts and the retention statement. |
 
 An empty plan has `semesters: []`. Each semester has `term_id`, `courses`,
 `placeholders`; every item has a stable `id`. Selected courses have
@@ -118,13 +119,15 @@ forces totals to agree or makes credits degree-eligible.
 PDF limits: 10 MB, 20 pages, 10 seconds in a killable extraction subprocess.
 PDF bytes stay in memory; Django upload handles are closed on every path.
 Paste limit: 1,000,000 characters. Previews expire after one hour and are owner
-protected. Expiry blocks commits; scheduled purging/deletion is H14 work.
+protected. Expiry blocks commits. Each new preview deletes that owner's expired
+previews; run `manage.py purge_previews` on a schedule in production to delete
+all expired ones.
 
 Supported errors: 400 invalid fields, 401 authentication, 403 CSRF, 404 foreign/
 missing objects, 409 stale revision, 413 upload limit, 422 uncommittable import,
 429 account throttling. A 409 contains `current_revision` and `reload_compare`;
-do not automatically overwrite/retry. Account recovery and deletion routes are
-later checkpoint work, not stubs. The printable report is the frontend's print
+do not automatically overwrite/retry. Self-service account recovery is not
+offered: no recovery email is configured, so no reset action is shown. The printable report is the frontend's print
 view of `POST /analysis`; the server does not render PDFs.
 
 Scenario changes: `{op:"drop"|"fail"|"grade",item_id}`, `{op:"postpone",item_id,term_id}`
@@ -157,5 +160,10 @@ For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 configure the actual proxy and production WSGI server with the hosting team.
 `COURSEPATH_DB_ENGINE=postgresql` allows PostgreSQL testing in development.
 `COURSEPATH_SQLITE_PATH` selects an isolated development/test database only.
-Never set production credentials in committed files. PostgreSQL concurrency,
-production serving, backup/restore and hosting are not yet verified here.
+Never set production credentials in committed files. `server.records.test_privacy`
+runs `check --deploy --fail-level WARNING` under production settings and checks
+that DEBUG is off, cookies are secure and a missing secret key stops start-up.
+Data deletion is immediate in the application database; this repository
+configures no database backups, so any copy the host keeps is outside its
+control (the deletion response says so). PostgreSQL concurrency, production
+serving and hosting are not yet verified here (GAP-13).
