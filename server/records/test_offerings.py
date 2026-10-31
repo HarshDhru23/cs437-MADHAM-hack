@@ -25,16 +25,17 @@ class OfferingAPITests(AccountAPIMixin, TestCase):
         self.assertIn('OFFERING_UNKNOWN', [i['code'] for i in empty.json()['issues']])
         self.assertEqual(client.get('/api/v1/offerings', {'term_id': '2026-I'}).status_code, 400)
         self.assertEqual(client.get('/api/v1/offerings').status_code, 400)
+        snapshot = adapter_snapshot()
         with self.assertRaises(CommandError):
-            self.load(adapter_snapshot())  # a draft needs an explicit --draft
-        self.load(adapter_snapshot(), '--reviewed', '--coverage', 'complete')
+            self.load(snapshot)  # a draft needs an explicit --draft
+        self.load(snapshot, '--reviewed', '--coverage', 'complete')
         loaded = client.get('/api/v1/offerings', {'term_id': TERM}).json()
         self.assertEqual((loaded['data']['review_status'], loaded['data']['coverage']), ('reviewed', 'complete'))
         self.assertIn('CS 331', [o['code'] for o in loaded['data']['offerings']])
         self.assertEqual(client.get('/api/v1/offerings', {'term_id': '2026-27-II'}).json()['data']['offerings'], [])
         self.assertFalse(list(Draft202012Validator(SCHEMA, format_checker=FormatChecker()).iter_errors(loaded)))
         with self.assertRaises(CommandError):
-            self.load(adapter_snapshot(), '--reviewed', '--coverage', 'complete')  # reviewed versions are immutable
+            self.load(snapshot, '--reviewed', '--coverage', 'complete')  # a stored version is never overwritten
         broken = adapter_snapshot()
         broken['offerings'][0]['meeting_groups'][0]['selection_semantics'] = 'maybe'
         with self.assertRaises(CommandError):
