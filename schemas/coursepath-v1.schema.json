@@ -624,9 +624,118 @@
                   "null"
                 ],
                 "format": "date"
+              },
+              "placement_mode": {
+                "enum": [
+                  "onsite_full_time",
+                  "remote_or_part_time",
+                  "unknown"
+                ]
+              },
+              "actual_days": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "expected_end_date_exclusive": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "overlapping_terms": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "term_id",
+                    "overlap_days",
+                    "exam_overlap",
+                    "course_ids"
+                  ]
+                }
+              },
+              "affected_courses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "downstream_courses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "unchecked_courses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "modules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "intended_allocation",
+                    "status",
+                    "reasons"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "earned",
+                        "approved",
+                        "proposed",
+                        "rejected"
+                      ]
+                    }
+                  }
+                }
+              },
+              "credits": {
+                "type": "object",
+                "required": [
+                  "earned",
+                  "approved",
+                  "proposed"
+                ],
+                "properties": {
+                  "earned": {
+                    "$ref": "#/$defs/decimal"
+                  },
+                  "approved": {
+                    "$ref": "#/$defs/decimal"
+                  },
+                  "proposed": {
+                    "$ref": "#/$defs/decimal"
+                  }
+                }
+              },
+              "completion_assumptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/issue"
+                }
               }
             }
           }
+        },
+        "baseline_plan_revision": {
+          "type": [
+            "integer",
+            "null"
+          ]
         }
       }
     },
