@@ -33,7 +33,7 @@ class DataDeletionTests(AccountAPIMixin, TestCase):
         self.populate(other, 'delete-bystander')
         self.assertEqual(owner.delete('/api/v1/account/data', data='{}', content_type='application/json').status_code, 403)
         body = {'expected_revision': 1, 'password': self.password, 'confirm': 'delete my data'}
-        self.assertEqual(self.request(owner, 'delete', '/account/data', {**body, 'password': 'wrong-password'}).status_code, 403)
+        self.assertEqual(self.request(owner, 'delete', '/account/data', {**body, 'password': self.password + '-wrong'}).status_code, 403)
         self.assertEqual(self.request(owner, 'delete', '/account/data', {**body, 'confirm': 'yes'}).status_code, 400)
         self.assertEqual(self.request(owner, 'delete', '/account/data', {**body, 'expected_revision': 0}).status_code, 409)
         deleted = self.request(owner, 'delete', '/account/data', body)
