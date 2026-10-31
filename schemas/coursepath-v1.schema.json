@@ -399,6 +399,15 @@
           "items": {
             "$ref": "#/$defs/requirement_result"
           }
+        },
+        "surplus_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "missing_terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/term_id"
+          }
         }
       }
     },
@@ -1106,6 +1115,18 @@
               "source_refs"
             ]
           }
+        },
+        "course_tags": {
+          "type": "object"
+        },
+        "pass_fail_courses": {
+          "type": "object"
+        },
+        "excluded_courses": {
+          "type": "array"
+        },
+        "repeat_policy": {
+          "type": "object"
         }
       },
       "additionalProperties": false

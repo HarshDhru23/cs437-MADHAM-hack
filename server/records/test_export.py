@@ -37,9 +37,8 @@ class ExportRestoreTests(AccountAPIMixin, TestCase):
         self.assertEqual((data['kind'], data['backup_version'], data['account']['username']), ('coursepath-backup', '1', 'backup-owner'))
         self.assertEqual((data['record']['revision'], len(data['record']['attempts'])), (1, len(self.attempts)))
         self.assertEqual((len(data['plans']), len(data['scenarios'])), (1, 1))
-        self.assertEqual(data['rule_version'], 'cse-2024-draft-v1')
-        self.assertTrue(data['sources'])
-        self.assertIn('SOURCE_MISSING', [i['code'] for i in body['issues']])  # unknowns travel with the backup
+        self.assertEqual((data['rule_version'], data['rule_review_status']), ('cse-2024-v1', 'reviewed'))
+        self.assertIn('adv13', [s['id'] for s in data['sources']])  # the backup names the rules it was made with
         text = response.content.decode().lower()
         for secret in ['password', 'pbkdf2', 'sessionid', 'csrf', self.password.lower()]:
             self.assertNotIn(secret, text)

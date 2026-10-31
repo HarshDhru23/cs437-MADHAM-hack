@@ -236,7 +236,7 @@ def import_commit(request, preview_id):
 def _curriculum_for(record=None):
     from coursepath.rules.loader import load_curriculum, validate_curriculum
     from server.records.models import RuleSnapshot
-    version = record.profile['curriculum_version'] if record else 'cse-2024-draft-v1'
+    version = record.profile['curriculum_version'] if record else 'cse-2024-v1'
     stored = RuleSnapshot.objects.filter(pk=version).first()
     return validate_curriculum(stored.payload) if stored else load_curriculum()
 
@@ -306,7 +306,8 @@ def analysis(request):
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, plan.payload if plan else None, awards=awards)
-    performance = calculate_performance(record['attempts'], _grading_policy())
+    from coursepath.identity import identity_map
+    performance = calculate_performance(record['attempts'], _grading_policy(), identity_map(rules.get('identity_groups')))
     performance['source_reported_controls'] = stored.reported_controls
     data = {'audit': audit, 'performance': performance, 'validation': _validate_owned_plan(request.user, plan) if plan else None,
             'record_revision': stored.revision, 'plan_revision': plan.revision if plan else None, 'rule_version': rules['version']}

@@ -13,7 +13,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with draft status and sources"
       ],
@@ -49,7 +49,8 @@
       "id": "CP-03",
       "oct27_target": true,
       "tests": [
-        "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement"
+        "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp03_record_following_the_p23_path_is_complete"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -57,7 +58,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
@@ -264,7 +265,8 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_reconcile.ReconcileTests.test_cp12_totals_mismatch_and_unknown_grade_blocked",
-        "server.records.test_imports.ImportAPITests.test_pdf_preview_commit_retains_reported_controls_separately"
+        "server.records.test_imports.ImportAPITests.test_pdf_preview_commit_retains_reported_controls_separately",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp12_one_credit_short_course_stays_on_record_but_never_counts"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -272,7 +274,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent",
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
@@ -294,7 +296,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
@@ -309,7 +311,8 @@
       "oct27_target": true,
       "tests": [
         "tests.domain.test_performance.PerformanceTests.test_cp14_grade_completion_exposure_and_performance_separate",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_p_grades_and_zero_credit_rows_excluded_with_reasons"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_p_grades_and_zero_credit_rows_excluded_with_reasons",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp14_viva_needs_a_pass_in_every_active_semester"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -332,7 +335,9 @@
       "oct27_target": true,
       "tests": [
         "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_repeated_course_counts_its_best_grade_once",
+        "tests.domain.test_performance.BestGradeRepeatTests.test_cp15_repeat_keeps_best_grade_and_projects_stay_separate"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -375,7 +380,10 @@
       "oct27_target": false,
       "tests": [
         "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism",
-        "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course"
+        "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_cs203_is_not_cs202_and_counts_only_as_an_elective",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_surplus_is_reported_and_courses_are_never_split",
+        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -383,7 +391,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -391,7 +399,9 @@
       "id": "CP-18",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive"
+        "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_project_caps_and_two_cs299_registrations",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_external_exposure_counts_only_toward_allowed_buckets"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -399,7 +409,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -408,7 +418,8 @@
       "oct27_target": false,
       "tests": [
         "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted",
-        "tests.domain.test_identity.CourseIdentityTests.test_cp19_identity_groups_are_sourced_and_never_overlap"
+        "tests.domain.test_identity.CourseIdentityTests.test_cp19_identity_groups_are_sourced_and_never_overlap",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp19_curriculum_is_reviewed_from_adv13_and_reconciles_to_170"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -416,7 +427,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -424,7 +435,9 @@
       "id": "CP-20",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget"
+        "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_hss_ge_and_bs_membership_follow_d19_d20",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_allocation_stays_interactive_for_partial_and_full_records"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -432,7 +445,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },

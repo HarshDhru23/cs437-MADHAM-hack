@@ -145,8 +145,12 @@ report `CALENDAR_MISSING` and leave affected courses unchecked.
 IDs and component totals before storage. `--draft` permits explicitly unapproved
 data; it does not approve it. Reviewed snapshots are immutable through the
 normal model save path. Student endpoints cannot ingest/verify rules or approvals.
-The committed dataset uses planning-note evidence with `review_status: draft`.
-Basket membership never falls back to code prefixes. PE/viva policy is unresolved.
+The committed dataset `cse-2024-v1` is reviewed from ADV13 (cited by page and
+SHA-256; the PDF stays local) and the TEAM decisions in `docs/academic-decisions.md`.
+Code-prefix membership is used only where a decision says so (D-06 CS electives,
+D-19 HS/GE, D-20 basic science). PE needs four passed PE courses; the viva needs a
+P in every active regular semester (D-16). Imported rows default to degree
+learning (D-21).
 
 `load_offerings snapshot.json --reviewed|--draft [--coverage complete|partial|unknown]`
 stores a snapshot produced by `scripts/build_timetable.py` after the adapter's

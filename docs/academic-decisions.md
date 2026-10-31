@@ -8,7 +8,7 @@ These decisions are the approved interpretation for building CoursePath. Where a
 
 | ID | Source | Used for |
 | --- | --- | --- |
-| ADV13 | Academic Affairs Advisory No. 13, *Norms for BTech Programme* (January 2026). Local, git-ignored copy. | pp. 1-4 institute curriculum, project, exposure and viva; p. 6 honours/minors; p. 7 load, project cap, short courses; pp. 14-15 CSE core and electives; p. 23 CSE 2024 sample path |
+| ADV13 | Academic Affairs Advisory No. 13, *Norms for BTech Programme* (January 2026). Local, git-ignored copy `Adv13_Norms for BTech Programme_28 Jan 2026.pdf`, SHA-256 `80d59bd2fb5b0096a57acd8192ba11387514cd8c08119e177cfd445c87c0861e`. Authorized by Harsh on 31 Oct 2026 as the curriculum source; cite by page, never commit the file. | pp. 1-4 institute curriculum (A.16 institute core, A.15 materials, A.2 HSS, A.5-A.6 science and maths), project, exposure and viva; p. 6 honours/minors; p. 7 load, project cap, short courses; p. 10 Annexure I science and maths baskets; pp. 14-15 CSE core and electives; p. 23 CSE 2024 sample path |
 | CSE-CAT | CSE course catalogue, <https://cse.iitgn.ac.in/academics/courses/>, retrieved 29 Oct 2026 | Current codes, titles and credits |
 | TT-2026-I | Supplied timetable workbook, Semester I 2026-27. Local, git-ignored copy. | Codes and titles offered this term |
 | TEAM | Team decision, Harsh, 29 Oct 2026 | Where the advisory is silent or needs interpreting |
@@ -93,6 +93,7 @@ A CS course outside the two baskets counts toward the 26 but not toward either 8
 - **Surplus credits.** If placing a course pushes a bucket past its required credits, all of that course's credits stay in that bucket and the excess is **surplus**. Surplus is earned and shown, but fills no other requirement. Example: seven 4-credit discipline electives give 28 credits against 26, so 2 credits are surplus.
 - **Whole extra courses.** A course a requirement doesn't need at all may be placed whole in another eligible bucket, such as an eighth discipline-elective course going to open electives.
 - **Allocation goal.** Choose placements that satisfy the most requirements and leave the least surplus. Report every placement, and every surplus credit, in the audit ledger.
+- **Incomplete records** (clarified 31 Oct, from task H07). When no allocation completes the degree, place the most required credits, and put each course in the narrowest requirement it fits, so a basket course is never spent on open electives while its basket is unmet. The order is: complete degree, credits placed, narrowest placement, least surplus.
 
 **D-08. One-credit short courses earn no graduation credit** (ADV13 p. 7). SC 372 (1 credit, IMS paste only) is a one-credit short course. Keep it in the record, show it as excluded with the reason, and never count it toward 170.
 
@@ -158,6 +159,16 @@ Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, 
 
 **D-18. AI minor and CSE honours are deferred** (TEAM, 29 Oct). Neither CSE-CAT nor ADV13 has the AI minor document or the CSE honours course list; p. 6 gives only the 20-credit framework. CP-25, CP-26 and CP-27 stay red until those documents arrive.
 
+## 8. Memberships ADV13 names but does not list
+
+Recorded 31 Oct 2026 by Harsh. ADV13 names these buckets for the 2024 cohort without listing their courses (pp. 1-2, 10; Annexure III applies only to students admitted before 2022-23).
+
+**D-19. HSS electives and the GE basket by course code** (TEAM). Any HS-coded course counts as an HSS elective, except the mandatory HS 191, HS 192, HS 151, HS 221 and HS 201. Any GE-coded course counts toward the General Education basket (two courses, 4 credits).
+
+**D-20. Basic Science electives** (TEAM, from ADV13 pp. 2, 10). The p. 10 science basket list, plus any course coded BS, MA, PH, CH, CG or EH, except the mandatory MA 103, MA 104, MA 203 and BS 192.
+
+**D-21. Imported and planned courses are degree learning by default** (TEAM). Rows from a transcript or IMS paste, confirmed current enrolment and planned courses count as degree learning unless the student marks one as additional (honours or minor) in review.
+
 ## Still open
 
 | Question | Affects | Current behavior |
@@ -167,6 +178,8 @@ Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, 
 | SPI of a term whose course was later repeated: unchanged or recalculated? | CP-16 | Unchanged (historical SPI) |
 | CPI display rounding (2 decimals, round or truncate?) | CP-15 | Unrounded value stored, 2 decimals shown |
 | AI minor document, CSE honours list | CP-25 to CP-27 | Deferred (D-18) |
+| D-02: does a same-named course with fewer credits (old ES 242, 3 credits) satisfy a 4-credit core requirement in the engine? | CP-03, CP-17 | Not yet: a core requirement still needs its full credits |
+| Is a P on IN 498 a pass/fail conversion (D-12)? | CP-18 | Counted as a conversion, which reduces the online pool |
 
 ## Implementation follow-ups
 
@@ -174,12 +187,12 @@ Each item goes through the normal reviewed PR. Owners are from `docs/team/README
 
 | Item | Decisions | Owner | CPs |
 | --- | --- | --- | --- |
-| Rewrite `data/curricula/cse-2024.json` from ADV13 with page references; change the source from the roadmap to ADV13 and mark it reviewed | D-05 to D-10, D-14, D-16 | Harsh | CP-01, 03, 17, 18, 19 |
-| Add a catalogue with D-04 identity groups; resolve D-01 identity before matching (today prerequisites and requirements compare raw codes, so `ES 242(N)` would not satisfy `ES 242`) | D-01 to D-04 | Harsh | CP-03, 13, 17 |
-| Set `repeat_policy: best_grade` and the always-P/F list in `data/grading/reported-v1.json`; add the online pool and conversion inference | D-11, D-12, D-15 | Harsh | CP-14, 15, 16 |
-| Reword SPEC CP-05 and CP-22 to "recommended prerequisite"; add a recommendation severity (`warning`) and keep `PREREQUISITE_UNKNOWN` for courses without an entry. This is a `[contract]` change | D-17 | Harsh (SPEC, domain), Aaryan (UI wording) | CP-05, 22 |
+| Done 31 Oct (`cse-2024-v1`, reviewed): rewrite `data/curricula/cse-2024.json` from ADV13 with page references; change the source from the roadmap to ADV13 and mark it reviewed | D-05 to D-10, D-14, D-16, D-19 to D-21 | Harsh | CP-01, 03, 17, 18, 19 |
+| Done 31 Oct: add a catalogue with D-04 identity groups; resolve D-01 identity before matching (today prerequisites and requirements compare raw codes, so `ES 242(N)` would not satisfy `ES 242`) | D-01 to D-04 | Harsh | CP-03, 13, 17 |
+| Done 31 Oct (rounding still open): set `repeat_policy: best_grade` and the always-P/F list; add the online pool and conversion inference. Students cannot mark a course online yet (needs a record field and UI) | D-11, D-12, D-15 | Harsh | CP-14, 15, 16 |
+| Done 31 Oct: reword SPEC CP-05 and CP-22 to "recommended prerequisite"; add a recommendation severity (`warning`) and keep `PREREQUISITE_UNKNOWN` for courses without an entry. This is a `[contract]` change | D-17 | Harsh (SPEC, domain), Aaryan (UI wording) | CP-05, 22 |
 | Mark AMB-01 to 05, 08, 09, 15 and GAP-04, 05, 09, 10 resolved by these decisions; GAP-06 partly (D-15); AMB-07 and GAP-07 deferred (D-18) | all | Manashree (`docs/data/`) | none |
-| Report surplus credits per requirement in the audit result, and add a test that a course is never split. `coursepath/rules/allocation.py` already places each attempt whole | D-06, D-07 | Harsh | CP-17 |
+| Done 31 Oct: report surplus credits per requirement in the audit result, and add a test that a course is never split. `coursepath/rules/allocation.py` already places each attempt whole | D-06, D-07 | Harsh | CP-17 |
 | UI: label TEAM decisions, surplus credits, the online pool, inferred P/F conversions and recommended prerequisites | D-07, D-11, D-12, D-17 | Aaryan | CP-14, 17, 18, 22 |
 
 ## Superseded text

@@ -45,7 +45,7 @@ def candidate(term, code, title, credits, grade, source_ref, locator, occurrence
     return {'id': key, 'source_key': key, 'normalized_code': normalized_code, 'original_code': code,
             'title': ' '.join(title.split()), 'credits': decimal_string(decimal_value(credits.strip())),
             'grade': grade, 'term_id': term, 'completion_status': grade_status(grade),
-            'learning_designation': 'unknown', 'course_version_id': None, 'instance_id': None,
+            'learning_designation': 'degree', 'course_version_id': None, 'instance_id': None,
             'source_refs': [source], 'user_corrections': [], 'approval_refs': [],
             'original': {'code': code, 'title': title, 'credits': credits, 'grade': grade}}
 

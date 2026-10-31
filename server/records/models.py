@@ -5,7 +5,7 @@ from django.db import models
 
 
 def empty_profile():
-    return {'programme': 'BTECH_CSE', 'admission_year': 2024, 'curriculum_version': 'cse-2024-draft-v1'}
+    return {'programme': 'BTECH_CSE', 'admission_year': 2024, 'curriculum_version': 'cse-2024-v1'}
 
 
 class Owned(models.Model):

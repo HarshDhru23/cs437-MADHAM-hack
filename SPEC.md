@@ -116,7 +116,7 @@ Status per statement comes from running its mapped tests: `python scripts/statem
 
 | ID | Backend behavior with tests | Still needed for release |
 | --- | --- | --- |
-| CP-17 to CP-22 | Exclusive allocation, caps, sources, actual/current/projected views, load limits and recommended preparation; course identity groups (D-04) resolve old and variant codes. | The curriculum is still draft: institute core, maths, science and HSS memberships are not in committed files; D-06 to D-16 are not yet encoded; browser evidence. |
+| CP-17 to CP-22 | Reviewed `cse-2024-v1` curriculum from ADV13 (pp. 1-4, 7, 10, 14-15, 23) and D-01 to D-21: identity groups, CS-prefix electives, HSS/GE/BS memberships, project/online/exposure caps, best-grade repeats, viva per active semester, surplus; recommended preparation as warnings. A record following the p. 23 path audits complete. | D-02 fewer-credit equivalents and marking online courses (not yet in the record); browser evidence. |
 | CP-23, CP-24 | Availability from a stored term snapshot; clashes by weekday, minutes and active dates; undated or alternative meetings give possible clashes; no snapshot is `not_checked`. | A reviewed 2026-27 Semester I snapshot (GAP-02), lab/tutorial alternative semantics (AMB-12) and quad dates (AMB-13); section-choice UI. |
 | CP-25 to CP-27 | Not implemented: D-18 defers CSE honours and the AI minor. | The AI minor document and CSE honours list (GAP-07). |
 | CP-28 | Scenarios with drop, fail, postpone, replace, caps and hypothetical grades; deltas; stale scenarios need rebase; plan-only apply. | Scenario UI and browser evidence. |

@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import unittest
 from coursepath.rules.loader import validate_curriculum
+from coursepath.rules.schema import walk_requirements
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -38,12 +39,13 @@ class RuleTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_curriculum(variant)
 
-    def test_170_draft_baseline_honest_missing_source_and_obligations(self):
+    def test_170_baseline_from_adv13_keeps_obligations_and_cs203_unlisted(self):
+        # Reviewed from ADV13 since 31 Oct 2026 (docs/academic-decisions.md, sources); the draft premise no longer holds.
         path = ROOT / 'data/curricula/cse-2024.json'
-        self.assertTrue(path.exists(), 'H06 should publish a traceable draft without fabricating source approval')
         curriculum = validate_curriculum(json.loads(path.read_text()))
-        self.assertEqual(curriculum['review_status'], 'draft')
-        self.assertEqual(curriculum['total_credits'], '170')
-        self.assertEqual(len(curriculum['noncredit_obligations']), 2)
-        self.assertTrue(curriculum['missing_sources'])
-        self.assertNotIn('CS 203', json.dumps(curriculum['requirements']))
+        self.assertEqual((curriculum['review_status'], curriculum['total_credits']), ('reviewed', '170'))
+        self.assertEqual(curriculum['missing_sources'], [])
+        self.assertEqual([o['id'] for o in curriculum['noncredit_obligations']], ['viva'])
+        self.assertIn('pe', [r['id'] for r in curriculum['requirements']])
+        listed = {c for r in walk_requirements(curriculum['requirements']) for c in [r.get('course_id')] + (r.get('course_ids') or [])}
+        self.assertNotIn('CS 203', listed)  # D-03: never listed in place of the CS 202 core

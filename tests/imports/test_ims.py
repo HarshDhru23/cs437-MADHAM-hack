@@ -20,7 +20,7 @@ class IMSTests(unittest.TestCase):
         self.assertEqual(rows[3]['credits'], '0')
         self.assertEqual(rows[0]['source_refs'][0]['line'], 2)
         self.assertEqual(rows[-1]['normalized_code'], 'SC 372')
-        self.assertEqual(rows[-1]['learning_designation'], 'unknown')
+        self.assertEqual(rows[-1]['learning_designation'], 'degree')  # D-21: imported rows are degree learning until marked otherwise
 
     def test_missing_headers_fields_unknown_grades_and_size_are_disclosed(self):
         for text in ['no headers', HEADER + '2024-25 Semester I\tCS 101\tMissing\t4\t\n',

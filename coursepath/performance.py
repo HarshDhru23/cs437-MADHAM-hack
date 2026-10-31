@@ -1,19 +1,34 @@
 from collections import Counter
+import re
+from coursepath.identity import canonical_code
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN, localcontext
 from coursepath.models import term_key
 from coursepath.serialization import decimal_value, decimal_string
 from coursepath.issues import issue
 
 
-def calculate_performance(attempts, grading_policy):
+def calculate_performance(attempts, grading_policy, identity=None):
     points = {grade: decimal_value(value) for grade, value in grading_policy['points'].items()}
     rows = sorted(attempts, key=lambda a: (term_key(a['term_id']), a['id']))
     issues = []
-    counts = Counter(a['normalized_code'] for a in rows)
+    counts = Counter(canonical_code(a['normalized_code'], identity) for a in rows)
     if grading_policy.get('review_status') != 'reviewed':
         issues.append(issue('GRADING_SOURCE_UNREVIEWED', 'Reported grade mapping is not an approved evaluation policy.'))
-    if any(count > 1 for count in counts.values()) and grading_policy.get('repeat_policy') != 'count_all':
+    if any(count > 1 for count in counts.values()) and grading_policy.get('repeat_policy') not in {'count_all', 'best_grade'}:
         issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeated registrations/retakes need an applicable inclusion policy.'))
+    superseded = set()
+    if grading_policy.get('repeat_policy') == 'best_grade':
+        # D-15: only the best graded attempt of a course enters CPI; projects are separate courses (D-01).
+        graded = {}
+        for attempt in rows:
+            code = canonical_code(attempt['normalized_code'], identity)
+            grade = attempt.get('grade', '').strip().upper()
+            if grade not in points or any(re.search(p, code) for p in grading_policy.get('separate_course_patterns', [])):
+                continue
+            graded.setdefault(code, []).append(((points[grade], term_key(attempt['term_id']), attempt['id']), attempt['id']))
+        for items in graded.values():
+            keep = max(items)[1]
+            superseded |= {attempt_id for _, attempt_id in items if attempt_id != keep}
     rounding = {'half_up': ROUND_HALF_UP, 'half_even': ROUND_HALF_EVEN}.get(grading_policy.get('rounding'))
     if rounding is None:
         issues.append(issue('ROUNDING_POLICY_UNKNOWN', 'No official display rounding policy supplied; display value unavailable.'))
@@ -22,7 +37,7 @@ def calculate_performance(attempts, grading_policy):
         raise ValueError('Unsupported display precision')
     source_refs = grading_policy.get('source_refs', [])
 
-    def aggregate(selected, cap=None, reported=None):
+    def aggregate(selected, cap=None, reported=None, cumulative=False):
         numerator, denominator = Decimal(0), Decimal(0)
         contributing, excluded, local_issues = [], [], []
         for attempt in selected:
@@ -31,6 +46,8 @@ def calculate_performance(attempts, grading_policy):
             reason = None
             if attempt.get('completion_status') in {'in_progress', 'planned'}:
                 reason = 'NOT_GRADED'
+            elif cumulative and attempt['id'] in superseded:
+                reason = 'SUPERSEDED_REPEAT'
             elif credits == 0:
                 reason = 'ZERO_CREDIT'
             elif grade in grading_policy.get('excluded_grades', []):
@@ -63,6 +80,6 @@ def calculate_performance(attempts, grading_policy):
                   'hypothetical': any(a.get('hypothetical') is True for a in selected)}
         return result
 
-    cumulative = aggregate(rows, grading_policy.get('cpi_cap'), grading_policy.get('source_reported_cpi'))
+    cumulative = aggregate(rows, grading_policy.get('cpi_cap'), grading_policy.get('source_reported_cpi'), cumulative=True)
     terms = [{'term_id': term, **aggregate([a for a in rows if a['term_id'] == term], grading_policy.get('spi_cap'))} for term in sorted({a['term_id'] for a in rows}, key=term_key)]
     return {'cumulative': cumulative, 'terms': terms, 'issues': issues + cumulative['issues']}

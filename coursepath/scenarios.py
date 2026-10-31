@@ -83,7 +83,8 @@ def apply_changes(plan, changes, ops=OPS):
 
 def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None, award_ids=()):
     audit = evaluate_audit(context['curriculum'], context.get('catalogue', {}), record, plan, awards=tuple(award_ids))
-    performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'])
+    performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'],
+                                        identity_map(context['curriculum'].get('identity_groups')))
     planning = {'attempts': record.get('attempts', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
                 'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}, 'identity': identity_map(context['curriculum'].get('identity_groups'))}
     validation = validate_plan(planning, plan, context.get('offering_snapshots'), context.get('calendar'))

@@ -93,7 +93,7 @@ class StudentProfile:
     id: str
     programme: str = 'BTECH_CSE'
     admission_year: int = 2024
-    curriculum_version: str = 'cse-2024-draft-v1'
+    curriculum_version: str = 'cse-2024-v1'
     selected_award_ids: tuple = ()
     standing: str = 'unknown'
     advisor_cap: Decimal | None = None
