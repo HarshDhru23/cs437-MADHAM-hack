@@ -15,6 +15,49 @@ repository files were used as sources.
 | `feature/harsh-d17-recommended-prerequisites` | `[contract]` D-17 recommended preparation | CP-05, CP-22 |
 | `feature/harsh-h15-nov3-integration` | H15 SPEC status and this note | none |
 
+| `feature/harsh-h06-adv13-curriculum` | H06 reviewed curriculum from ADV13; D-19 to D-21 | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
+
+The last branch was added later on 31 Oct, after Harsh authorized the local
+ADV13 PDF as the curriculum source. It needs three companion changes before it
+can merge, because it intentionally changes behavior other owners' tests pin:
+
+```markdown
+To: Aaryan · From: Harsh · Task: H06 · Blocks: CP-01, CP-03
+Need: e2e/tests/public.spec.ts expects "These rules are a draft" and version
+cse-2024-draft-v1; the curriculum is now cse-2024-v1, review_status reviewed,
+with no SOURCE_MISSING issue. e2e/tests/student-flow.spec.ts finds the heading
+"Tools"; the requirement label is now "Software Tools and Techniques for CSE"
+(id still "tools"). The assertion's intent (shows CS 202, not Satisfied) holds.
+Also: requirement results carry surplus_credits; the viva node carries
+missing_terms; mark TEAM decisions (decision field) in the requirement view.
+Until then I will: keep the branch unmerged; nothing else in the UI broke
+(frontend suite: 230 passed).
+```
+
+```markdown
+To: Manashree · From: Harsh · Task: H06 · Blocks: CP-03
+Need: tests/reference/test_service_regression.py
+test_draft_curriculum_never_certifies_the_sample_record assumes a draft
+curriculum (no requirement satisfied). Proposed: keep assertFalse(complete),
+and assert the CS 202 "tools" requirement is pending and SC 372 is excluded with
+reason ONE_CREDIT_SHORT_COURSE. Data register: GAP-04, GAP-05, GAP-09, GAP-10
+and AMB-01 to 05, 08, 09 can close (D-01 to D-21); GAP-06 is partly closed
+(best grade decided, CPI rounding open).
+Until then I will: keep the branch unmerged.
+```
+
+Timetable: a draft snapshot was built locally (not committed) from the
+supplied workbook with `scripts/build_timetable.py`:
+`server/.local/timetable/2026-27-I.draft.json` and `.report.json` (workbook
+SHA-256 `43df3926...dc1e6`, unchanged by the build). 303 offerings, 30 slots,
+732 meetings, 0 errors. To review before `load_offerings --reviewed`:
+publication/finality and coverage (AMB-11); 54 lab/tutorial groups with unstated
+alternatives (AMB-12); 0 meetings have active dates, so every clash is
+"possible" (AMB-13); 38 unrecognized rows; 4 sessions given as text; duplicate
+conflicting rows for IN 101 and MSE 317; 16 offerings with no meetings. With the
+H11 engine the draft reproduces the PH 202 / ES 667 lecture clashes (Tue B1,
+Fri B2) and the PH 202 / CS 331 H2 tutorial clash.
+
 H10 (CP-25 to CP-27) is not started: D-18 defers it until the AI minor document
 and the CSE honours list exist (GAP-07).
 
