@@ -1,4 +1,4 @@
-# Harsh — November 3 block handoff
+# Harsh â€” November 3 block handoff
 
 Prepared 31 October 2026 (IST) as stacked local branches from `origin/main`
 `ece371c`. Nothing here has been pushed, reviewed or merged yet. Only committed
