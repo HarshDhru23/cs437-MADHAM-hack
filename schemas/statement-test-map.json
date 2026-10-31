@@ -96,7 +96,9 @@
       "id": "CP-05",
       "oct27_target": true,
       "tests": [
-        "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order"
+        "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp05_unmet_recommendation_is_a_labelled_warning_that_never_blocks",
+        "server.records.test_recommendations.RecommendedPreparationAPITests.test_cp05_saved_plan_warns_about_recommended_preparation_without_blocking"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -455,7 +457,9 @@
       "oct27_target": false,
       "tests": [
         "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty",
-        "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities"
+        "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_variant_satisfies_and_unlisted_course_stays_unknown",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
