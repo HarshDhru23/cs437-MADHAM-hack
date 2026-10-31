@@ -108,4 +108,19 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-31 | A student can complete import, requirement inspection and planning using a phone or keyboard. | Browser accessibility/responsive flows plus observed user session. |
 | CP-32 | A student's personal data is accessible only to that account and can be deleted. | Two-user access/export/delete tests; CSRF, temporary-upload cleanup. |
 | CP-33 | A student can compare no-internship, 3-month and 6-month scenarios using exact dates and see affected courses and completion assumptions. | Calendar boundaries, summer/semester presets, full/partial term conflicts, downstream prerequisites and immutable baseline. |
-| CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4 credits per quad/16 overall; HSS/open-project caps; no duplicated modules or unauthorized approvals. |
+| CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4-credit modules, 16 overall, no per-quad limit (D-14); HSS/open-project caps; no duplicated modules or unauthorized approvals. |
+
+## November 3 implementation status (not release certification)
+
+Status per statement comes from running its mapped tests: `python scripts/statement_report.py --all` (add `--browser --frontend` for the UI suites). This section does not record a pass count. A statement is release-complete only with its tests green, a real browser flow, review by another member and a merged PR (`schemas/statement-test-map.json`). The table lists, for the November statements, what the backend now does and what is still missing.
+
+| ID | Backend behavior with tests | Still needed for release |
+| --- | --- | --- |
+| CP-17 to CP-22 | Exclusive allocation, caps, sources, actual/current/projected views, load limits and recommended preparation; course identity groups (D-04) resolve old and variant codes. | The curriculum is still draft: institute core, maths, science and HSS memberships are not in committed files; D-06 to D-16 are not yet encoded; browser evidence. |
+| CP-23, CP-24 | Availability from a stored term snapshot; clashes by weekday, minutes and active dates; undated or alternative meetings give possible clashes; no snapshot is `not_checked`. | A reviewed 2026-27 Semester I snapshot (GAP-02), lab/tutorial alternative semantics (AMB-12) and quad dates (AMB-13); section-choice UI. |
+| CP-25 to CP-27 | Not implemented: D-18 defers CSE honours and the AI minor. | The AI minor document and CSE honours list (GAP-07). |
+| CP-28 | Scenarios with drop, fail, postpone, replace, caps and hypothetical grades; deltas; stale scenarios need rebase; plan-only apply. | Scenario UI and browser evidence. |
+| CP-30 | Versioned JSON export; restore through preview, diff and confirmed commit. | Printable report view and browser evidence. |
+| CP-31 | Frontend responsibility. | Phone and keyboard browser flows and an observed user session. |
+| CP-32 | Owner-only data, re-authenticated deletion (data or account), expired-preview purge, production settings check. | Hosted deployment and PostgreSQL verification (GAP-13). |
+| CP-33, CP-34 | Exact-date internships, calendar-month arithmetic, attendance conflicts, downstream courses; IN 498 modules under D-14; none / 3 / 6 month comparison. | An academic calendar (GAP-03) for presets and overlap checks; internship UI and browser evidence. |
