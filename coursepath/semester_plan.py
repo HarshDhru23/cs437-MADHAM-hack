@@ -6,6 +6,7 @@ from coursepath.eligibility import evaluate_prerequisite
 from coursepath.issues import issue
 from coursepath.offerings import offering_availability, snapshot_for_term
 from coursepath.timetable import check_meetings
+from coursepath.identity import canonical_code
 
 
 def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
@@ -26,6 +27,7 @@ def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
 def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     catalogue = context.get('catalogue', {})
     attempts = context.get('attempts', [])
+    identity = context.get('identity')
     workload, per_course, issues, meeting_checks = {}, [], [], {}
     planned = [{**c, 'normalized_code': c.get('normalized_code', c.get('course_id')), 'term_id': semester['term_id']}
                for semester in plan.get('semesters', []) for c in semester.get('courses', [])]
@@ -43,7 +45,7 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             entity = course.get('id', code)
             metadata = catalogue.get(code)
             expression = metadata.get('prerequisites') if metadata and metadata.get('prerequisite_known') else None
-            eligibility = evaluate_prerequisite(expression, term, attempts, planned)
+            eligibility = evaluate_prerequisite(expression, term, attempts, planned, identity)
             if eligibility['status'] == 'unknown':
                 issues.append(issue('PREREQUISITE_UNKNOWN', 'Prerequisite data is unknown.', entities=[entity]))
             elif eligibility['status'] == 'ineligible':
@@ -51,7 +53,7 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             elif eligibility['status'] == 'conditional':
                 issues.append(issue('PREREQUISITE_CONDITIONAL', 'Earlier planned prerequisite must be passed.', 'warning', [entity], eligibility['source_refs']))
             previous = seen.get(code, [])
-            completed = [a for a in attempts if a['normalized_code'] == code and a['completion_status'] == 'completed']
+            completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == canonical_code(code, identity) and a['completion_status'] == 'completed']
             if previous or completed:
                 if metadata is None or metadata.get('repeatable') is None:
                     issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeat eligibility requires reviewed policy.', entities=[entity]))

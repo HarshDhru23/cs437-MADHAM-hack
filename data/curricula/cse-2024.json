@@ -1,6 +1,7 @@
 {
   "id": "cse-2024", "version": "cse-2024-draft-v1", "cohort": "BTECH_CSE-2024", "review_status": "draft", "total_credits": "170",
-  "sources": [{"id": "committed-roadmap", "kind": "student_example", "title": "Committed implementation roadmap (secondary planning evidence)", "version": "a53e7d3", "locator": "docs/implementation-roadmap.md sections 3.1-3.2 (describes advisory pp. 2,4,6,7,10,14,15,23)", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": null, "review_status": "draft", "authority": "example"}],
+  "sources": [{"id": "committed-roadmap", "kind": "student_example", "title": "Committed implementation roadmap (secondary planning evidence)", "version": "a53e7d3", "locator": "docs/implementation-roadmap.md sections 3.1-3.2 (describes advisory pp. 2,4,6,7,10,14,15,23)", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": null, "review_status": "draft", "authority": "example"},
+    {"id": "academic-decisions", "kind": "team_decision", "title": "CoursePath academic decisions for CSE 2024 (team interpretation of ADV13)", "version": "2026-10-29", "locator": "docs/academic-decisions.md D-01 to D-04", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": null, "review_status": "draft", "authority": "team"}],
   "missing_sources": ["Committed official January 2026 advisory and cohort amendments", "Reviewed catalogue and basket memberships", "Equivalence/substitution decisions", "Project/exposure/viva interpretation and approvals"],
   "requirements": [
     {"id": "institute-core", "label": "Institute core", "type": "minimum_credits", "minimum_credits": "31", "course_ids": null, "source_refs": ["committed-roadmap"]},
@@ -41,6 +42,23 @@
     {"id": "open-electives", "type": "minimum_credits", "minimum_credits": "16", "course_ids": null, "source_refs": ["committed-roadmap"]},
     {"id": "open-project", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
     {"id": "foundation", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]}
+  ],
+  "identity_groups": [
+    {"current": "ES 242", "same": ["ES 242(N)"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 214", "same": ["CS 322"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 204", "same": ["ES 203"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 336", "same": ["ES 215"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 330", "same": ["CS 301"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 331", "same": ["CS 433"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 335", "same": ["ES 654", "ES 678"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 667", "same": ["ES 413"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 645", "same": ["CS 608"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 333", "same": ["CS 621"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]}
+  ],
+  "identity_review_pairs": [
+    {"codes": ["ES 668", "ES 417"], "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"codes": ["ES 659", "CS 429"], "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"codes": ["ES 661", "CS 691-XII"], "decision": "D-04", "source_refs": ["academic-decisions"]}
   ],
   "noncredit_obligations": [{"id": "pe", "required_semesters": 4, "completion_policy": null, "source_refs": ["committed-roadmap"]}, {"id": "viva", "required_each_active_semester": true, "recorded_grades": ["P", "F"], "completion_policy": null, "source_refs": ["committed-roadmap"]}],
   "caps": [

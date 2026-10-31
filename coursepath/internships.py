@@ -102,8 +102,8 @@ def _downstream(context, plan_items, affected):
         metadata = context.get('catalogue', {}).get(row.get('normalized_code'))
         if row['id'] in affected or not metadata or not metadata.get('prerequisite_known'):
             continue
-        before = evaluate_prerequisite(metadata['prerequisites'], row['term_id'], attempts, plan_items)
-        after = evaluate_prerequisite(metadata['prerequisites'], row['term_id'], attempts, kept)
+        before = evaluate_prerequisite(metadata['prerequisites'], row['term_id'], attempts, plan_items, context.get('identity'))
+        after = evaluate_prerequisite(metadata['prerequisites'], row['term_id'], attempts, kept, context.get('identity'))
         if before['status'] in {'eligible', 'conditional'} and after['status'] == 'ineligible':
             downstream.append(row['id'])
     return downstream

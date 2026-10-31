@@ -6,6 +6,7 @@ actual view cannot change. Applying a scenario writes plan edits only.
 """
 from copy import deepcopy
 from coursepath.degree_audit import evaluate_audit
+from coursepath.identity import identity_map
 from coursepath.imports.grades import POINTS, grade_status
 from coursepath.internships import evaluate_internship
 from coursepath.issues import issue
@@ -84,7 +85,7 @@ def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None,
     audit = evaluate_audit(context['curriculum'], context.get('catalogue', {}), record, plan, awards=tuple(award_ids))
     performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'])
     planning = {'attempts': record.get('attempts', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
-                'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}}
+                'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}, 'identity': identity_map(context['curriculum'].get('identity_groups'))}
     validation = validate_plan(planning, plan, context.get('offering_snapshots'), context.get('calendar'))
     stay = None
     if internship:

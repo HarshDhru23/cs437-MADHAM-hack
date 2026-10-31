@@ -1056,6 +1056,56 @@
         },
         "noncredit_obligations": {
           "type": "array"
+        },
+        "identity_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "current",
+              "same",
+              "decision",
+              "source_refs"
+            ],
+            "properties": {
+              "current": {
+                "type": "string"
+              },
+              "same": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "by": {
+                "enum": [
+                  "name",
+                  "code"
+                ]
+              },
+              "decision": {
+                "type": "string"
+              },
+              "source_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "identity_review_pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "codes",
+              "decision",
+              "source_refs"
+            ]
+          }
         }
       },
       "additionalProperties": false
@@ -1125,7 +1175,8 @@
             "timetable",
             "course_plan",
             "approval",
-            "student_example"
+            "student_example",
+            "team_decision"
           ]
         },
         "title": {
@@ -1175,7 +1226,8 @@
           "enum": [
             "institutional",
             "student_provided",
-            "example"
+            "example",
+            "team"
           ]
         },
         "retrieved_at": {
