@@ -214,6 +214,26 @@ def check_privacy(root: Path, base: str) -> None:
         record(PASS, "secrets", "no secret-like additions")
 
 
+TEXT_SUFFIXES = {".py", ".json", ".md", ".ts", ".tsx", ".js", ".mjs", ".css", ".html", ".txt", ".yml", ".yaml", ".toml", ".cfg"}
+
+
+def check_encoding(root: Path, base: str) -> None:
+    # Python's default encoding is cp1252 on Windows, so a file written without encoding="utf-8"
+    # can pass locally and fail on Linux CI.
+    bad = []
+    for name in changed_files(root, base):
+        path = root / name
+        if path.suffix.lower() in TEXT_SUFFIXES and path.is_file():
+            try:
+                path.read_bytes().decode("utf-8")
+            except UnicodeDecodeError as exc:
+                bad.append(f"{name} (byte {exc.start})")
+    if bad:
+        record(FAIL, "encoding", "not UTF-8 (write with encoding='utf-8'): " + ", ".join(bad[:5]))
+    else:
+        record(PASS, "encoding", "changed text files are UTF-8")
+
+
 def detect_owner(root: Path, explicit: str | None) -> str | None:
     if explicit:
         return explicit.lower()
@@ -458,6 +478,7 @@ def main() -> int:
     check_branch(root, base, fetch=not args.no_fetch)
     check_privacy(root, base)
     check_ownership(root, base, owner)
+    check_encoding(root, base)
     check_spec(root)
     if not args.quick:
         check_django(root)
