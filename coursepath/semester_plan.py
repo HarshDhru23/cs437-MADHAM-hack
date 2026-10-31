@@ -97,10 +97,13 @@ def _load_issues(context, term, total):
     advisor = context.get('advisor_cap')
     if advisor is not None:
         cap = min(cap, decimal_value(advisor))
+    term_cap = context.get('term_caps', {}).get(term)
+    if term_cap is not None:
+        cap = min(cap, decimal_value(term_cap))
     if standing == 'unknown':
         issues.append(issue('STANDING_UNKNOWN', 'Confirm standing and any advisor cap.', entities=[term]))
     if total > cap:
-        may_overload = not summer and standing != 'GPS' and (advisor is None or decimal_value(advisor) >= 28) and total <= 32
+        may_overload = not summer and standing != 'GPS' and cap == 28 and total <= 32
         if may_overload:
             evidence = context.get('overload', {})
             approved = evidence.get('verified') is True and evidence.get('recommendation_verified') is True and decimal_value(evidence.get('cpi', '0')) >= 7

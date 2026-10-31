@@ -59,6 +59,18 @@
           "$ref": "#/$defs/offering_snapshot"
         },
         {
+          "$ref": "#/$defs/scenario"
+        },
+        {
+          "$ref": "#/$defs/scenario_list"
+        },
+        {
+          "$ref": "#/$defs/scenario_comparison"
+        },
+        {
+          "$ref": "#/$defs/plan_apply"
+        },
+        {
           "type": "null"
         }
       ]
@@ -1364,6 +1376,214 @@
           "type": "array"
         }
       }
+    },
+    "scenario": {
+      "type": "object",
+      "required": [
+        "id",
+        "revision",
+        "plan_id",
+        "label",
+        "baseline_record_revision",
+        "baseline_plan_revision",
+        "rule_version",
+        "changes",
+        "internship",
+        "award_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plan_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "baseline_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_plan_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "op"
+            ],
+            "properties": {
+              "op": {
+                "enum": [
+                  "drop",
+                  "fail",
+                  "postpone",
+                  "replace",
+                  "grade",
+                  "cap"
+                ]
+              }
+            }
+          }
+        },
+        "internship": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "duration_choice"
+              ],
+              "properties": {
+                "duration_choice": {
+                  "enum": [
+                    "none",
+                    "three_months",
+                    "six_months"
+                  ]
+                },
+                "modules": {
+                  "type": "array"
+                }
+              }
+            }
+          ]
+        },
+        "award_ids": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "cse_honours",
+              "ai_minor"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "scenario_list": {
+      "type": "object",
+      "required": [
+        "scenarios"
+      ],
+      "properties": {
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "scenario_comparison": {
+      "type": "object",
+      "required": [
+        "comparisons",
+        "internship_cases"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "scenario_id",
+              "stale",
+              "baseline",
+              "scenario",
+              "deltas",
+              "issues"
+            ],
+            "properties": {
+              "stale": {
+                "type": "boolean"
+              },
+              "baseline_record_revision": {
+                "type": "integer"
+              },
+              "baseline_plan_revision": {
+                "type": "integer"
+              },
+              "deltas": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "requirements",
+                      "new_issues",
+                      "resolved_issues",
+                      "downstream_affected",
+                      "workload",
+                      "cpi",
+                      "meeting_checks"
+                    ]
+                  }
+                ]
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/issue"
+                }
+              }
+            }
+          }
+        },
+        "internship_cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "scenario_id",
+              "duration_choice",
+              "approved_credits",
+              "credits",
+              "completion_assumptions"
+            ]
+          }
+        }
+      }
+    },
+    "plan_apply": {
+      "type": "object",
+      "required": [
+        "plan",
+        "not_applied"
+      ],
+      "properties": {
+        "plan": {
+          "$ref": "#/$defs/plan"
+        },
+        "not_applied": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "op",
+              "reason"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
