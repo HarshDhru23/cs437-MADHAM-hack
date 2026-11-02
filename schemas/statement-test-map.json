@@ -643,6 +643,9 @@
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_password_rechecks_are_throttled_like_login",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_delete_account_must_be_a_json_boolean",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
         "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"
