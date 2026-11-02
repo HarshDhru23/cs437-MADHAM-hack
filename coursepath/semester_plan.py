@@ -73,7 +73,7 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
                                 for c in semester.get('courses', [])], snapshot_for_term(offering_snapshot, term))
         issues.extend(check['issues'])
         status = check['status']
-        if status == 'clear' and semester.get('placeholders'):
+        if status == 'clear' and semester.get('placeholders'):  # placeholders beside clash-free courses are still unchecked
             status = 'not_checked'
         meeting_checks[term] = {'status': status, 'conflicts': check['conflicts']}
         for row in per_course:

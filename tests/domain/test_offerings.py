@@ -81,6 +81,13 @@ class OfferingAvailabilityTests(unittest.TestCase):
             offering['availability_status'] = 'historical'
         self.assertEqual(offering_availability(historical, TERM, 'CS 331')['status'], 'historical')
 
+    def test_cp23_a_current_variant_outranks_a_historical_one(self):
+        complete = reviewed(adapter_snapshot())
+        current = next(o for o in complete['offerings'] if o['code'] == 'CS 331')
+        complete['offerings'].insert(0, {**deepcopy(current), 'id': current['id'] + '#old', 'availability_status': 'historical'})
+        self.assertEqual(offering_availability(complete, TERM, 'CS 331')['status'], 'confirmed_in_snapshot')
+        self.assertEqual(offering_availability({**complete, 'review_status': 'draft'}, TERM, 'CS 331')['status'], 'tentative')
+
 
 class MeetingClashTests(unittest.TestCase):
     def test_cp24_ph202_es667_lectures_clash_on_both_weekly_meetings(self):
@@ -121,6 +128,21 @@ class MeetingClashTests(unittest.TestCase):
         self.assertEqual((possible['status'], [c['certain'] for c in possible['conflicts']]), ('conflicts', [False]))
         self.assertEqual([i['severity'] for i in possible['issues'] if i['code'] == 'TIMETABLE_CONFLICT'], ['warning'])
 
+    def test_cp24_dated_meetings_clash_only_when_a_shared_date_falls_on_their_weekday(self):
+        def check(weekday, first, second):
+            snapshot = hand_snapshot(('ZZ 100', 'all_required', [meeting('a', weekday, 510, 590, first)]),
+                                     ('ZZ 200', 'all_required', [meeting('b', weekday, 510, 590, second)]))
+            return check_meetings([item('x', 'ZZ 100'), item('y', 'ZZ 200')], snapshot)
+        # Weekday 0 is Monday. The shared range [29 Sep, 30 Sep) holds only Tuesday 29 Sep 2026.
+        early, late = ('2026-08-01', '2026-09-30'), ('2026-09-29', '2026-12-01')
+        monday = check(0, early, late)
+        self.assertEqual((monday['status'], monday['conflicts']), ('clear', []))
+        self.assertEqual([c['certain'] for c in check(1, early, late)['conflicts']], [True])
+        # End-exclusive: [23 Sep, 29 Sep) runs Wednesday to Monday, so it holds Monday 28 Sep but no Tuesday.
+        early, late = ('2026-08-01', '2026-09-29'), ('2026-09-23', '2026-12-01')
+        self.assertEqual(check(1, early, late)['status'], 'clear')
+        self.assertEqual(check(0, early, late)['status'], 'conflicts')
+
     def test_cp24_alternative_groups_need_a_selection_before_a_clash_is_certain(self):
         options = [meeting('lab-a', 4, 840, 920, ('2026-08-01', '2026-12-01')), meeting('lab-b', 4, 930, 1010, ('2026-08-01', '2026-12-01'))]
         snapshot = hand_snapshot(('ZZ 100', 'choose_one', options),
@@ -159,6 +181,19 @@ class MeetingClashTests(unittest.TestCase):
         self.assertIn('OFFERING_SECTION_REQUIRED', [i['code'] for i in ambiguous['issues']])
         self.assertEqual(check_meetings([item('n', 'CS 331', offering_id=twin['id'] + '#v2')], variants)['per_item']['n'], 'clear')
 
+    def test_cp24_stale_offering_variant_is_an_error_not_missing_meetings(self):
+        stale = f'{TERM}:CS331#withdrawn'
+        result = check_meetings([item('n', 'CS 331', offering_id=stale)], reviewed(adapter_snapshot()))
+        self.assertEqual(result['per_item']['n'], 'not_checked')
+        self.assertEqual([(i['code'], i['severity'], i['entity_refs']) for i in result['issues']],
+                         [('OFFERING_VARIANT_UNKNOWN', 'error', ['n', stale])])
+
+    def test_cp24_conflict_ids_stay_unique_when_a_course_is_planned_twice(self):
+        result = check_meetings([item('p1', 'PH 202'), item('p2', 'PH 202'), item('e', 'ES 667')], reviewed(adapter_snapshot()))
+        # p1/p2 share B1, B2 and H2; each copy also meets ES 667 in B1 and B2.
+        self.assertEqual(len(result['conflicts']), 7)
+        self.assertEqual(len({c['id'] for c in result['conflicts']}), 7)
+
     def test_cp24_duplicated_source_meetings_do_not_double_conflicts(self):
         snapshot = reviewed(adapter_snapshot(ROWS + [course_row('ES 667', 'Synthetic Deep Learning', 4, 'B1, B2')]))
         self.assertEqual(len([o for o in snapshot['offerings'] if o['code'] == 'ES 667']), 1)
@@ -195,6 +230,22 @@ class PlanValidationWithSnapshotTests(unittest.TestCase):
         result = validate_plan({}, plan)
         self.assertEqual(result['meeting_check_status'], 'not_checked')
         self.assertEqual(result['per_course'][0]['offering_status'], 'unknown')
+
+    def test_cp24_empty_term_is_not_checked_with_or_without_a_snapshot(self):
+        # Nothing selected means nothing was compared, so an empty term never reads as clear.
+        snapshot = reviewed(adapter_snapshot())
+        self.assertEqual(check_meetings([], None)['status'], 'not_checked')
+        self.assertEqual(check_meetings([], snapshot)['status'], 'not_checked')
+        empty = validate_plan({}, {'semesters': [{'term_id': '2027-28-I', 'courses': [], 'placeholders': []}]})
+        self.assertEqual((empty['meeting_checks']['2027-28-I']['status'], empty['meeting_check_status']), ('not_checked', 'not_checked'))
+        plan = {'semesters': [{'term_id': TERM, 'courses': [item('p', 'PH 202'), item('s', 'CS 329')]},
+                              {'term_id': '2027-28-I', 'courses': [], 'placeholders': []}]}
+        result = validate_plan({}, plan, snapshot)
+        self.assertEqual(result['meeting_checks'][TERM]['status'], 'clear')
+        self.assertEqual((result['meeting_checks']['2027-28-I']['status'], result['meeting_check_status']), ('not_checked', 'not_checked'))
+        # A placeholder beside clash-free courses is still an unchecked selection.
+        plan['semesters'][0]['placeholders'] = [{'id': 'ph', 'requirement_id': 'r', 'desired_credits': '4'}]
+        self.assertEqual(validate_plan({}, plan, snapshot)['meeting_checks'][TERM]['status'], 'not_checked')
 
 
 if __name__ == '__main__':
