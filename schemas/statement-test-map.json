@@ -494,13 +494,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no snapshot is \"Not checked\", never clear (CP-23/24)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"Not checked\" with the server's reasons, never a green check, and the snapshot label, date, review and coverage",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a future term with no snapshot is \"Not checked\" and its offering unknown, never clear"
+      ]
     },
     {
       "id": "CP-24",
@@ -520,13 +526,28 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and CS 331 clash on the Wednesday H2 tutorial even though their lectures differ (CP-24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no snapshot is \"Not checked\", never clear (CP-23/24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > the planner and timetable panel fit a 390px phone"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"Not checked\" with the server's reasons, never a green check, and the snapshot label, date, review and coverage",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"No clashes found\" only when the server reports the term clear",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > marks a certain clash as an error and a possible one as a warning with the server's assumptions and source cells",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a choose-one tutorial is picked with radio buttons and saved as section_ids through the plan save path",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a stale section save gets the 409 reload/compare panel and is not retried",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a group with unstated semantics gets a clarification, not radio buttons or \"required\"",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a future term with no snapshot is \"Not checked\" and its offering unknown, never clear",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > offers the variant choice the server asks for and renders unfamiliar issue codes generically",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > an empty term says there is nothing to check rather than \"No clashes found\""
+      ]
     },
     {
       "id": "CP-25",
