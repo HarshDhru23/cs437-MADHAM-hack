@@ -214,7 +214,8 @@ class InternshipModuleTests(unittest.TestCase):
 
     def test_cp34_completed_module_without_grade_is_not_earned(self):
         verified = [{'id': 'a1', 'status': 'verified', 'covered_entities': ['m1']}]
-        for extra in [{}, {'grade': None}, {'grade': ' '}]:
+        # An unrecognised grade (I, W) is unknown, never a failure: grade_status() maps it to 'unknown'.
+        for extra in [{}, {'grade': None}, {'grade': ' '}, {'grade': 'I'}, {'grade': 'W'}]:
             result = self.evaluate([module('m1', 'hss', 'completed', approval_ref='a1', **extra)], verified)
             self.assertEqual((result['modules'][0]['status'], result['credits']['earned'], result['credits']['approved']), ('approved', '0', '4'))
             unknown = [i for i in result['issues'] if i['code'] == 'INTERNSHIP_GRADE_UNKNOWN']

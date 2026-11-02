@@ -97,15 +97,16 @@ def _modules(context, modules, issues):
             continue
         approval = approvals.get(module.get('approval_ref'))
         verified = bool(approval) and approval.get('status') == 'verified' and module_id in approval.get('covered_entities', [])
-        completed, grade = module.get('status') == 'completed', str(module.get('grade') or '').strip()
-        if completed and not grade:
-            issues.append(issue('INTERNSHIP_GRADE_UNKNOWN', 'This module is marked completed but has no grade, so its credit is not earned yet.', 'unknown',
-                                [module_id], [DECISION], 'Record the module grade.'))
-        if completed and grade and grade_status(grade) != 'completed':  # any recorded grade that is not a pass
-            issues.append(issue('INTERNSHIP_MODULE_FAILED', 'This module was completed without a passing grade, so it earns no credit.', 'warning', [module_id], [DECISION]))
+        completed = module.get('status') == 'completed'
+        outcome = grade_status(str(module.get('grade') or ''))  # a missing or unrecognised grade is 'unknown', never a fail
+        if completed and outcome == 'unknown':
+            issues.append(issue('INTERNSHIP_GRADE_UNKNOWN', 'This module is marked completed but its grade is missing or not recognised, so its credit is not earned yet.',
+                                'unknown', [module_id], [DECISION], 'Record the module grade.'))
+        if completed and outcome == 'failed':
+            issues.append(issue('INTERNSHIP_MODULE_FAILED', 'This module was completed with a failing grade, so it earns no credit.', 'warning', [module_id], [DECISION]))
             rows.append({'id': module_id, 'intended_allocation': target, 'status': 'failed', 'reasons': ['INTERNSHIP_MODULE_FAILED']})
             continue
-        status = 'earned' if verified and completed and grade else 'approved' if verified else 'proposed'
+        status = 'earned' if verified and completed and outcome == 'completed' else 'approved' if verified else 'proposed'
         rows.append({'id': module_id, 'intended_allocation': target, 'status': status, 'reasons': []})
     # Caps fill by tier, earned then approved then proposed (input order within a tier), so a proposal never pushes out credit already approved.
     on_record = f', including {decimal_string(record)} already on the record' if record else ''
