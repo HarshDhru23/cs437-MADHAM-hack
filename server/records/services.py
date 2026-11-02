@@ -7,6 +7,7 @@ from django.db.models import F
 from server.records.models import Attempt
 from coursepath.models import CourseAttempt
 from coursepath.imports.grades import grade_status
+from coursepath.imports import normalization
 from coursepath.imports.normalization import normalize_code, normalize_text
 from coursepath.imports.reconcile import FIELDS as REIMPORT_FIELDS
 from coursepath.serialization import decimal_string, decimal_value
@@ -108,7 +109,7 @@ def _restorable(row, stored, verified_approvals):
         if not isinstance(entry, dict) or 'accepted' not in entry or not isinstance(entry.get('justification'), str) or not entry['justification'].strip():
             return False
         if entry.get('field') == 'reimport' and isinstance(entry['accepted'], dict):
-            expected.update({k: v for k, v in entry['accepted'].items() if k in REIMPORT_FIELDS}, learning_designation='unknown', completion_status=_DERIVED)
+            expected.update({k: v for k, v in entry['accepted'].items() if k in REIMPORT_FIELDS}, learning_designation=normalization.IMPORTED_LEARNING_DESIGNATION, completion_status=_DERIVED)
         elif isinstance(entry.get('field'), str) and entry['field'] in EDITABLE_FIELDS:
             expected[entry['field']] = entry['accepted']
         else:
@@ -122,7 +123,7 @@ def _source_values(original):
     """An imported row's values before any correction, as normalization.candidate builds them. A manual row has none."""
     if not isinstance(original, dict):
         return {}
-    expected = {'learning_designation': 'unknown', 'instance_id': None, 'completion_status': _DERIVED}
+    expected = {'learning_designation': normalization.IMPORTED_LEARNING_DESIGNATION, 'instance_id': None, 'completion_status': _DERIVED}
     for field, key in [('original_code', 'code'), ('normalized_code', 'code'), ('title', 'title'), ('credits', 'credits'), ('grade', 'grade')]:
         if key in original:
             expected[field] = original[key]

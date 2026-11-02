@@ -72,6 +72,20 @@ class ExportRestoreTests(AccountAPIMixin, TestCase):
         foreign = self.export(other).json()['data']
         self.assertEqual((foreign['record']['attempts'], foreign['plans'], foreign['scenarios']), ([], [], []))
 
+    def test_cp30_unedited_backup_restores_whatever_designation_imports_assign(self):
+        # The restore check must expect the designation imports actually give (D-21 may change it), not a copy of today's value.
+        with mock.patch('coursepath.imports.normalization.IMPORTED_LEARNING_DESIGNATION', 'degree'):
+            client = Client()
+            self.signup(client, 'designation-owner')
+            preview = self.request(client, 'post', '/imports/preview', {'kind': 'ims', 'text': TABLE, 'expected_revision': 0}).json()['data']
+            committed = self.request(client, 'post', f"/imports/{preview['id']}/commit",
+                                     {'expected_revision': 0, 'accepted_candidate_ids': [a['id'] for a in preview['candidate_attempts']], 'resolutions': {}})
+            self.assertEqual({a['learning_designation'] for a in committed.json()['data']['attempts']}, {'degree'})
+            backup = self.export(client).json()
+            self.assertEqual(self.request(client, 'patch', '/record', {'expected_revision': 1, 'attempts': []}).status_code, 200)
+            restored = self.request(client, 'post', '/imports/backup-preview', {'expected_revision': 2, 'backup': backup})
+            self.assertEqual(restored.status_code, 201, restored.content)
+
     def test_cp30_restore_previews_diff_then_commits_only_on_confirmation(self):
         backup = self.export().json()
         cleared = self.request(self.client, 'patch', '/record', {'expected_revision': 1, 'attempts': []})
