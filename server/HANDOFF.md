@@ -100,9 +100,9 @@ and the CSE honours list exist (GAP-07).
   `examples/internship-comparison.json` and `/scenarios/compare`; section
   choice and clash panel from `meeting_checks`; print view; data-deletion page
   with the retention text; "recommended preparation (CoursePath team)" wording.
-  The record page cannot set `learning_designation`, and imported rows default
-  to `unknown`, which the audit excludes; this needs a team decision before the
-  demo.
+  D-21 makes imported, current, planned and hypothetical rows degree learning
+  by default (#18); the record editor's manual rows still default to `unknown`
+  (`RecordPage.tsx`, Aaryan's follow-up from the #18 review).
 - Manashree: a reviewed 2026-27 Semester I snapshot (`build_timetable.py`, then
   `load_offerings --reviewed --coverage ...`), lab alternative semantics
   (AMB-12), quad dates (AMB-13) and the 2026-27 calendar (GAP-03). GAP-08 can

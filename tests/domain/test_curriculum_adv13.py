@@ -9,10 +9,16 @@ BS elective 4 + CSE core 36 + electives 26 + open electives 16 + open project 4
 """
 from copy import deepcopy
 from decimal import Decimal
+import json
+from pathlib import Path
 import time
 import unittest
 from coursepath.degree_audit import evaluate_audit
+from coursepath.identity import identity_map
+from coursepath.performance import calculate_performance
 from coursepath.rules.loader import load_curriculum
+
+GRADING = json.loads((Path(__file__).resolve().parents[2] / 'data/grading/reported-v1.json').read_text())
 
 TERMS = ['2024-25-I', '2024-25-II', '2025-26-I', '2025-26-II', '2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II']
 PATH = [  # (semester index, code, credits, grade)
@@ -51,6 +57,19 @@ def nodes(tree, result=None):
 
 def audit(rows=PATH):
     return evaluate_audit(load_curriculum(), {}, record(rows))
+
+
+def performance(attempts):
+    return calculate_performance(attempts, GRADING, identity_map(load_curriculum().get('identity_groups')))
+
+
+def credited_and_cpi(attempts, code):
+    """The attempt IDs of `code` that earn credit in the audit, and those that enter CPI."""
+    result = evaluate_audit(load_curriculum(), {}, {'revision': 1, 'attempts': attempts, 'current_enrolment': []})
+    cumulative = performance(attempts)['cumulative']
+    ids = {a['id'] for a in attempts if a['normalized_code'].startswith(code)}
+    return (sorted(a['attempt_id'] for a in result['ledger'] if a['attempt_id'] in ids),
+            sorted(c['attempt_id'] for c in cumulative['contributing_attempts'] if c['attempt_id'] in ids), result, cumulative)
 
 
 class Adv13CurriculumTests(unittest.TestCase):
@@ -129,6 +148,36 @@ class Adv13CurriculumTests(unittest.TestCase):
         uses = [a for a in result['ledger'] if 'CS 201' in a['attempt_id']]
         self.assertEqual([a['attempt_id'] for a in uses], [f'a{len(PATH)}-CS 201'])
         self.assertIn({'attempt_id': next(f'a{i:02d}-CS 201' for i, r in enumerate(rows) if r[1] == 'CS 201'), 'reason': 'SUPERSEDED_REPEAT'}, result['excluded_attempts'])
+
+    def test_cp15_credit_and_cpi_supersede_the_same_failed_attempt(self):
+        # D-15 with D-11: CS 432 failed, then passed with P. The P earns the credit, so the failed attempt is superseded in CPI
+        # too, and a P never enters CPI: nothing from CS 432 is in CPI. E is a fail even though it carries 2 points.
+        for failing in ('F', 'E'):
+            rows = [r for r in PATH if r[1] != 'CS 432'] + [(4, 'CS 432', '4', failing), (5, 'CS 432', '4', 'P')]
+            attempts = record(rows)['attempts']
+            failed, passed = (a['id'] for a in attempts if a['normalized_code'] == 'CS 432')
+            credited, in_cpi, _, cumulative = credited_and_cpi(attempts, 'CS 432')
+            self.assertEqual((credited, in_cpi), ([passed], []), failing)
+            self.assertIn({'attempt_id': failed, 'reason': 'SUPERSEDED_REPEAT'}, cumulative['excluded_attempts'])
+
+    def test_cp15_same_course_variants_are_chosen_by_rule_not_attempt_id(self):
+        # D-02/D-04/D-15: old ES 242 (3 credits) and ES 242(N) (4 credits), both A in one term. Whatever the attempt IDs,
+        # the 4-credit attempt is the one counted, in credit and CPI alike, so DSA I is satisfied and the anchor stays complete.
+        base = record([r for r in PATH if r[1] != 'ES 242'])['attempts']
+        for old_id, new_id in [('a90-x', 'a91-y'), ('a91-y', 'a90-x')]:
+            attempts = base + [{**row(0, 2, 'ES 242', '3', 'A'), 'id': old_id}, {**row(0, 2, 'ES 242(N)', '4', 'A'), 'id': new_id}]
+            credited, in_cpi, result, _ = credited_and_cpi(attempts, 'ES 242')
+            self.assertEqual((credited, in_cpi), ([new_id], [new_id]), old_id)
+            self.assertEqual(nodes(result['actual'])['dsa']['status'], 'satisfied')
+            self.assertTrue(result['complete'])
+
+    def test_cp15_in498_modules_are_separate_courses_for_cpi_too(self):
+        # D-15 exception for IN 498 modules (p. 3 A.12), as in the allocation: both letter-graded modules enter CPI.
+        rows = [r for r in PATH if r[1] not in {'ME 210', 'CE 301'}] + [(6, 'IN 498', '4', 'A'), (6, 'IN 498', '4', 'B')]
+        attempts = record(rows)['attempts']
+        credited, in_cpi, _, _ = credited_and_cpi(attempts, 'IN 498')
+        modules = sorted(a['id'] for a in attempts if a['normalized_code'] == 'IN 498')
+        self.assertEqual((credited, in_cpi), (modules, modules))
 
     def test_cp17_surplus_is_reported_and_courses_are_never_split(self):
         # D-07: a 4-credit course in place of the 2-credit CS 451 puts general electives at 12 of 10.
