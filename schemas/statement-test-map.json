@@ -631,13 +631,26 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > download a backup: own username, attempts and plan, no password (CP-30)",
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > restore from the downloaded backup: the server diff, an explicit confirmation, the record is back (CP-30)",
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > the printable report shows rules, the three views, semesters and its limits (CP-30)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/account/yourData.test.tsx::AccountPage backup and restore (A11, CP-30) > downloads the backup as a dated JSON file holding the server envelope, with no password",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage backup and restore (A11, CP-30) > rejects a file that is not valid JSON without sending anything",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage backup and restore (A11, CP-30) > shows the server diff, then restores only after the explicit confirmation and reloads the record",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage backup and restore (A11, CP-30) > a 409 on commit shows the conflict panel and is never retried automatically",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage backup and restore (A11, CP-30) > a 422 shows the server issue and says the record was not changed",
+        "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > renders the printable report from the server analysis of the saved plan",
+        "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > lists counted courses from the server ledger without adding anything up",
+        "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > lists the chosen scenario's assumptions and prints on request"
+      ]
     },
     {
       "id": "CP-31",
@@ -670,18 +683,27 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
-        "e2e/tests/student-flow.spec.ts::student flow > another account cannot see the first account's plan; sign-out clears personal state (CP-32 foundation)"
+        "e2e/tests/student-flow.spec.ts::student flow > another account cannot see the first account's plan; sign-out clears personal state (CP-32 foundation)",
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting with a wrong password deletes nothing; the right password empties the record (CP-32)",
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting the account signs out and returns to the public requirements (CP-32)",
+        "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > another account never sees the first account's data or restores its backup (CP-32)"
       ],
       "frontend_tests": [
-        "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it"
+        "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > explains what is removed and quotes the documented retention",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > needs the typed phrase, then a wrong password is refused and nothing is claimed deleted",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a %i %s refusal shows the server issue and claims nothing",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting data shows the server counts and retention, and reloads the empty record",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting the account clears personal state and goes to the public home page",
+        "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > a plan that is missing or belongs to someone else shows not found, not data"
       ],
-      "release_evidence_note": "Account isolation and sign-out foundation only; export and deletion are November scope (A11/H14)."
+      "release_evidence_note": "Browser flow covers isolation, own export, deletion with re-authentication and account deletion (A11); human review and merge are still pending."
     },
     {
       "id": "CP-33",

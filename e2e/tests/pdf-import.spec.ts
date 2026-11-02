@@ -1,10 +1,23 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { SYNTHETIC_PDF } from '../global-setup';
 import { signup, uniqueUser } from './helpers';
 
 // Flow 3 (CP-06/11/12): supported-layout synthetic PDF -> all semester rows ->
-// source totals -> re-import without duplicates.
-test('PDF import shows every semester and source totals; re-import is idempotent', async ({ page }) => {
+// source totals -> re-import without duplicates. Both tests share one account,
+// so the unreadable file is tried against a saved record (and the suite stays
+// inside the 10-account-actions throttle).
+test.describe.configure({ mode: 'serial' });
+let page: Page;
+
+test.beforeAll(async ({ browser }: { browser: Browser }) => {
+  page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+});
+
+test.afterAll(async () => {
+  await page.context().close();
+});
+
+test('PDF import shows every semester and source totals; re-import is idempotent', async () => {
   await signup(page, uniqueUser('e2e_pdf'));
   await page.getByRole('tab', { name: 'Upload transcript PDF' }).click();
   await page.getByLabel('Choose transcript PDF').setInputFiles(SYNTHETIC_PDF);
@@ -37,11 +50,13 @@ test('PDF import shows every semester and source totals; re-import is idempotent
   await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ES 242(N)', { exact: true })).toHaveCount(4);
 });
 
-test('an unreadable file keeps the prior record and offers alternatives (CP-09)', async ({ page }) => {
-  await signup(page, uniqueUser('e2e_bad'));
+test('an unreadable file keeps the prior record and offers alternatives (CP-09)', async () => {
+  await page.goto('/record/import');
   await page.getByLabel('Choose transcript PDF').setInputFiles({ name: 'not-really.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
   await page.getByRole('button', { name: 'Parse transcript' }).click();
   const alert = page.getByRole('alert').filter({ hasText: 'Your saved record was not changed' });
   await expect(alert).toBeVisible();
   await expect(alert.getByRole('button', { name: 'Paste IMS grades instead' })).toBeVisible();
+  await page.goto('/record');
+  await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ES 242(N)', { exact: true })).toHaveCount(4);
 });
