@@ -15,9 +15,9 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from coursepath.issues import issue
 from coursepath.serialization import plain
-from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview
-from coursepath.validation import plan_payload, current_enrolment
-from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows
+from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
+from coursepath.validation import plan_payload, current_enrolment, scenario_payload
+from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario
 
 
 def response(data=None, issues=(), status=200):
@@ -300,8 +300,7 @@ def analysis(request):
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, plan.payload if plan else None, awards=awards)
-    policy = json.loads((Path(__file__).resolve().parents[2] / 'data/grading/reported-v1.json').read_text())
-    performance = calculate_performance(record['attempts'], policy)
+    performance = calculate_performance(record['attempts'], _grading_policy())
     performance['source_reported_controls'] = stored.reported_controls
     data = {'audit': audit, 'performance': performance, 'validation': _validate_owned_plan(request.user, plan) if plan else None,
             'record_revision': stored.revision, 'plan_revision': plan.revision if plan else None, 'rule_version': rules['version']}
@@ -317,3 +316,104 @@ def plan_validate(request, plan_id):
     if request.payload.get('record_revision') != record.revision:
         raise RevisionConflict(record.revision)
     return response(_validate_owned_plan(request.user, plan))
+
+
+def _grading_policy():
+    return json.loads((Path(__file__).resolve().parents[2] / 'data/grading/reported-v1.json').read_text())
+
+
+def _engine_context(user, stored):
+    """Server-side inputs for scenario evaluation. Approvals are staff-verified evidence only; no calendar is committed (GAP-03)."""
+    approvals = [{'id': str(a.pk), 'status': a.status, 'covered_entities': a.covered_entities}
+                 for a in ApprovalEvidence.objects.filter(owner=user, status='verified')]
+    return {'curriculum': _curriculum_for(stored), 'catalogue': {}, 'grading_policy': _grading_policy(), 'approvals': approvals,
+            'standing': stored.profile.get('standing', 'unknown'), 'advisor_cap': stored.profile.get('advisor_cap'),
+            'offering_snapshots': list(_offering_snapshots().values()), 'calendar': None}
+
+
+def _baseline(stored, plan):
+    return {'record': record_data(stored), 'plan': {'id': str(plan.pk), 'revision': plan.revision, **plan.payload},
+            'rule_version': _curriculum_for(stored)['version']}
+
+
+def _checked_changes(plan, payload):
+    from coursepath.scenarios import apply_changes
+    apply_changes({'semesters': plan.payload.get('semesters', [])}, payload.get('changes', []))
+    return payload
+
+
+@endpoint({'GET', 'POST'})
+def scenarios(request):
+    if request.method == 'GET':
+        return response({'scenarios': [scenario_data(s) for s in Scenario.objects.filter(owner=request.user).order_by('id')]})
+    payload = scenario_payload(request.payload)
+    plan = get_object_or_404(AcademicPlan, pk=request.payload.get('plan_id'), owner=request.user)
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    payload = _checked_changes(plan, {k: v for k, v in payload.items() if k in {'label', 'changes', 'internship', 'award_ids'}})
+    scenario = Scenario.objects.create(owner=request.user, plan=plan, baseline_record_revision=stored.revision, baseline_plan_revision=plan.revision,
+                                       rule_version=_curriculum_for(stored)['version'], payload=payload)
+    return response(scenario_data(scenario), status=201)
+
+
+@endpoint({'GET', 'PATCH', 'DELETE'})
+def scenario_detail(request, scenario_id):
+    scenario = get_object_or_404(Scenario, pk=scenario_id, owner=request.user)
+    if request.method == 'GET':
+        return response(scenario_data(scenario))
+    expected = expected_revision(request.payload)
+    if request.method == 'DELETE':
+        if not Scenario.objects.filter(pk=scenario.pk, owner=request.user, revision=expected).delete()[0]:
+            raise RevisionConflict(Scenario.objects.get(pk=scenario.pk).revision)
+        return response()
+    changes = scenario_payload(request.payload)
+    if 'plan_id' in request.payload and request.payload['plan_id'] != str(scenario.plan_id):
+        raise ValueError('A scenario keeps its plan; create a new scenario instead')
+    payload = _checked_changes(scenario.plan, {**scenario.payload, **{k: v for k, v in changes.items() if k in {'label', 'changes', 'internship', 'award_ids'}}})
+    baseline = None
+    if request.payload.get('rebase') is True:
+        stored = get_object_or_404(AcademicRecord, owner=request.user)
+        baseline = {'baseline_record_revision': stored.revision, 'baseline_plan_revision': scenario.plan.revision, 'rule_version': _curriculum_for(stored)['version']}
+    return response(update_scenario(scenario, expected, payload, baseline))
+
+
+@endpoint({'POST'})
+def scenarios_compare(request):
+    from coursepath.internships import compare_internships
+    from coursepath.scenarios import compare_scenario
+    ids = request.payload.get('scenario_ids')
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 6 or len(set(ids)) != len(ids):
+        raise ValueError('Compare one to six distinct scenarios')
+    chosen = [get_object_or_404(Scenario, pk=i, owner=request.user) for i in ids]
+    if len({s.plan_id for s in chosen}) != 1:
+        raise ValueError('Compared scenarios must share one baseline plan')
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    context, baseline = _engine_context(request.user, stored), _baseline(stored, chosen[0].plan)
+    comparisons = [compare_scenario(context, baseline, scenario_data(s)) for s in chosen]
+    current = [s for s, c in zip(chosen, comparisons) if not c['stale'] and s.payload.get('internship')]
+    planning = {'attempts': baseline['record']['attempts'], 'current_enrolment': baseline['record']['current_enrolment'], 'catalogue': context['catalogue'],
+                'approvals': context['approvals'], 'record_revision': stored.revision}
+    table = compare_internships(planning, baseline['plan'], context['calendar'], [s.payload['internship'] for s in current])
+    cases = [{**case, 'scenario_id': str(s.pk)} for s, case in zip(current, table['cases'])]
+    issues, seen = [], set()
+    for found in [i for c in comparisons for i in c['issues'] + (c['scenario']['issues'] if c['scenario'] else [])] + [i for c in cases for i in c['issues']]:
+        key = (found['code'], tuple(found['entity_refs']))
+        if key not in seen:
+            seen.add(key)
+            issues.append(found)
+    return response({'comparisons': comparisons, 'internship_cases': cases}, issues)
+
+
+@endpoint({'POST'})
+@transaction.atomic
+def scenario_apply(request, scenario_id):
+    from coursepath.scenarios import plan_edits
+    scenario = get_object_or_404(Scenario, pk=scenario_id, owner=request.user)
+    plan = AcademicPlan.objects.select_for_update().get(pk=scenario.plan_id, owner=request.user)
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    expected = request.payload.get('expected_plan_revision')
+    current = (stored.revision, plan.revision, _curriculum_for(stored)['version'])
+    if type(expected) is not int or expected != plan.revision or current != (scenario.baseline_record_revision, scenario.baseline_plan_revision, scenario.rule_version):
+        raise RevisionConflict(plan.revision)
+    edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
+    result = update_plan(plan, expected, plan_payload(edited))
+    return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
