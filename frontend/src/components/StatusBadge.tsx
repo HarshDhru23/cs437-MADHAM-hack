@@ -44,6 +44,36 @@ export function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
+/** A rule that rests on a CoursePath TEAM decision (docs/academic-decisions.md), labelled as such to students. */
+export function DecisionBadge({ decision }: { decision: string }) {
+  return (
+    <Badge tone="neutral" symbol="⚖">
+      CoursePath team decision {decision}
+    </Badge>
+  );
+}
+
+/**
+ * Recommended preparation (D-17): a CoursePath team recommendation that never blocks a plan,
+ * so a missing preparation is a warning, never a red "not eligible".
+ */
+export function PreparationBadge({ value }: { value: string | null | undefined }) {
+  const map: Record<string, { tone: Tone; symbol: string; label: string }> = {
+    eligible: { tone: 'success', symbol: '✓', label: 'Preparation met' },
+    ineligible: { tone: 'warning', symbol: '!', label: 'Recommended preparation missing' },
+    conditional: { tone: 'scenario', symbol: '◐', label: 'Planned earlier, must pass' },
+    unknown: { tone: 'unknown', symbol: '?', label: 'No recommendation recorded' },
+    not_checked: { tone: 'unknown', symbol: '?', label: 'Not checked' },
+  };
+  const v = value ?? 'not_checked';
+  const meta = map[v] ?? { tone: 'unknown' as Tone, symbol: '?', label: v };
+  return (
+    <Badge tone={meta.tone} symbol={meta.symbol}>
+      {meta.label}
+    </Badge>
+  );
+}
+
 /** Generic evidence status (eligibility/offering/meeting check) without implying success. */
 export function EvidenceBadge({ value }: { value: string | null | undefined }) {
   const v = value ?? 'unknown';

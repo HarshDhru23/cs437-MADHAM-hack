@@ -10,6 +10,7 @@ import { IssueList } from './IssueList';
 import { SaveStatusIndicator } from './SaveStatusIndicator';
 import { SourcePanel } from './SourcePanel';
 import { StatePanel } from './StatePanel';
+import { PreparationBadge } from './StatusBadge';
 import { RequirementStatusBadge, SeverityBadge } from './StatusBadge';
 import { Tabs } from './Tabs';
 import { CoursePicker } from './CoursePicker';
@@ -53,7 +54,7 @@ describe('status badges', () => {
 
 describe('IssueList', () => {
   it('groups issues by severity with code, message and suggested action', () => {
-    render(<IssueList issues={[issue('LOAD_GUIDANCE', 'warning'), issue('PREREQUISITE_MISSING', 'error'), issue('OFFERING_UNKNOWN', 'unknown')]} />);
+    render(<IssueList issues={[issue('DUPLICATE_COURSE', 'error'), issue('PREREQUISITE_MISSING', 'warning'), issue('OFFERING_UNKNOWN', 'unknown')]} />);
     const groups = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(groups).toEqual(['Errors (1)', 'Warnings (1)', 'Unknown (1)']);
     expect(screen.getByText('PREREQUISITE_MISSING message')).toBeInTheDocument();
@@ -62,7 +63,7 @@ describe('IssueList', () => {
 
   it('lets the student select an issue to highlight affected items', async () => {
     const onSelect = vi.fn();
-    render(<IssueList issues={[issue('PREREQUISITE_MISSING', 'error', ['item-1'])]} onSelect={onSelect} />);
+    render(<IssueList issues={[issue('PREREQUISITE_MISSING', 'warning', ['item-1'])]} onSelect={onSelect} />);
     await userEvent.click(screen.getByRole('button', { name: /Show affected items/ }));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ code: 'PREREQUISITE_MISSING', entity_refs: ['item-1'] }));
   });
@@ -221,5 +222,20 @@ describe('CoursePicker', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add course' }));
     expect(onPick).not.toHaveBeenCalled();
     expect(screen.getByText(/Enter credits as a number/)).toBeInTheDocument();
+  });
+});
+
+describe('PreparationBadge (D-17 recommended preparation)', () => {
+  it('shows missing preparation as a warning, never a red "not eligible"', () => {
+    const { container } = render(<PreparationBadge value="ineligible" />);
+    expect(screen.getByText('Recommended preparation missing')).toBeInTheDocument();
+    expect(container.querySelector('.badge-warning')).not.toBeNull();
+    expect(container.querySelector('.badge-danger')).toBeNull();
+    expect(container).not.toHaveTextContent(/not eligible|✕/i);
+  });
+
+  it('keeps an unlisted course unknown, not "none needed"', () => {
+    render(<PreparationBadge value="unknown" />);
+    expect(screen.getByText('No recommendation recorded')).toBeInTheDocument();
   });
 });
