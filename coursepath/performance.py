@@ -3,6 +3,7 @@ import re
 from coursepath.identity import canonical_code
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN, localcontext
 from coursepath.models import term_key
+from coursepath.repeats import superseded_attempts
 from coursepath.serialization import decimal_value, decimal_string
 from coursepath.issues import issue
 
@@ -18,17 +19,10 @@ def calculate_performance(attempts, grading_policy, identity=None):
         issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeated registrations/retakes need an applicable inclusion policy.'))
     superseded = set()
     if grading_policy.get('repeat_policy') == 'best_grade':
-        # D-15: only the best graded attempt of a course enters CPI; projects are separate courses (D-01).
-        graded = {}
-        for attempt in rows:
-            code = canonical_code(attempt['normalized_code'], identity)
-            grade = attempt.get('grade', '').strip().upper()
-            if grade not in points or any(re.search(p, code) for p in grading_policy.get('separate_course_patterns', [])):
-                continue
-            graded.setdefault(code, []).append(((points[grade], term_key(attempt['term_id']), attempt['id']), attempt['id']))
-        for items in graded.values():
-            keep = max(items)[1]
-            superseded |= {attempt_id for _, attempt_id in items if attempt_id != keep}
+        # D-15: only the attempt that earns the credit enters CPI, ranked exactly as the allocation ranks it, so a P that
+        # supersedes an F leaves nothing in CPI (D-11). Projects and IN 498 modules are separate courses (D-01, A.12).
+        patterns = grading_policy.get('separate_course_patterns', [])
+        superseded = superseded_attempts(rows, identity, lambda _, code: any(re.search(p, code) for p in patterns))
     rounding = {'half_up': ROUND_HALF_UP, 'half_even': ROUND_HALF_EVEN}.get(grading_policy.get('rounding'))
     if rounding is None:
         issues.append(issue('ROUNDING_POLICY_UNKNOWN', 'No official display rounding policy supplied; display value unavailable.'))

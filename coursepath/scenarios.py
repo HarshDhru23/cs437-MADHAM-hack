@@ -77,7 +77,7 @@ def apply_changes(plan, changes, ops=OPS):
                 grade = 'F' if op == 'fail' else change['grade'].upper()
                 hypothetical.append({'id': 'hypothetical:' + course['id'], 'normalized_code': course['normalized_code'], 'credits': course['credits'],
                                      'grade': grade, 'term_id': semester['term_id'], 'completion_status': grade_status(grade),
-                                     'learning_designation': course.get('learning_designation', 'unknown'), 'hypothetical': True})
+                                     'learning_designation': course.get('learning_designation', 'degree'), 'hypothetical': True})  # D-21
     return plan, caps, hypothetical, skipped
 
 

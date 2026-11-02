@@ -337,6 +337,9 @@
         "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_repeated_course_counts_its_best_grade_once",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_credit_and_cpi_supersede_the_same_failed_attempt",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_same_course_variants_are_chosen_by_rule_not_attempt_id",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_in498_modules_are_separate_courses_for_cpi_too",
         "tests.domain.test_performance.BestGradeRepeatTests.test_cp15_repeat_keeps_best_grade_and_projects_stay_separate"
       ],
       "implementation_scope": "backend_evidence",
@@ -600,6 +603,7 @@
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_postpone_replace_and_cap_rerun_the_same_checks",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_attempt_of_an_undesignated_planned_row_is_degree_learning",
         "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply"
