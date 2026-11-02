@@ -1,19 +1,21 @@
 # Harsh — November 3 block handoff
 
-Prepared 31 October 2026 (IST) as stacked local branches from `origin/main`
-`ece371c`. Nothing here has been pushed, reviewed or merged yet. Only committed
-repository files were used as sources.
+Prepared 31 October 2026 (IST) as stacked branches from `origin/main`
+`ece371c`, then opened as stacked PRs #10 to #18 (#10 is merged; the rest are
+in review and merge in order). Only committed repository files were used as
+sources.
 
-| Branch (stacked in this order) | Task | Statements |
-| --- | --- | --- |
-| `feature/harsh-h11-offerings-clashes` | H11 offerings and clashes | CP-23, CP-24 |
-| `feature/harsh-h12-internships` | H12 internships and IN 498 modules | CP-33, CP-34 |
-| `feature/harsh-h13-scenarios` | H13 scenarios, compare, plan apply | CP-28 (and the CP-33/34 API) |
-| `feature/harsh-h13-export` | H13 export and restore | CP-30 |
-| `feature/harsh-h14-privacy` | H14 deletion, preview purge, production check | CP-32 |
-| `feature/harsh-d04-course-identity` | D-01 to D-04 identity groups | CP-13, CP-17, CP-19, CP-22 |
-| `feature/harsh-d17-recommended-prerequisites` | `[contract]` D-17 recommended preparation | CP-05, CP-22 |
-| `feature/harsh-h15-nov3-integration` | H15 SPEC status and this note | none |
+| Branch (stacked in this order) | PR | Task | Statements |
+| --- | --- | --- | --- |
+| `feature/harsh-h11-offerings-clashes` | #10 (merged) | H11 offerings and clashes | CP-23, CP-24 |
+| `feature/harsh-h12-internships` | #11 | H12 internships and IN 498 modules | CP-33, CP-34 |
+| `feature/harsh-h13-scenarios` | #12 | H13 scenarios, compare, plan apply | CP-28 (and the CP-33/34 API) |
+| `feature/harsh-h13-export` | #13 | H13 export and restore | CP-30 |
+| `feature/harsh-h14-privacy` | #14 | H14 deletion, preview purge, production check | CP-32 |
+| `feature/harsh-d04-course-identity` | #15 | D-01 to D-04 identity groups | CP-13, CP-17, CP-19, CP-22 |
+| `feature/harsh-d17-recommended-prerequisites` | #16 | `[contract]` D-17 recommended preparation | CP-05, CP-22 |
+| `feature/harsh-h15-nov3-integration` | #17 | H15 SPEC status and this note | none |
+| `feature/harsh-h06-adv13-curriculum` | #18 | H06 reviewed ADV13 curriculum | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
 
 H10 (CP-25 to CP-27) is not started: D-18 defers it until the AI minor document
 and the CSE honours list exist (GAP-07).
