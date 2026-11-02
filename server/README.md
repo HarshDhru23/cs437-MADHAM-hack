@@ -90,8 +90,9 @@ and `meeting_check_status`; `meeting_checks[term]` lists each clash with both
 meeting IDs, planned item IDs and source cells. A clash is `certain: false`
 (severity warning) when a meeting's active dates are not stated or it belongs to
 an alternative/unstated group. Pick a meeting with `section_ids` (snapshot meeting
-IDs) and a source variant with `offering_id`. Terms without a snapshot, unresolved
-slots and placeholder-only selections are `not_checked`, never `clear`. No future
+IDs) and a source variant with `offering_id`; an `offering_id` missing from the
+snapshot is an `OFFERING_VARIANT_UNKNOWN` error. Terms without a snapshot, empty
+terms, unresolved slots and placeholder selections are `not_checked`, never `clear`. No future
 timetable is inferred, and an offering's credits never overwrite earned history.
 
 Import correction shape, keyed by candidate ID:
@@ -132,7 +133,10 @@ Basket membership never falls back to code prefixes. PE/viva policy is unresolve
 `load_offerings snapshot.json --reviewed|--draft [--coverage complete|partial|unknown]`
 stores a snapshot produced by `scripts/build_timetable.py` after the adapter's
 structural check. One of `--reviewed` (staff checked it against the workbook) or
-`--draft` is required; a stored version is never overwritten.
+`--draft` is required; a stored version is never overwritten. The version ID is a
+SHA-256 of the stored snapshot's content, so a corrected snapshot of the same
+workbook is a new version while reloading an identical one is refused. The term
+ID must be a valid academic term.
 
 For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 `COURSEPATH_ALLOWED_HOSTS` (comma separated), and `COURSEPATH_DB_NAME`,
