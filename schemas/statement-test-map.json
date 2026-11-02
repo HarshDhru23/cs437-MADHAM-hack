@@ -601,13 +601,28 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > a scenario with a drop and a hypothetical grade is compared against the baseline (CP-28)",
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > apply writes only plan edits and leaves the accepted record unchanged (CP-28)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenariosPage (A09, CP-28) > lists scenarios and creates a named clone of the chosen plan",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows the hypothetical banner with baseline revisions and a return-to-baseline action",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > adds typed changes, lists them exactly and saves them with the expected revision",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows the conflict panel on a 409 save and never retries automatically",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > marks a stale baseline and rebases only when asked, with rebase: true",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows a re-evaluating state while the comparison is out of date",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > apply lists exactly the plan edits and the hypothetical changes, sends both revisions and states the record is unchanged",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale scenario revision offers reload and compare, never retrying",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale baseline offers rebase",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > deleting a scenario sends its revision and returns to the scenario list"
+      ]
     },
     {
       "id": "CP-29",
@@ -747,13 +762,21 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)",
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > converts the inclusive last day to an end-exclusive date once, and back for display",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > explains dates that differ from the chosen duration using the server values",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > asks for exact dates when the server supplies no calendar for a preset",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0"
+      ]
     },
     {
       "id": "CP-34",
@@ -775,13 +798,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > awards no credit for choosing a duration: zero from the server and an explicit statement",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > labels proposed modules \"proposed, pending approval\", never earned",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > renders an unrecognised module state and issue code generically"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."
