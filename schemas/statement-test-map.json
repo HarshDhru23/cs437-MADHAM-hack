@@ -490,7 +490,10 @@
       "tests": [
         "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_snapshot_coverage_and_review_decide_availability",
         "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_current_snapshot_never_confirms_a_later_term",
-        "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded"
+        "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_a_current_variant_outranks_a_historical_one",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_a_corrected_snapshot_from_the_same_workbook_is_stored_as_a_new_version",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_load_offerings_rejects_a_malformed_term"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -514,9 +517,14 @@
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_unknown_lab_semantics_report_possible_clash_but_clear_when_none_can_clash",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_missing_snapshot_meetings_or_variant_choice_is_not_checked",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_duplicated_source_meetings_do_not_double_conflicts",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_dated_meetings_clash_only_when_a_shared_date_falls_on_their_weekday",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_stale_offering_variant_is_an_error_not_missing_meetings",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_conflict_ids_stay_unique_when_a_course_is_planned_twice",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_validation_reports_term_checks_and_keeps_history_credits",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_without_snapshot_never_reports_clear",
-        "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot"
+        "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_empty_term_is_not_checked_with_or_without_a_snapshot",
+        "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot",
+        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
