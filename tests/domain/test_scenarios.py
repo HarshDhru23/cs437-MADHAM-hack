@@ -116,6 +116,15 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(result['baseline']['audit']['actual'], result['scenario']['audit']['actual'])
         self.assertIn('AWARD_POLICY_MISSING', [i['code'] for i in result['scenario']['issues']])
 
+    def test_cp28_hypothetical_attempt_of_an_undesignated_planned_row_is_degree_learning(self):
+        # D-21: planned rows saved through the API carry no learning_designation and count as degree learning,
+        # so their hypothetical attempts must too, instead of raising ADDITIONAL_LEARNING_POLICY_UNKNOWN.
+        base = baseline()
+        del base['plan']['semesters'][0]['courses'][0]['learning_designation']
+        result = compare_scenario(context(), base, scenario({'op': 'fail', 'item_id': 'os'}))
+        self.assertNotIn('ADDITIONAL_LEARNING_POLICY_UNKNOWN', [i['code'] for i in result['scenario']['performance']['issues']])
+        self.assertEqual(result['scenario']['performance']['cumulative']['unrounded_value'], '6')  # 72 / 12, as with a declared row
+
     def test_cp33_scenario_internship_runs_through_the_same_comparison(self):
         internship = {'id': 'i6', 'duration_choice': 'six_months', 'start_date': '2027-07-01', 'end_date_exclusive': '2028-01-01',
                       'placement_mode': 'onsite_full_time', 'modules': [module('m1', 'open_elective')]}
