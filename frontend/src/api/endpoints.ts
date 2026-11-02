@@ -86,3 +86,10 @@ export const scenarioEndpoints = {
   applyPlan: (api: ApiClient, id: string, body: ScenarioApplyRequest, o?: RequestOptions) =>
     api.send<ScenarioApplyResult>('POST', `${scenarioPath(id)}/apply-plan`, body, o),
 };
+
+// A08: public term offering snapshot (latest reviewed, else latest draft).
+import type { TermOfferingSnapshot } from './types';
+
+export const offeringEndpoints = {
+  offerings: (api: ApiClient, termId: string, o?: RequestOptions) => api.get<TermOfferingSnapshot>(`/offerings?term_id=${encodeURIComponent(termId)}`, o),
+};

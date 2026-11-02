@@ -21,6 +21,8 @@ import { newId } from '../../lib/ids';
 import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
 import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
+import type { SectionChoice } from './SectionPicker';
+import { OfferingStatusBadge, TermTimetablePanel } from './TermTimetablePanel';
 
 const DEFAULT_LAST_SEMESTER = 8;
 
@@ -190,6 +192,15 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
     setDialog(null);
   };
 
+  // A08: a section/variant choice is an ordinary plan edit (save queue, expected_revision, 409 panel).
+  const chooseSections = (term: string, itemId: string, choice: SectionChoice) => {
+    const code = plan.semesters.find((s) => s.term_id === term)?.courses.find((c) => c.id === itemId)?.normalized_code ?? 'course';
+    edit(
+      updateSemester(term, (s) => ({ ...s, courses: s.courses.map((c) => (c.id === itemId ? { ...c, offering_id: choice.offering_id, section_ids: choice.section_ids } : c)) })),
+      `Saved section choice for ${code} in ${formatTerm(term)}.`,
+    );
+  };
+
   const reloadFromServer = async () => {
     const fresh = await endpoints.plan(session.api, initial.id);
     queue.reload(planPayload(fresh.data), fresh.data.revision);
@@ -273,6 +284,9 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
               onAddCourse={() => setDialog({ kind: 'course', term: s.term_id })}
               onAddPlaceholder={() => setDialog({ kind: 'placeholder', term: s.term_id })}
               onResolve={(placeholderId) => setDialog({ kind: 'resolve', term: s.term_id, placeholderId })}
+              timetable={
+                <TermTimetablePanel semester={s} validation={stale ? null : (validation?.data ?? null)} issues={stale ? [] : issues} stale={stale} onChooseSections={(id, choice) => chooseSections(s.term_id, id, choice)} />
+              }
             />
           ))}
           <button type="button" className="btn" onClick={extend}>
@@ -378,6 +392,7 @@ function SemesterTable({
   onAddCourse,
   onAddPlaceholder,
   onResolve,
+  timetable,
 }: {
   semester: PlannedSemester;
   allTerms: string[];
@@ -394,6 +409,7 @@ function SemesterTable({
   onAddCourse: () => void;
   onAddPlaceholder: () => void;
   onResolve: (placeholderId: string) => void;
+  timetable?: React.ReactNode;
 }) {
   const headingId = useId();
   const label = formatTerm(semester.term_id);
@@ -402,6 +418,7 @@ function SemesterTable({
   const perCourse = new Map((validation?.per_course ?? []).map((p) => [p.id, p]));
   const itemIssues = (id: string) => issues.filter((i) => i.entity_refs.includes(id));
   return (
+    <>
     <section className="panel semester" aria-labelledby={headingId} data-current={isCurrent ? 'true' : undefined}>
       <div className="semester-head">
         <h2 id={headingId}>{label}</h2>
@@ -464,7 +481,7 @@ function SemesterTable({
                       <EvidenceBadge value={pc?.eligibility ?? 'not_checked'} />
                     </td>
                     <td data-label="Offering / sections">
-                      <EvidenceBadge value={pc?.offering_status ?? 'not_checked'} /> <EvidenceBadge value={pc?.meeting_check_status ?? 'not_checked'} />
+                      <OfferingStatusBadge status={pc?.offering_status} /> <EvidenceBadge value={pc?.meeting_check_status ?? 'not_checked'} />
                       {c.section_ids?.length ? <div>Sections: {c.section_ids.join(', ')}</div> : null}
                     </td>
                     <td data-label="Issues">
@@ -560,6 +577,8 @@ function SemesterTable({
         </button>
       </div>
     </section>
+    {timetable}
+    </>
   );
 }
 

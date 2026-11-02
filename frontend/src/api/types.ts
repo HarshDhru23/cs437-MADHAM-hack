@@ -630,3 +630,100 @@ export interface ScenarioConflictData {
   current_revision?: number;
   action?: string;
 }
+
+// A08: term offering snapshots, meeting groups and per-term clash checks
+// (`GET /offerings?term_id=`, plan validation `meeting_checks`). Interface
+// merging adds the server's extra validation fields without editing above.
+
+/** Snapshot cell reference, for example `{ id: 'SRC-X', locator: 'Time table!K3' }`. */
+export interface SnapshotSourceRef {
+  id: string;
+  locator?: string | null;
+}
+
+/** Times are minutes from midnight (end-exclusive); weekday 0 is Monday. */
+export interface OfferingMeeting {
+  id: string;
+  kind?: string | null;
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+  active_start_date?: string | null;
+  active_end_date?: string | null;
+  room?: string | null;
+  room_options?: string[];
+  delivery_note?: string | null;
+  original_slot?: string | null;
+  source_refs?: SnapshotSourceRef[];
+  offering_id?: string;
+  group_id?: string;
+}
+
+export interface MeetingGroup {
+  id: string;
+  kind?: string | null;
+  raw_text?: string | null;
+  /** `all_required`, `choose_one` or `unknown`; any other value is treated as unknown. */
+  selection_semantics: string;
+  section_labels?: string[];
+  notes?: string[];
+  unresolved?: string[];
+  meetings: OfferingMeeting[];
+  source_refs?: SnapshotSourceRef[];
+}
+
+export interface CourseOffering {
+  id: string;
+  term_id?: string;
+  code: string;
+  display_code?: string;
+  raw_label?: string | null;
+  suffix?: string | null;
+  title?: string | null;
+  credits?: DecimalString | null;
+  section_labels?: string[];
+  meeting_groups: MeetingGroup[];
+  availability_status?: string;
+  remarks?: string | null;
+  source_refs?: SnapshotSourceRef[];
+}
+
+export interface TermOfferingSnapshot {
+  id: string | null;
+  term_id: string;
+  coverage: 'complete' | 'partial' | 'unknown' | string;
+  review_status: 'draft' | 'reviewed' | 'conflicted' | string | null;
+  publication_status?: string | null;
+  revision_date?: string | null;
+  offerings: CourseOffering[];
+  slot_map?: Record<string, unknown>;
+  source_refs?: SourceReference[];
+}
+
+export interface MeetingConflict {
+  id: string;
+  item_ids: string[];
+  meeting_ids: string[];
+  kinds: (string | null)[];
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+  certain: boolean;
+  assumptions: string[];
+  source_refs: SnapshotSourceRef[];
+}
+
+export type MeetingCheckStatus = 'clear' | 'conflicts' | 'not_checked';
+
+export interface TermMeetingCheck {
+  status: MeetingCheckStatus;
+  conflicts: MeetingConflict[];
+}
+
+export interface PlanValidation {
+  meeting_checks?: Record<string, TermMeetingCheck>;
+}
+
+export interface PerCourseValidation {
+  offering_ids?: string[];
+}
