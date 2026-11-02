@@ -15,7 +15,7 @@
       },
       "academic_data": "reviewed_adv13",
       "browser_tests": [
-        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with draft status and sources"
+        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with review status and sources"
       ],
       "frontend_tests": [
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement grouped by basket before any history or sign-in",
