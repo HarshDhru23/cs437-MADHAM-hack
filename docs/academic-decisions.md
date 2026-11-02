@@ -140,7 +140,9 @@ Transcripts don't mark online courses either, so the student marks a course as o
 
 ## 5. Grades, CPI and viva
 
-**D-15. Repeated courses: the best grade counts** (TEAM). When a course (by D-01 identity) has several graded attempts, only the highest-grade attempt enters CPI and earns credit. The others stay on the record, marked superseded. Project and special-topics registrations are separate courses (D-01 exceptions), not repeats.
+**D-15. Repeated courses: the best grade counts** (TEAM). When a course (by D-01 identity) has several graded attempts, only the highest-grade attempt enters CPI and earns credit. The others stay on the record, marked superseded. Project and special-topics registrations, and IN 498 modules (ADV13 p. 3 A.12), are separate courses (D-01 exceptions), not repeats.
+
+Credit and CPI use the same counted attempt (2 Nov, from the #18 review): a pass beats a fail (E is a fail although it carries 2 points), then more grade points (P has none), then more credits (D-02), then the current D-04 code, then the later term. Example: CS 432 F then CS 432 P: the P earns the credit, the F is superseded, and nothing from CS 432 enters CPI (D-11). Old ES 242 (3 credits, A) and ES 242(N) (4 credits, A): the 4-credit attempt counts, whatever the record IDs.
 
 Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, E = 2, P excluded from CPI, CPI shown with a maximum of 10). An unrepeated E or F stays in CPI with its points.
 
@@ -167,7 +169,7 @@ Recorded 31 Oct 2026 by Harsh. ADV13 names these buckets for the 2024 cohort wit
 
 **D-20. Basic Science electives** (TEAM, from ADV13 pp. 2, 10). The p. 10 science basket list, plus any course coded BS, MA, PH, CH, CG or EH, except the mandatory MA 103, MA 104, MA 203 and BS 192.
 
-**D-21. Imported and planned courses are degree learning by default** (TEAM). Rows from a transcript or IMS paste, confirmed current enrolment and planned courses count as degree learning unless the student marks one as additional (honours or minor) in review.
+**D-21. Imported, current and planned courses are degree learning by default** (TEAM; scope confirmed 2 Nov after the #18 review). Rows from a transcript or IMS paste, confirmed current enrolment, planned courses and hypothetical scenario attempts made from them count as degree learning unless the student marks one as additional (honours or minor) in review. Without this default the current and projected views could not show completion until the student tagged every row.
 
 ## Still open
 
