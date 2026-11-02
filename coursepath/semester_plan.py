@@ -4,6 +4,8 @@ from coursepath.serialization import decimal_value, decimal_string
 from coursepath.models import term_key
 from coursepath.eligibility import evaluate_prerequisite
 from coursepath.issues import issue
+from coursepath.offerings import offering_availability, snapshot_for_term
+from coursepath.timetable import check_meetings
 
 
 def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
@@ -24,7 +26,7 @@ def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
 def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     catalogue = context.get('catalogue', {})
     attempts = context.get('attempts', [])
-    workload, per_course, issues = {}, [], []
+    workload, per_course, issues, meeting_checks = {}, [], [], {}
     planned = [{**c, 'normalized_code': c.get('normalized_code', c.get('course_id')), 'term_id': semester['term_id']}
                for semester in plan.get('semesters', []) for c in semester.get('courses', [])]
     seen = {}
@@ -56,11 +58,35 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
                 elif not metadata['repeatable'] or not course.get('instance_id'):
                     issues.append(issue('DUPLICATE_COURSE', 'Already completed/selected or missing repeat instance evidence.', 'error', [entity] + previous))
             seen.setdefault(code, []).append(entity)
-            issues.extend([issue('OFFERING_UNKNOWN', 'No reviewed offering check is available for this term.', entities=[entity]),
-                           issue('MEETINGS_UNKNOWN', 'Meeting check has not been performed.', entities=[entity])])
+            availability = offering_availability(offering_snapshot, term, code)
+            issues.extend(availability['issues'])
+            ids = availability['offering_ids']
+            chosen = course.get('offering_id') if course.get('offering_id') in ids else ids[0] if len(ids) == 1 and not course.get('offering_id') else None
+            if chosen:
+                offered = _offering(snapshot_for_term(offering_snapshot, term), chosen)
+                if offered.get('credits') is not None and decimal_value(offered['credits']) != decimal_value(course['credits']):
+                    issues.append(issue('OFFERING_CREDITS_DIFFER', f"The {term} offering lists {offered['credits']} credits; earned history keeps its own credits.",
+                                        'warning', [entity], [r['id'] for r in offered.get('source_refs', [])[:1]]))
             per_course.append({'id': entity, 'term_id': term, 'eligibility': eligibility['status'], 'prerequisite_proof': eligibility,
-                               'offering_status': 'unknown', 'meeting_check_status': 'not_checked'})
-    return {'workload': workload, 'per_course': per_course, 'issues': issues, 'meeting_check_status': 'not_checked', 'completion_term': None}
+                               'offering_status': availability['status'], 'offering_ids': availability['offering_ids']})
+        check = check_meetings([{**c, 'id': c.get('id', c.get('normalized_code', c.get('course_id'))), 'normalized_code': c.get('normalized_code', c.get('course_id'))}
+                                for c in semester.get('courses', [])], snapshot_for_term(offering_snapshot, term))
+        issues.extend(check['issues'])
+        status = check['status']
+        if status == 'clear' and semester.get('placeholders'):
+            status = 'not_checked'
+        meeting_checks[term] = {'status': status, 'conflicts': check['conflicts']}
+        for row in per_course:
+            if row['term_id'] == term:
+                row['meeting_check_status'] = check['per_item'][row['id']]
+    statuses = [c['status'] for c in meeting_checks.values()]
+    overall = 'conflicts' if 'conflicts' in statuses else 'clear' if statuses and set(statuses) == {'clear'} else 'not_checked'
+    return {'workload': workload, 'per_course': per_course, 'issues': issues, 'meeting_check_status': overall,
+            'meeting_checks': meeting_checks, 'completion_term': None}
+
+
+def _offering(snapshot, offering_id):
+    return next(o for o in snapshot['offerings'] if o['id'] == offering_id)
 
 
 def _load_issues(context, term, total):

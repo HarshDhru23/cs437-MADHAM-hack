@@ -56,6 +56,9 @@
           "$ref": "#/$defs/import_conflict"
         },
         {
+          "$ref": "#/$defs/offering_snapshot"
+        },
+        {
           "type": "null"
         }
       ]
@@ -549,6 +552,31 @@
               "type": "null"
             }
           ]
+        },
+        "meeting_checks": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/term_id"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "status",
+              "conflicts"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "clear",
+                  "conflicts",
+                  "not_checked"
+                ]
+              },
+              "conflicts": {
+                "type": "array"
+              }
+            }
+          }
         }
       }
     },
@@ -1032,6 +1060,201 @@
         }
       },
       "additionalProperties": false
+    },
+    "offering_snapshot": {
+      "type": "object",
+      "required": [
+        "term_id",
+        "coverage",
+        "review_status",
+        "offerings",
+        "slot_map"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "term_id": {
+          "$ref": "#/$defs/term_id"
+        },
+        "coverage": {
+          "enum": [
+            "complete",
+            "partial",
+            "unknown"
+          ]
+        },
+        "review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted",
+            null
+          ]
+        },
+        "slot_map": {
+          "type": "object"
+        },
+        "source_refs": {
+          "type": "array"
+        },
+        "offerings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "code",
+              "display_code",
+              "credits",
+              "meeting_groups",
+              "availability_status",
+              "source_refs"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "display_code": {
+                "type": "string"
+              },
+              "credits": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/decimal"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "availability_status": {
+                "enum": [
+                  "confirmed_in_snapshot",
+                  "tentative",
+                  "historical",
+                  "unknown"
+                ]
+              },
+              "source_refs": {
+                "type": "array"
+              },
+              "meeting_groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "selection_semantics",
+                    "meetings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "enum": [
+                        "lecture",
+                        "tutorial",
+                        "lab",
+                        "exam"
+                      ]
+                    },
+                    "selection_semantics": {
+                      "enum": [
+                        "all_required",
+                        "choose_one",
+                        "unknown"
+                      ]
+                    },
+                    "unresolved": {
+                      "type": "array"
+                    },
+                    "meetings": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/meeting"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "meeting": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "weekday",
+        "start_minute",
+        "end_minute",
+        "active_start_date",
+        "active_end_date",
+        "source_refs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "lecture",
+            "tutorial",
+            "lab",
+            "exam"
+          ]
+        },
+        "weekday": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "start_minute": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "end_minute": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "active_start_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "active_end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "End-exclusive."
+        },
+        "original_slot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array"
+        }
+      }
     }
   }
 }

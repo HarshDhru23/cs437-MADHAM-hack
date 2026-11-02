@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/v1/catalogue', views.catalogue),
     path('api/v1/analysis', views.analysis),
     path('api/v1/plans/<uuid:plan_id>/validate', views.plan_validate),
+    path('api/v1/offerings', views.offerings),
 ]

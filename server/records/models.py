@@ -85,6 +85,20 @@ class RuleSnapshot(models.Model):
         super().save(*args, **kwargs)
 
 
+class OfferingSnapshot(models.Model):
+    """A staff-loaded term timetable. Reviewed versions are immutable."""
+    version = models.CharField(primary_key=True, max_length=160)
+    term_id = models.CharField(max_length=24, db_index=True)
+    payload = models.JSONField()
+    reviewed = models.BooleanField(default=False)
+    loaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk, reviewed=True).exists():
+            raise ValidationError('Reviewed snapshots are immutable; publish a new version')
+        super().save(*args, **kwargs)
+
+
 class LoginThrottle(models.Model):
     key = models.CharField(primary_key=True, max_length=64)
     attempts = models.PositiveIntegerField(default=0)
