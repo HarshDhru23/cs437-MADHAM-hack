@@ -733,6 +733,33 @@
       "academic_data": "draft_or_incomplete",
       "browser_tests": [],
       "frontend_tests": []
+    },
+    {
+      "id": "CP-28",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_drop_reports_downstream_without_touching_the_baseline",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_failure_changes_projection_and_labelled_cpi_only",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_postpone_replace_and_cap_rerun_the_same_checks",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_passing_hypothetical_grade_keeps_the_course_planned",
+        "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "browser_tests": [],
+      "frontend_tests": []
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."

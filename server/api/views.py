@@ -419,13 +419,23 @@ def scenarios_compare(request):
 @transaction.atomic
 def scenario_apply(request, scenario_id):
     from coursepath.scenarios import plan_edits
-    scenario = get_object_or_404(Scenario, pk=scenario_id, owner=request.user)
+    scenario = get_object_or_404(Scenario.objects.select_for_update(), pk=scenario_id, owner=request.user)
     plan = AcademicPlan.objects.select_for_update().get(pk=scenario.plan_id, owner=request.user)
     stored = get_object_or_404(AcademicRecord, owner=request.user)
-    expected = request.payload.get('expected_plan_revision')
-    current = (stored.revision, plan.revision, _curriculum_for(stored)['version'])
-    if type(expected) is not int or expected != plan.revision or current != (scenario.baseline_record_revision, scenario.baseline_plan_revision, scenario.rule_version):
+    expected_scenario, expected = request.payload.get('expected_scenario_revision'), request.payload.get('expected_plan_revision')
+    if any(type(value) is not int or value < 0 for value in (expected_scenario, expected)):
+        raise ValueError('expected_scenario_revision and expected_plan_revision must be nonnegative integers')
+    if expected_scenario != scenario.revision:
+        raise RevisionConflict(scenario.revision)  # the scenario changed after the client compared it
+    if expected != plan.revision:
         raise RevisionConflict(plan.revision)
+    current = (stored.revision, plan.revision, _curriculum_for(stored)['version'])
+    if current != (scenario.baseline_record_revision, scenario.baseline_plan_revision, scenario.rule_version):
+        stale = {'action': 'rebase', 'scenario_revision': scenario.revision, 'current_record_revision': current[0], 'current_plan_revision': current[1],
+                 'current_rule_version': current[2], 'baseline_record_revision': scenario.baseline_record_revision,
+                 'baseline_plan_revision': scenario.baseline_plan_revision, 'rule_version': scenario.rule_version}
+        return response(stale, [issue('SCENARIO_STALE', 'The saved record, plan or rules changed after this scenario was created.', 'error', [str(scenario.pk)],
+                                      action='Rebase the scenario on the current record and plan, then compare again.')], 409)
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
     result = update_plan(plan, expected, plan_payload(edited))
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})

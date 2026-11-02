@@ -81,6 +81,9 @@
         },
         {
           "type": "null"
+        },
+        {
+          "$ref": "#/$defs/scenario_stale"
         }
       ]
     },
@@ -1616,7 +1619,171 @@
                       "workload",
                       "cpi",
                       "meeting_checks"
-                    ]
+                    ],
+                    "properties": {
+                      "requirements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "label",
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "baseline": {
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "remaining_credits"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "enum": [
+                                    "satisfied",
+                                    "pending",
+                                    "conditional",
+                                    "needs_review"
+                                  ]
+                                },
+                                "remaining_credits": {
+                                  "$ref": "#/$defs/decimal"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "scenario": {
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "remaining_credits"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "enum": [
+                                    "satisfied",
+                                    "pending",
+                                    "conditional",
+                                    "needs_review"
+                                  ]
+                                },
+                                "remaining_credits": {
+                                  "$ref": "#/$defs/decimal"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "new_issues": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/issue"
+                        }
+                      },
+                      "resolved_issues": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/issue"
+                        }
+                      },
+                      "downstream_affected": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "workload": {
+                        "type": "object",
+                        "propertyNames": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "baseline": {
+                              "$ref": "#/$defs/decimal"
+                            },
+                            "scenario": {
+                              "$ref": "#/$defs/decimal"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "cpi": {
+                        "type": "object",
+                        "required": [
+                          "baseline",
+                          "scenario",
+                          "hypothetical"
+                        ],
+                        "properties": {
+                          "baseline": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                          },
+                          "scenario": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                          },
+                          "hypothetical": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "meeting_checks": {
+                        "type": "object",
+                        "propertyNames": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "baseline": {
+                              "enum": [
+                                "clear",
+                                "conflicts",
+                                "not_checked",
+                                null
+                              ]
+                            },
+                            "scenario": {
+                              "enum": [
+                                "clear",
+                                "conflicts",
+                                "not_checked"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      }
+                    }
                   }
                 ]
               },
@@ -1625,6 +1792,32 @@
                 "items": {
                   "$ref": "#/$defs/issue"
                 }
+              },
+              "scenario_id": {
+                "type": "string"
+              },
+              "rule_version": {
+                "type": "string"
+              },
+              "baseline": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/$defs/scenario_evaluation"
+                  }
+                ]
+              },
+              "scenario": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/$defs/scenario_evaluation"
+                  }
+                ]
               }
             }
           }
@@ -1823,6 +2016,174 @@
           "type": "string"
         }
       }
+    },
+    "scenario_evaluation": {
+      "type": "object",
+      "required": [
+        "audit",
+        "performance",
+        "validation",
+        "internship",
+        "completion_term",
+        "issues"
+      ],
+      "properties": {
+        "audit": {
+          "$ref": "#/$defs/audit"
+        },
+        "performance": {
+          "type": "object",
+          "required": [
+            "cumulative",
+            "terms",
+            "issues",
+            "hypothetical"
+          ],
+          "properties": {
+            "cumulative": {
+              "type": "object",
+              "required": [
+                "unrounded_value"
+              ],
+              "properties": {
+                "unrounded_value": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                }
+              }
+            },
+            "terms": {
+              "type": "array"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/issue"
+              }
+            },
+            "hypothetical": {
+              "type": "boolean"
+            }
+          }
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        },
+        "internship": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "duration_choice",
+                "credits",
+                "issues"
+              ],
+              "properties": {
+                "duration_choice": {
+                  "enum": [
+                    "none",
+                    "three_months",
+                    "six_months"
+                  ]
+                },
+                "credits": {
+                  "type": "object",
+                  "required": [
+                    "earned",
+                    "approved",
+                    "proposed"
+                  ],
+                  "properties": {
+                    "earned": {
+                      "$ref": "#/$defs/decimal"
+                    },
+                    "approved": {
+                      "$ref": "#/$defs/decimal"
+                    },
+                    "proposed": {
+                      "$ref": "#/$defs/decimal"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/issue"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "completion_term": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/term_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        }
+      }
+    },
+    "scenario_stale": {
+      "type": "object",
+      "required": [
+        "action",
+        "scenario_revision",
+        "current_record_revision",
+        "current_plan_revision",
+        "current_rule_version",
+        "baseline_record_revision",
+        "baseline_plan_revision",
+        "rule_version"
+      ],
+      "properties": {
+        "action": {
+          "const": "rebase"
+        },
+        "scenario_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_plan_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_rule_version": {
+          "type": "string"
+        },
+        "baseline_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_plan_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule_version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
