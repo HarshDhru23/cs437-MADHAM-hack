@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError, RequestDataTooBig
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import F, ProtectedError
 from django.http import JsonResponse, Http404
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -507,6 +507,7 @@ def backup_preview(request):
         issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
     if scenarios:
         issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
+    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
                                            payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
     return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
@@ -548,8 +549,10 @@ RETENTION = ('Deleted from the CoursePath database immediately. This repository 
 def account_data(request):
     """Delete the owner's academic data, or the whole account, after re-authentication."""
     payload = request.payload
-    if payload.get('confirm') != 'delete my data':
-        raise ValueError('Type "delete my data" to confirm')
+    if payload.get('confirm') != 'delete my data' or not isinstance(payload.get('delete_account', False), bool):
+        raise ValueError('Type "delete my data" to confirm; delete_account is a JSON boolean')
+    if throttled(request):
+        return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
     if not request.user.check_password(payload.get('password') or ''):
         return response(issues=[issue('REAUTH_FAILED', 'Enter your current password to delete data.', 'error')], status=403)
     stored = AcademicRecord.objects.select_for_update().get(owner=request.user)
@@ -562,8 +565,13 @@ def account_data(request):
     counts = {name: query.count() for name, query in owned.items()}
     if payload.get('delete_account') is True:
         user = request.user
+        try:
+            with transaction.atomic():
+                user.delete()
+        except ProtectedError:  # a staff verifier's name stays on the evidence they verified for other students
+            return response(issues=[issue('ACCOUNT_HAS_VERIFICATIONS', 'This account verified approval evidence that other students rely on, so it cannot be deleted here. '
+                                          'Delete your data only, or ask an administrator to reassign those verifications.', 'error')], status=409)
         logout(request)
-        user.delete()
         return response({'deleted': counts, 'account_deleted': True, 'record_revision': None, 'retention': RETENTION})
     for name in ['scenarios', 'plans', 'import_previews', 'approval_evidence']:
         owned[name].delete()
