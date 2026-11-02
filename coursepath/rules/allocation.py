@@ -16,7 +16,7 @@ from coursepath.rules.schema import walk_requirements
 from coursepath.rules.expressions import requirement_result
 from coursepath.issues import issue
 from coursepath.identity import identity_map, canonical_code
-from coursepath.imports.grades import POINTS
+from coursepath.repeats import superseded_attempts
 
 
 def _subject(code):
@@ -119,21 +119,11 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
             unknown_caps = True
         candidates.append((attempt, code, tags))
     if curriculum.get('repeat_policy', {}).get('rule') == 'best_grade':
-        # D-15: one counted attempt per course; project registrations are separate courses.
-        best = {}
-        for attempt, code, tags in candidates:
-            if tags & separate:
-                continue
-            rank = (POINTS.get(attempt.get('grade', '').strip().upper(), Decimal(-1)), attempt.get('term_id') or '', attempt['id'])
-            if code not in best or rank > best[code][0]:
-                best[code] = (rank, attempt['id'])
-        keep = []
-        for attempt, code, tags in candidates:
-            if not tags & separate and best[code][1] != attempt['id']:
-                excluded.append({'attempt_id': attempt['id'], 'reason': 'SUPERSEDED_REPEAT'})
-            else:
-                keep.append((attempt, code, tags))
-        candidates = keep
+        # D-15: one counted attempt per course, ranked as CPI ranks it; project registrations are separate courses.
+        tags_by_id = {attempt['id']: tags for attempt, _, tags in candidates}
+        superseded = superseded_attempts([attempt for attempt, _, _ in candidates], identity, lambda attempt, _: bool(tags_by_id[attempt['id']] & separate))
+        excluded += [{'attempt_id': attempt['id'], 'reason': 'SUPERSEDED_REPEAT'} for attempt, _, _ in candidates if attempt['id'] in superseded]
+        candidates = [candidate for candidate in candidates if candidate[0]['id'] not in superseded]
     rows = []
     for attempt, code, tags in candidates:
         credits = decimal_value(attempt['credits'])

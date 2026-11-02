@@ -1,4 +1,30 @@
 import { expect, type Page } from '@playwright/test';
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/**
+ * Django allows 10 account actions per IP per 15 minutes, and every spec reaches it
+ * through the same 127.0.0.1 proxy. Clearing the throttle table of this run's throwaway
+ * database gives each new account its own budget, as separate runs would. The throttle
+ * itself is tested in server/records/tests.py and server/records/test_privacy.py.
+ */
+export function resetAccountThrottle() {
+  const port = process.env.COURSEPATH_E2E_API_PORT ?? '8000';
+  // start-backend.mjs writes this file when it creates the run's database.
+  const sqlitePath = readFileSync(path.join(tmpdir(), `coursepath-e2e-${port}.db-path`), 'utf8');
+  const script = 'from server.records.models import LoginThrottle; LoginThrottle.objects.all().delete()';
+  const result = spawnSync(process.env.COURSEPATH_PYTHON ?? 'python', [path.join(repoRoot, 'server', 'manage.py'), 'shell', '-c', script], {
+    cwd: repoRoot,
+    env: { ...process.env, COURSEPATH_ENV: 'development', COURSEPATH_SQLITE_PATH: sqlitePath },
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) throw new Error(`Could not reset the e2e account throttle: ${result.stderr}`);
+}
 
 export const PASSWORD = 'Synthetic-pass-9183!';
 
@@ -20,6 +46,7 @@ export const IMS_TEXT = [
 ].join('\n');
 
 export async function signup(page: Page, username: string) {
+  resetAccountThrottle();
   await page.goto('/signup');
   await page.getByLabel('Username').fill(username);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
