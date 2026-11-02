@@ -80,9 +80,18 @@ class SampleRecordThroughAudit(unittest.TestCase):
         cls.record, cls.preview = record, preview
         cls.audit = evaluate_audit(CURRICULUM, {}, record)
 
-    def test_draft_curriculum_never_certifies_the_sample_record(self):
+    def test_reviewed_curriculum_does_not_certify_the_sample_record(self):
+        # ADV13 replaced the draft, so some requirements may now be satisfied; the record still lacks CS 202 (D-03) and SC 372 never counts (D-08).
+        def find(tree, rid):
+            for node in tree:
+                hit = node if node["id"] == rid else find(node.get("children", []), rid)
+                if hit:
+                    return hit
+        sc =next(a["id"] for a in self.record["attempts"] if a["normalized_code"] == "SC 372")
         self.assertFalse(self.audit["complete"])
-        self.assertTrue(all(r["status"] != "satisfied" for r in self.audit["actual"]))
+        self.assertEqual(find(self.audit["actual"], "tools")["status"], "pending")
+        self.assertIn({"attempt_id": sc, "reason": "ONE_CREDIT_SHORT_COURSE"}, self.audit["excluded_attempts"])
+        self.assertNotIn(sc, [a["attempt_id"] for a in self.audit["ledger"]])
 
     def test_counted_credits_never_exceed_earned_credits_and_nothing_is_counted_twice(self):
         counted = sum(Decimal(a["credits"]) for a in self.audit["ledger"])

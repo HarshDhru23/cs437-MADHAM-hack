@@ -36,14 +36,16 @@ Until then I will: keep the branch unmerged; nothing else in the UI broke
 
 ```markdown
 To: Manashree · From: Harsh · Task: H06 · Blocks: CP-03
-Need: tests/reference/test_service_regression.py
-test_draft_curriculum_never_certifies_the_sample_record assumes a draft
-curriculum (no requirement satisfied). Proposed: keep assertFalse(complete),
-and assert the CS 202 "tools" requirement is pending and SC 372 is excluded with
-reason ONE_CREDIT_SHORT_COURSE. Data register: GAP-04, GAP-05, GAP-09, GAP-10
+Need: review, in #18, the replacement for your
+test_draft_curriculum_never_certifies_the_sample_record. It assumed a draft
+curriculum (no requirement satisfied). It is now
+test_reviewed_curriculum_does_not_certify_the_sample_record: it keeps
+assertFalse(complete) and asserts the CS 202 "tools" requirement is pending
+(D-03) and SC 372 is excluded with reason ONE_CREDIT_SHORT_COURSE and never
+counted (D-08). Data register: GAP-04, GAP-05, GAP-09, GAP-10
 and AMB-01 to 05, 08, 09 can close (D-01 to D-21); GAP-06 is partly closed
 (best grade decided, CPI rounding open).
-Until then I will: keep the branch unmerged.
+Until then I will: change it back or adjust it if you disagree.
 ```
 
 Timetable: a draft snapshot was built locally (not committed) from the
