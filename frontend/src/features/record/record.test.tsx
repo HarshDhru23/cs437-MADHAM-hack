@@ -80,11 +80,18 @@ describe('RecordPage (CP-02, A04)', () => {
     await userEvent.type(within(dialog).getByLabelText('Credits'), '4');
     await userEvent.selectOptions(within(dialog).getByLabelText('Status'), 'failed');
     await userEvent.type(within(dialog).getByLabelText('Grade'), 'F');
+    // D-21 sets the default only for imported, current and planned rows; a hand-added row asks the student.
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add attempt' }));
+    expect(within(dialog).getByText(/Choose whether this course counts toward your degree/)).toBeInTheDocument();
+    expect(s.patches).toHaveLength(0);
+    await userEvent.selectOptions(within(dialog).getByLabelText('Counts toward'), 'degree');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add attempt' }));
     await waitFor(() => expect(s.patches).toHaveLength(1));
     const attempts = s.patches[0]!.attempts!;
     expect(attempts).toHaveLength(record.attempts.length + 1);
-    expect(attempts.at(-1)).toMatchObject({ normalized_code: 'ZZ 401', completion_status: 'failed', grade: 'F', source_refs: [], approval_refs: [], course_version_id: null });
+    expect(attempts.at(-1)).toMatchObject({
+      normalized_code: 'ZZ 401', completion_status: 'failed', grade: 'F', learning_designation: 'degree', source_refs: [], approval_refs: [], course_version_id: null,
+    });
   });
 
   it('saves confirmed current enrolment with debounce and shows acknowledged revision', async () => {
