@@ -77,6 +77,9 @@
           "$ref": "#/$defs/backup_preview"
         },
         {
+          "$ref": "#/$defs/account_deletion"
+        },
+        {
           "type": "null"
         }
       ]
@@ -1707,6 +1710,44 @@
             "plans_to_create",
             "scenarios_not_restored"
           ]
+        }
+      }
+    },
+    "account_deletion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deleted",
+        "account_deleted",
+        "record_revision",
+        "retention"
+      ],
+      "properties": {
+        "deleted": {
+          "type": "object",
+          "required": [
+            "attempts",
+            "plans",
+            "scenarios",
+            "import_previews",
+            "approval_evidence"
+          ],
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "account_deleted": {
+          "type": "boolean"
+        },
+        "record_revision": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "retention": {
+          "type": "string"
         }
       }
     }

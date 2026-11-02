@@ -175,6 +175,7 @@ def import_preview(request):
         if upload is None:
             raise ValueError('Missing PDF')
         if upload.size > 10 * 1024 * 1024:
+            upload.close()
             return response(issues=[issue('INPUT_LIMIT', 'PDF exceeds 10 MB.', 'error')], status=413)
         try:
             parsed = parse_pdf(upload.read(10 * 1024 * 1024 + 1), 'pdf-v1')
@@ -190,6 +191,7 @@ def import_preview(request):
     if not parsed['candidate_attempts']:
         return response(parsed, parsed['issues'], 422)
     proposed = reconcile_import(record_data(stored), parsed, {})
+    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision,
                                            payload=parsed, expires_at=timezone.now() + timedelta(hours=1))
     data = {k: v for k, v in parsed.items() if k != 'issues'}
@@ -494,3 +496,35 @@ def _restore_backup(request, preview, stored, expected):
     preview.committed_at = timezone.now()
     preview.save(update_fields=['committed_at'])
     return response(restored)
+
+
+RETENTION = ('Deleted from the CoursePath database immediately. This repository configures no database backups; '
+             'if the hosting provider keeps backups, a copy may remain there until those backups expire under the host\'s retention policy.')
+
+
+@endpoint({'DELETE'})
+@transaction.atomic
+def account_data(request):
+    """Delete the owner's academic data, or the whole account, after re-authentication."""
+    payload = request.payload
+    if payload.get('confirm') != 'delete my data':
+        raise ValueError('Type "delete my data" to confirm')
+    if not request.user.check_password(payload.get('password') or ''):
+        return response(issues=[issue('REAUTH_FAILED', 'Enter your current password to delete data.', 'error')], status=403)
+    stored = AcademicRecord.objects.select_for_update().get(owner=request.user)
+    expected = expected_revision(payload)
+    if expected != stored.revision:
+        raise RevisionConflict(stored.revision)
+    owned = {'attempts': stored.attempts.all(), 'plans': AcademicPlan.objects.filter(owner=request.user),
+             'scenarios': Scenario.objects.filter(owner=request.user), 'import_previews': ImportPreview.objects.filter(owner=request.user),
+             'approval_evidence': ApprovalEvidence.objects.filter(owner=request.user)}
+    counts = {name: query.count() for name, query in owned.items()}
+    if payload.get('delete_account') is True:
+        user = request.user
+        logout(request)
+        user.delete()
+        return response({'deleted': counts, 'account_deleted': True, 'record_revision': None, 'retention': RETENTION})
+    for name in ['scenarios', 'plans', 'import_previews', 'approval_evidence']:
+        owned[name].delete()
+    cleared = replace_record(stored, expected, [], current_enrolment=[], reported_controls=[])
+    return response({'deleted': counts, 'account_deleted': False, 'record_revision': cleared['revision'], 'retention': RETENTION})
