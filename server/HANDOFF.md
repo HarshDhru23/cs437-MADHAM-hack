@@ -15,9 +15,7 @@ sources.
 | `feature/harsh-d04-course-identity` | #15 | D-01 to D-04 identity groups | CP-13, CP-17, CP-19, CP-22 |
 | `feature/harsh-d17-recommended-prerequisites` | #16 | `[contract]` D-17 recommended preparation | CP-05, CP-22 |
 | `feature/harsh-h15-nov3-integration` | #17 | H15 SPEC status and this note | none |
-| `feature/harsh-h06-adv13-curriculum` | #18 | H06 reviewed ADV13 curriculum | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
-
-| `feature/harsh-h06-adv13-curriculum` | H06 reviewed curriculum from ADV13; D-19 to D-21 | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
+| `feature/harsh-h06-adv13-curriculum` | #18 | H06 reviewed curriculum from ADV13; D-19 to D-21 | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
 
 The last branch was added later on 31 Oct, after Harsh authorized the local
 ADV13 PDF as the curriculum source. It needs three companion changes before it
