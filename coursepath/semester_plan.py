@@ -46,12 +46,15 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             metadata = catalogue.get(code)
             expression = metadata.get('prerequisites') if metadata and metadata.get('prerequisite_known') else None
             eligibility = evaluate_prerequisite(expression, term, attempts, planned, identity)
+            # D-17: prerequisites are CoursePath team recommendations; an unmet one warns and never blocks.
             if eligibility['status'] == 'unknown':
-                issues.append(issue('PREREQUISITE_UNKNOWN', 'Prerequisite data is unknown.', entities=[entity]))
+                issues.append(issue('PREREQUISITE_UNKNOWN', 'No recommendation recorded for this course; its preparation is unknown, not "none".', entities=[entity]))
             elif eligibility['status'] == 'ineligible':
-                issues.append(issue('PREREQUISITE_MISSING', 'Missing: ' + ', '.join(eligibility['missing']), 'error', [entity], eligibility['source_refs']))
+                issues.append(issue('PREREQUISITE_MISSING', 'Recommended preparation (CoursePath team) missing: ' + ', '.join(eligibility['missing']), 'warning',
+                                    [entity], eligibility['source_refs'], 'Take the recommended course earlier, or keep the plan if you are prepared.'))
             elif eligibility['status'] == 'conditional':
-                issues.append(issue('PREREQUISITE_CONDITIONAL', 'Earlier planned prerequisite must be passed.', 'warning', [entity], eligibility['source_refs']))
+                issues.append(issue('PREREQUISITE_CONDITIONAL', 'Recommended preparation (CoursePath team) is planned earlier; it helps only if passed.', 'warning',
+                                    [entity], eligibility['source_refs']))
             previous = seen.get(code, [])
             completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == canonical_code(code, identity) and a['completion_status'] == 'completed']
             if previous or completed:

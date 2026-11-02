@@ -255,7 +255,7 @@ def _validate_owned_plan(owner, plan):
     from coursepath.identity import identity_map
     record = AcademicRecord.objects.get(owner=owner)
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': {}, 'identity': identity, 'standing': record.profile.get('standing', 'unknown')},
+    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown')},
                          plan.payload, list(_offering_snapshots().values()))
 
 
@@ -324,6 +324,11 @@ def plan_validate(request, plan_id):
     return response(_validate_owned_plan(request.user, plan))
 
 
+def _recommendations():
+    from coursepath.prerequisites import load_recommended_prerequisites
+    return load_recommended_prerequisites()
+
+
 def _grading_policy():
     return json.loads((Path(__file__).resolve().parents[2] / 'data/grading/reported-v1.json').read_text())
 
@@ -332,7 +337,7 @@ def _engine_context(user, stored):
     """Server-side inputs for scenario evaluation. Approvals are staff-verified evidence only; no calendar is committed (GAP-03)."""
     approvals = [{'id': str(a.pk), 'status': a.status, 'covered_entities': a.covered_entities}
                  for a in ApprovalEvidence.objects.filter(owner=user, status='verified')]
-    return {'curriculum': _curriculum_for(stored), 'catalogue': {}, 'grading_policy': _grading_policy(), 'approvals': approvals,
+    return {'curriculum': _curriculum_for(stored), 'catalogue': _recommendations(), 'grading_policy': _grading_policy(), 'approvals': approvals,
             'standing': stored.profile.get('standing', 'unknown'), 'advisor_cap': stored.profile.get('advisor_cap'),
             'offering_snapshots': list(_offering_snapshots().values()), 'calendar': None}
 

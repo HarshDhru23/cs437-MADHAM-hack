@@ -79,7 +79,7 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-02 | A student can record/correct completed, in-progress and failed course attempts without losing prior attempts. | Existing test + edit/commit integration. |
 | CP-03 | A student can inspect counted completed courses/credits and remaining requirements. | Existing test + independently hand-audited record. |
 | CP-04 | A student can add/remove/move future courses and see semester credit totals. | Existing test + browser planner workflow. |
-| CP-05 | A student can see which prerequisite is missing when it is not completed or earlier planned. | Existing ordering matrix + visible issue. |
+| CP-05 | A student can see which recommended preparation (CoursePath team list) is missing when it is not completed or planned earlier; it warns and never blocks the plan. | Existing ordering matrix + visible warning; unlisted courses show "no recommendation recorded". |
 | CP-06 | A student can import a supported transcript PDF with correct semester/code/credit/grade rows. | 39-row independent oracle, wrapped titles, repeated headers, multipage. |
 | CP-07 | A student can paste an IMS grade table and recover all valid rows in their proper terms. | 40-row oracle + tab/whitespace/line-ending variants. |
 | CP-08 | A student can review and correct candidate rows before accepting an import. | Browser preview; no pre-commit record mutation. |
@@ -96,7 +96,7 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-19 | A student can trace every audit decision to its applicable rule version and source. | Explanation/source completeness; wrong-cohort rejection. |
 | CP-20 | A student sees separate actual/current/projected progress and cannot receive an unconditional completion result with missing required evidence. | Incomplete core, pending grade, missing policy and projected-pass cases. |
 | CP-21 | A student can see normal/GPS/summer/advisor load violations and approval-dependent overload status. | Boundary and approval-condition tests. |
-| CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations in plan validation. | Ordering truth tables, duplicate/repeat policy and unknown prerequisite. |
+| CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations for recommended preparation in plan validation. | Ordering truth tables, duplicate/repeat policy, identity-resolved codes and unknown (unlisted) recommendations. |
 | CP-23 | A student can inspect confirmed/tentative/unknown availability for the selected planning term. | Complete vs partial offering snapshot; historical pattern never confirmed. |
 | CP-24 | A student can choose sections and see overlapping required meetings, or that clashes could not be checked. | Lecture/lab, alternatives, touching endpoints, quads, missing meetings. |
 | CP-25 | A student can inspect CSE honours eligibility, progress and remaining approved requirements. | Reviewed honours dataset, required project and overlap constraints. |
