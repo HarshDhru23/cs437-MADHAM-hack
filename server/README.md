@@ -82,7 +82,7 @@ Implemented routes:
 | `POST /scenarios/{id}/apply-plan` | `{expected_plan_revision}`; writes drop/postpone/replace edits to the saved plan only; `not_applied` lists hypothetical fail/grade/cap/internship changes. 409 when the scenario or plan is stale. Never changes the record. |
 | `GET /export?kind=json` | Owned backup download: `kind: "coursepath-backup"`, `backup_version: "1"`, account username, rule version/review status/sources/missing sources, grading policy ID, record (with revision), plans and scenarios. No password, session or CSRF data. |
 | `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version, owner, cohort, attempts and plans, and returns a diff. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
-| `DELETE /account/data` | `{expected_revision, password, confirm: "delete my data", delete_account?}`. Re-authenticates (403 `REAUTH_FAILED`), then deletes the owner's attempts, current enrolment, reported controls, plans, scenarios, import previews and approval evidence; with `delete_account: true` also deletes the account and ends every session. Returns counts and the retention statement. |
+| `DELETE /account/data` | `{expected_revision, password, confirm: "delete my data", delete_account?}` (`delete_account` is a JSON boolean; anything else is 400). Re-authenticates (403 `REAUTH_FAILED`; password re-checks share the login limit, then 429 `AUTH_THROTTLED` and nothing is deleted), then deletes the owner's attempts, current enrolment, reported controls, plans, scenarios, import previews and approval evidence; with `delete_account: true` also deletes the account and ends every session. A staff account that verified other students' approval evidence is not deleted: 409 `ACCOUNT_HAS_VERIFICATIONS`, nothing deleted and the session kept. Returns counts and the retention statement. |
 
 An empty plan has `semesters: []`. Each semester has `term_id`, `courses`,
 `placeholders`; every item has a stable `id`. Selected courses have
@@ -119,7 +119,7 @@ forces totals to agree or makes credits degree-eligible.
 PDF limits: 10 MB, 20 pages, 10 seconds in a killable extraction subprocess.
 PDF bytes stay in memory; Django upload handles are closed on every path.
 Paste limit: 1,000,000 characters. Previews expire after one hour and are owner
-protected. Expiry blocks commits. Each new preview deletes that owner's expired
+protected. Expiry blocks commits. Each new import or backup preview deletes that owner's expired
 previews; run `manage.py purge_previews` on a schedule in production to delete
 all expired ones.
 
