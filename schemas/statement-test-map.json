@@ -587,9 +587,13 @@
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_postpone_replace_and_cap_rerun_the_same_checks",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_passing_hypothetical_grade_keeps_the_course_planned",
         "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

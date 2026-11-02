@@ -41,7 +41,7 @@ def _semester(plan, term_id):
 def apply_changes(plan, changes, ops=OPS):
     """Return (plan copy, term caps, hypothetical attempts, skipped changes)."""
     plan = deepcopy(plan)
-    caps, hypothetical, skipped = {}, [], []
+    caps, hypothetical, skipped, graded = {}, [], [], set()
     if not isinstance(changes, list) or len(changes) > 100:
         raise ValueError('Expected at most 100 scenario changes')
     for change in changes:
@@ -52,6 +52,8 @@ def apply_changes(plan, changes, ops=OPS):
             validate_term_id(change['term_id'])
             credits = decimal_string(decimal_value(change['credits']))
         else:
+            if change.get('item_id') in graded:
+                raise ValueError('A course with a hypothetical grade takes no further changes')
             semester, course = _locate(plan, change.get('item_id'))
         if op == 'grade' and str(change.get('grade', '')).upper() not in POINTS:
             raise ValueError('Hypothetical grades must be letter grades')
@@ -72,9 +74,12 @@ def apply_changes(plan, changes, ops=OPS):
             for stale in ('course_id', 'course_version_id', 'offering_id', 'section_ids', 'instance_id'):
                 course.pop(stale, None)
         else:
-            semester['courses'].remove(course)
+            grade = change['grade'].upper() if op == 'grade' else 'F'
+            if op != 'grade' or grade_status(grade) == 'failed':
+                # A passing hypothetical grade keeps the course planned: only the labelled CPI sees that grade.
+                semester['courses'].remove(course)
             if op in {'fail', 'grade'}:
-                grade = 'F' if op == 'fail' else change['grade'].upper()
+                graded.add(course['id'])
                 hypothetical.append({'id': 'hypothetical:' + course['id'], 'normalized_code': course['normalized_code'], 'credits': course['credits'],
                                      'grade': grade, 'term_id': semester['term_id'], 'completion_status': grade_status(grade),
                                      'learning_designation': course.get('learning_designation', 'unknown'), 'hypothetical': True})
