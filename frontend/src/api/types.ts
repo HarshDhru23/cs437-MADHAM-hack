@@ -186,11 +186,18 @@ export interface RequirementDefinition {
   course_id?: string;
   course_ids?: string[] | null;
   source_refs: string[];
+  /** Where in the source the rule sits, e.g. "p. 14; codes from p. 23". */
+  source_locator?: string;
+  /** A TEAM decision in docs/academic-decisions.md, e.g. "D-03". */
+  decision?: string;
   children?: RequirementDefinition[];
 }
 
 export interface NoncreditObligation {
   id: string;
+  label?: string;
+  decision?: string;
+  source_locator?: string;
   required_semesters?: number;
   required_each_active_semester?: boolean;
   recorded_grades?: string[];
@@ -238,6 +245,10 @@ export interface RequirementResult {
   required_credits?: DecimalString | null;
   counted_credits?: DecimalString | null;
   remaining_credits?: DecimalString | null;
+  /** Credits counted beyond the requirement (D-07); never reused elsewhere. */
+  surplus_credits?: DecimalString | null;
+  /** Viva: active semesters still without a recorded P (D-16). */
+  missing_terms?: string[];
   counted_courses?: number | null;
   required_courses?: number | null;
   allocation_ids: string[];
