@@ -704,7 +704,9 @@
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_invalid_dates_changed_length_and_missing_calendar",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_compare_none_three_six_on_one_unchanged_baseline",
         "tests.domain.test_scenarios.ScenarioTests.test_cp33_scenario_internship_runs_through_the_same_comparison",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
+        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_exam_window_without_dates_is_unknown_not_clear",
+        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -724,9 +726,15 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_example_twelve_open_four_hss_stays_proposed",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_only_verified_covering_approval_counts",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_caps_module_size_targets_and_duplicates",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_failed_module_is_never_approved_and_frees_its_cap",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_completed_module_without_grade_is_not_earned",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_in498_on_the_record_counts_toward_sixteen",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_cap_keeps_earned_and_approved_before_proposed",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_one_registration_counts_once_across_modules",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
