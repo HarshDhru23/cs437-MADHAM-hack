@@ -16,8 +16,8 @@ from django.utils import timezone
 from coursepath.issues import issue
 from coursepath.serialization import plain
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
-from coursepath.validation import plan_payload, current_enrolment, scenario_payload
-from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts
+from coursepath.validation import plan_payload, current_enrolment, scenario_payload, reported_controls
+from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts, restore_rejections
 
 
 def response(data=None, issues=(), status=200):
@@ -468,7 +468,7 @@ def backup_preview(request):
     revision = expected_revision(request.payload)
     backup = request.payload.get('backup')
     if isinstance(backup, dict) and 'schema_version' in backup and isinstance(backup.get('data'), dict):
-        backup = backup['data']
+        backup = backup['data'] if backup['schema_version'] == '1' else None
     if not isinstance(backup, dict) or backup.get('kind') != BACKUP_KIND or backup.get('backup_version') != '1':
         return response(issues=[issue('BACKUP_VERSION_UNSUPPORTED', 'This is not a supported CoursePath backup version.', 'error')], status=422)
     if not isinstance(backup.get('account'), dict) or backup['account'].get('username') != request.user.username:
@@ -480,19 +480,28 @@ def backup_preview(request):
         return response(issues=[issue('COHORT_MISMATCH', 'The backup is not for the supported B.Tech CSE 2024 cohort.', 'error')], status=422)
     attempts = validate_attempts(record.get('attempts'))
     enrolment = current_enrolment(record.get('current_enrolment', []))
-    reported = record.get('reported_controls', [])
+    reported = reported_controls(record.get('reported_controls', []))
     plans, scenarios = backup.get('plans', []), backup.get('scenarios', [])
-    if not isinstance(reported, list) or len(reported) > 50 or not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
+    if not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
         raise ValueError('Backup lists exceed limits')
-    plans = [plan_payload({k: v for k, v in p.items() if k in {'semesters', 'label'}}) for p in plans]
+    if any(not isinstance(item, dict) for item in plans + scenarios):
+        raise ValueError('Backup plans and scenarios are objects')
+    plan_ids, plans = [str(p.get('id')) for p in plans], [plan_payload({k: v for k, v in p.items() if k in {'semesters', 'label'}}) for p in plans]
     if revision != stored.revision:
         raise RevisionConflict(stored.revision)
+    rejected = _backup_rejection(request, stored, attempts)
+    if rejected:
+        return rejected
+    owned = {str(p.pk): p.payload for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')}
+    matches = [plan_id if plan_id in owned else next((pk for pk, payload in owned.items() if payload == plan), None) for plan_id, plan in zip(plan_ids, plans)]
+    plans = [plan for plan, match in zip(plans, matches) if match is None]  # a plan that still exists, by ID or identical content, is not copied again
     existing = {a['id']: a for a in record_data(stored)['attempts']}
     incoming = {a['id']: a for a in attempts}
     shared = incoming.keys() & existing.keys()
     diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
             'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
-            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans), 'scenarios_not_restored': len(scenarios)}
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans),
+            'plans_skipped_existing': sorted({m for m in matches if m is not None}), 'scenarios_not_restored': len(scenarios)}
     issues = []
     if backup.get('rule_version') != _curriculum_for(stored)['version']:
         issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
@@ -504,12 +513,26 @@ def backup_preview(request):
                     issues, 201)
 
 
+def _backup_rejection(request, stored, attempts):
+    """A 422 naming the backup rows the record editor would reject; approvals resolve only to this owner's verified evidence."""
+    verified = {str(pk) for pk in ApprovalEvidence.objects.filter(owner=request.user, status='verified').values_list('pk', flat=True)}
+    rejected = restore_rejections(stored, attempts, verified)
+    if rejected:
+        return response(issues=[issue('BACKUP_INVALID', 'These rows differ from their source evidence or correction history without a justified correction, '
+                                      'or claim approvals or catalogue matches the server has not recorded.', 'error', rejected,
+                                      action='Restore an unedited backup, then correct rows in the record editor with a justification.')], status=422)
+    return None
+
+
 def _restore_backup(request, preview, stored, expected):
     """Runs inside import_commit's transaction: the record and new plans commit together or not at all."""
     if request.payload.get('confirm') is not True:
         raise ValueError('Restoring replaces the record; send confirm: true')
     payload = preview.payload
-    restored = replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
+    rejected = _backup_rejection(request, stored, payload['attempts'])
+    if rejected:
+        return rejected
+    restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
     preview.committed_at = timezone.now()
     preview.save(update_fields=['committed_at'])
