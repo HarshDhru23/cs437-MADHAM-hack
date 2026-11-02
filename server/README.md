@@ -80,6 +80,8 @@ Implemented routes:
 | `GET/PATCH/DELETE /scenarios/{id}` | PATCH/DELETE need `expected_revision`; PATCH with `rebase: true` moves the baseline to the current record and plan. |
 | `POST /scenarios/compare` | `{scenario_ids:[1-6, same plan]}`; for each, baseline and scenario evaluations (audit, labelled hypothetical performance, plan validation, internship) and their deltas. Stale scenarios return `stale: true` and `SCENARIO_STALE`, no evaluation. `internship_cases` tabulates none / 3 / 6 month choices. |
 | `POST /scenarios/{id}/apply-plan` | `{expected_plan_revision}`; writes drop/postpone/replace edits to the saved plan only; `not_applied` lists hypothetical fail/grade/cap/internship changes. 409 when the scenario or plan is stale. Never changes the record. |
+| `GET /export?kind=json` | Owned backup download: `kind: "coursepath-backup"`, `backup_version: "1"`, account username, rule version/review status/sources/missing sources, grading policy ID, record (with revision), plans and scenarios. No password, session or CSRF data. |
+| `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version, owner, cohort, attempts and plans, and returns a diff. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
 
 An empty plan has `semesters: []`. Each semester has `term_id`, `courses`,
 `placeholders`; every item has a stable `id`. Selected courses have
@@ -121,8 +123,9 @@ protected. Expiry blocks commits; scheduled purging/deletion is H14 work.
 Supported errors: 400 invalid fields, 401 authentication, 403 CSRF, 404 foreign/
 missing objects, 409 stale revision, 413 upload limit, 422 uncommittable import,
 429 account throttling. A 409 contains `current_revision` and `reload_compare`;
-do not automatically overwrite/retry. Account recovery, exports and deletion
-routes are later checkpoint work, not stubs.
+do not automatically overwrite/retry. Account recovery and deletion routes are
+later checkpoint work, not stubs. The printable report is the frontend's print
+view of `POST /analysis`; the server does not render PDFs.
 
 Scenario changes: `{op:"drop"|"fail"|"grade",item_id}`, `{op:"postpone",item_id,term_id}`
 (later terms only), `{op:"replace",item_id,course:{normalized_code,credits}}`,
