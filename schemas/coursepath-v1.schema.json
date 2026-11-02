@@ -1708,8 +1708,21 @@
             "attempts_unchanged",
             "current_enrolment_changed",
             "plans_to_create",
+            "plans_skipped_existing",
             "scenarios_not_restored"
-          ]
+          ],
+          "properties": {
+            "plans_to_create": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "plans_skipped_existing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

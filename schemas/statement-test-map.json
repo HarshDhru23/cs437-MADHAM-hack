@@ -606,7 +606,11 @@
         "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_previews_diff_then_commits_only_on_confirmation",
         "server.records.test_export.ExportRestoreTests.test_cp30_unknown_foreign_or_malformed_backups_are_rejected_without_changes",
-        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record"
+        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_rejects_rows_the_record_editor_would_reject",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_keeps_justified_history_and_owned_verified_approvals",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_accepts_only_well_formed_reported_controls",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
