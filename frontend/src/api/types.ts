@@ -387,3 +387,76 @@ export interface RevisionConflictData {
   current_revision: number;
   action: 'reload_compare';
 }
+
+// A11: backup export/restore, account-data deletion and the report's scenario
+// lookup. Shapes follow server/api/views.py (export, backup_preview,
+// _restore_backup, account_data, scenario_detail) and server/README.md.
+
+/** `GET /export?kind=json` data. Saved to disk inside its envelope, exactly as served. */
+export interface BackupData {
+  kind: string;
+  backup_version: string;
+  exported_at: string;
+  account: { username: string };
+  rule_version: string;
+  rule_review_status: string;
+  sources: SourceReference[];
+  missing_sources: string[];
+  grading_policy: { id: string; review_status: string };
+  record: AcademicRecord;
+  plans: AcademicPlan[];
+  scenarios: Scenario[];
+}
+
+/** Restore diff as the server computes it. Extra keys the server adds are shown as reported. */
+export interface BackupDiff {
+  attempts_added: string[];
+  attempts_removed: string[];
+  attempts_changed: string[];
+  attempts_unchanged: number;
+  current_enrolment_changed: boolean;
+  plans_to_create: number;
+  scenarios_not_restored: number;
+  [key: string]: unknown;
+}
+
+export interface BackupPreview {
+  id: string;
+  kind: 'backup';
+  base_record_revision: number;
+  expires_at: string;
+  diff: BackupDiff;
+}
+
+export interface BackupCommitPayload {
+  expected_revision: number;
+  confirm: true;
+}
+
+export interface DeleteDataPayload {
+  expected_revision: number;
+  password: string;
+  /** The typed phrase; the server accepts only "delete my data". */
+  confirm: string;
+  delete_account: boolean;
+}
+
+export interface DeleteDataResult {
+  deleted: Record<string, number>;
+  account_deleted: boolean;
+  record_revision: number | null;
+  retention: string;
+}
+
+export interface Scenario {
+  id: string;
+  revision: number;
+  plan_id: string;
+  label: string;
+  baseline_record_revision: number;
+  baseline_plan_revision: number;
+  rule_version: string;
+  changes: Record<string, unknown>[];
+  internship: Record<string, unknown> | null;
+  award_ids: string[];
+}

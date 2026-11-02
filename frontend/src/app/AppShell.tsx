@@ -108,6 +108,14 @@ export function AppShell() {
         </div>
       ) : null}
       <main id="main" tabIndex={-1}>
+        {session.notice ? (
+          <div className="callout" role="status">
+            {session.notice}
+            <button type="button" className="btn btn-small" onClick={session.dismissNotice}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
         <Outlet />
       </main>
     </>

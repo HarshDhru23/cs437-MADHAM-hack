@@ -23,6 +23,15 @@ export interface SessionValue {
   login: (credentials: Credentials) => Promise<void>;
   signup: (credentials: Credentials) => Promise<void>;
   logout: () => Promise<void>;
+  /**
+   * The server already ended the session (account deletion): clear every piece
+   * of personal state in this tab without calling logout, then show `notice`
+   * once on the next page.
+   */
+  forgetSession: (notice?: ReactNode) => Promise<void>;
+  /** One-time message left by forgetSession, shown by the shell. */
+  notice: ReactNode;
+  dismissNotice: () => void;
   /** Reload every cached personal resource from the server. */
   refreshPersonal: () => void;
   retryBootstrap: () => void;
@@ -96,25 +105,40 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       userRef.current = session.user;
       setUser(session.user);
       setExpired(false);
+      setNotice(null);
       setStatus('ready');
     },
     [api],
   );
 
+  const [notice, setNotice] = useState<ReactNode>(null);
+
+  const forget = useCallback(async () => {
+    userRef.current = null;
+    setUser(null);
+    setExpired(false);
+    cacheRef.current.clear();
+    importDraftStore.clear();
+    previewStore.clear();
+    saveRegistry.clear();
+    await api.bootstrap().catch(() => undefined);
+  }, [api]);
+
   const logout = useCallback(async () => {
     try {
       await endpoints.logout(api);
     } finally {
-      userRef.current = null;
-      setUser(null);
-      setExpired(false);
-      cacheRef.current.clear();
-      importDraftStore.clear();
-      previewStore.clear();
-      saveRegistry.clear();
-      await api.bootstrap().catch(() => undefined);
+      await forget();
     }
-  }, [api]);
+  }, [api, forget]);
+
+  const forgetSession = useCallback(
+    async (message?: ReactNode) => {
+      setNotice(message ?? null);
+      await forget();
+    },
+    [forget],
+  );
 
   const value = useMemo<SessionValue>(
     () => ({
@@ -127,10 +151,13 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       login: (c) => establish('login', c),
       signup: (c) => establish('signup', c),
       logout,
+      forgetSession,
+      notice,
+      dismissNotice: () => setNotice(null),
       refreshPersonal: () => cacheRef.current.clear(),
       retryBootstrap: () => setAttempt((a) => a + 1),
     }),
-    [api, status, user, expired, error, mock, establish, logout],
+    [api, status, user, expired, error, mock, establish, logout, forgetSession, notice],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
