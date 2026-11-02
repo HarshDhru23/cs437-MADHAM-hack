@@ -144,7 +144,8 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     expect(p).toHaveTextContent('timetable-2026-27-I');
     expect(p).toHaveTextContent('synthetic-timetable.xlsx');
     expect(p).toHaveTextContent('Not stated by the source');
-    expect(p).toHaveTextContent('Reviewed against its source by staff');
+    expect(p).toHaveTextContent('Draft, not reviewed: offerings are tentative'); // examples/offerings.json is a draft snapshot
+    expect(p).not.toHaveTextContent('Reviewed against its source by staff');
     expect(p).toHaveTextContent(/Coverage\s*Partial/);
     expect(p).toHaveTextContent('not a registration guarantee');
     expect(p).toHaveTextContent('A course absent from it is unknown, not unavailable');
