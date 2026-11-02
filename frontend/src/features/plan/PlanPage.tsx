@@ -219,6 +219,9 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
           <button type="button" className="btn" onClick={undoLast} disabled={undo.length === 0 || status === 'conflict'}>
             Undo last change
           </button>
+          <Link className="btn" to={`/report/${encodeURIComponent(initial.id)}`}>
+            Printable report
+          </Link>
         </div>
       </div>
       <p className="muted">

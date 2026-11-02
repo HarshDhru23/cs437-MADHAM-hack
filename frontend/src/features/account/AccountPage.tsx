@@ -4,6 +4,7 @@ import { useRecord } from '../../api/hooks';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
 import { failureMessage, PasswordField } from '../auth/AuthPages';
+import { YourData } from './YourData';
 
 export function AccountPage() {
   const session = useSession();
@@ -71,14 +72,8 @@ export function AccountPage() {
         </form>
       </section>
 
-      <section className="panel" aria-label="Your data">
-        <h2>Your data</h2>
-        <p>
-          Export and deletion are not available yet. The server does not provide export or account-data deletion routes in this release; they are planned
-          for the 3 November release (A11/H14). Until then, signing out removes your personal data from this browser tab.
-        </p>
-        <p className="muted">Password recovery is not available in this release, so keep your password somewhere safe.</p>
-      </section>
+      <YourData />
+      <p className="muted">Password recovery is not available in this release, so keep your password somewhere safe.</p>
     </div>
   );
 }

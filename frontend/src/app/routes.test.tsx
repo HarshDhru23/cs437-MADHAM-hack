@@ -29,13 +29,12 @@ describe('routes and shell (A01)', () => {
     ['/record/import', 'Add your academic record'],
     ['/awards', 'Awards'],
     ['/scenarios', 'Scenarios'],
-    ['/report/plan-1', 'Printable report'],
   ])('%s renders its screen', async (path, heading) => {
     renderAt(path, false);
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
   });
 
-  it.each(['/record', '/performance', '/plan/plan-1', '/account', '/record/review/abc'])('%s asks a signed-out visitor to sign in without leaking data', async (path) => {
+  it.each(['/record', '/performance', '/plan/plan-1', '/account', '/record/review/abc', '/report/plan-1'])('%s asks a signed-out visitor to sign in without leaking data', async (path) => {
     renderAt(path, false);
     expect(await screen.findByRole('heading', { level: 1, name: 'Sign in required' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', `/login?next=${encodeURIComponent(path)}`);
