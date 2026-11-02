@@ -242,12 +242,13 @@ def _curriculum_for(record=None):
 
 
 def _offering_snapshots():
-    """Latest reviewed snapshot per term, else the latest draft."""
+    """Latest reviewed snapshot per term, else the latest draft. Payloads are loaded only for those versions."""
     from server.records.models import OfferingSnapshot
     latest = {}
-    for stored in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at'):
-        latest.setdefault(stored.term_id, stored.payload)
-    return latest
+    for term, version in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at').values_list('term_id', 'version'):
+        latest.setdefault(term, version)
+    payloads = dict(OfferingSnapshot.objects.filter(pk__in=latest.values()).values_list('version', 'payload'))
+    return {term: payloads[version] for term, version in latest.items()}
 
 
 def _validate_owned_plan(owner, plan):
