@@ -79,9 +79,18 @@ Implemented routes:
 | `GET/POST /scenarios` | Owned list (`{scenarios:[...]}`) / create `{plan_id,label?,changes?,internship?,award_ids?}`. The baseline record, plan and rule revisions are captured at creation. |
 | `GET/PATCH/DELETE /scenarios/{id}` | PATCH/DELETE need `expected_revision`; PATCH with `rebase: true` moves the baseline to the current record and plan. |
 | `POST /scenarios/compare` | `{scenario_ids:[1-6, same plan]}`; for each, baseline and scenario evaluations (audit, labelled hypothetical performance, plan validation, internship) and their deltas. Stale scenarios return `stale: true` and `SCENARIO_STALE`, no evaluation. `internship_cases` tabulates none / 3 / 6 month choices. |
-| `POST /scenarios/{id}/apply-plan` | `{expected_plan_revision}`; writes drop/postpone/replace edits to the saved plan only; `not_applied` lists hypothetical fail/grade/cap/internship changes. 409 when the scenario or plan is stale. Never changes the record. |
+| `POST /scenarios/{id}/apply-plan` | `{expected_scenario_revision,expected_plan_revision}` (both required; the scenario revision is the one the client compared). Writes drop/postpone/replace edits to the saved plan only and returns `{plan,not_applied}`; `not_applied` lists hypothetical fail/grade/cap/internship changes. Never changes the record. Errors are listed below the table. |
 | `GET /export?kind=json` | Owned backup download: `kind: "coursepath-backup"`, `backup_version: "1"`, account username, rule version/review status/sources/missing sources, grading policy ID, record (with revision), plans and scenarios. No password, session or CSRF data. |
 | `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version, owner, cohort, attempts and plans, and returns a diff. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
+
+Apply-plan errors, checked in this order; each changes nothing:
+
+- 404 `NOT_FOUND`: missing or foreign scenario.
+- 400 `INVALID_INPUT`: either expected revision is missing or not a nonnegative integer.
+- 409 `REVISION_CONFLICT`, data `{current_revision,action:"reload_compare"}`: `current_revision` is the scenario's revision when the scenario changed since it was compared, otherwise the plan's revision when the plan is stale. Reload, compare again, then apply.
+- 409 `SCENARIO_STALE`, data `{action:"rebase",scenario_revision,current_record_revision,current_plan_revision,current_rule_version,baseline_record_revision,baseline_plan_revision,rule_version}`: the record, plan or rules moved since the scenario's baseline. PATCH the scenario with `{expected_revision:scenario_revision,rebase:true}`, compare again, then apply.
+
+Examples: `examples/scenario.json`, `scenario-comparison.json`, `plan-apply.json`, `scenario-stale.json`.
 
 An empty plan has `semesters: []`. Each semester has `term_id`, `courses`,
 `placeholders`; every item has a stable `id`. Selected courses have
@@ -122,14 +131,18 @@ protected. Expiry blocks commits; scheduled purging/deletion is H14 work.
 
 Supported errors: 400 invalid fields, 401 authentication, 403 CSRF, 404 foreign/
 missing objects, 409 stale revision, 413 upload limit, 422 uncommittable import,
-429 account throttling. A 409 contains `current_revision` and `reload_compare`;
+429 account throttling. A 409 contains `current_revision` and `reload_compare`
+(except apply-plan's `SCENARIO_STALE`, which asks for a rebase);
 do not automatically overwrite/retry. Account recovery and deletion routes are
 later checkpoint work, not stubs. The printable report is the frontend's print
 view of `POST /analysis`; the server does not render PDFs.
 
 Scenario changes: `{op:"drop"|"fail"|"grade",item_id}`, `{op:"postpone",item_id,term_id}`
 (later terms only), `{op:"replace",item_id,course:{normalized_code,credits}}`,
-`{op:"cap",term_id,credits}`. `grade` takes a letter grade. Internship:
+`{op:"cap",term_id,credits}`. `grade` takes a letter grade: a passing grade keeps the
+course planned, so audit and validation are unchanged and only the labelled CPI uses
+it; E or F removes the course like `fail`. A graded or failed item takes no further
+changes. Internship:
 `{duration_choice,start_date,end_date_exclusive,placement_mode,preset?,modules?}`;
 modules are `{id,credits,intended_allocation,status,grade?,quad_id?,approval_ref?,registration_id?}`.
 A module cannot carry an approval status: only staff-verified `ApprovalEvidence`
