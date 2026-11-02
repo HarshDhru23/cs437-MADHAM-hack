@@ -691,6 +691,7 @@
                         "earned",
                         "approved",
                         "proposed",
+                        "failed",
                         "rejected"
                       ]
                     }
