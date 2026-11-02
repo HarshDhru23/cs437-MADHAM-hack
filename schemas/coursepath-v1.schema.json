@@ -71,10 +71,16 @@
           "$ref": "#/$defs/plan_apply"
         },
         {
-          "$ref": "#/$defs/scenario_stale"
+          "$ref": "#/$defs/backup"
+        },
+        {
+          "$ref": "#/$defs/backup_preview"
         },
         {
           "type": "null"
+        },
+        {
+          "$ref": "#/$defs/scenario_stale"
         }
       ]
     },
@@ -1777,6 +1783,125 @@
         }
       },
       "additionalProperties": false
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "backup_version",
+        "exported_at",
+        "account",
+        "rule_version",
+        "rule_review_status",
+        "sources",
+        "missing_sources",
+        "grading_policy",
+        "record",
+        "plans",
+        "scenarios"
+      ],
+      "properties": {
+        "kind": {
+          "const": "coursepath-backup"
+        },
+        "backup_version": {
+          "const": "1"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "account": {
+          "type": "object",
+          "required": [
+            "username"
+          ],
+          "properties": {
+            "username": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "rule_review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted"
+          ]
+        },
+        "sources": {
+          "type": "array"
+        },
+        "missing_sources": {
+          "type": "array"
+        },
+        "grading_policy": {
+          "type": "object",
+          "required": [
+            "id",
+            "review_status"
+          ]
+        },
+        "record": {
+          "$ref": "#/$defs/record"
+        },
+        "plans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/plan"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        }
+      }
+    },
+    "backup_preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "base_record_revision",
+        "expires_at",
+        "diff"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "const": "backup"
+        },
+        "base_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "diff": {
+          "type": "object",
+          "required": [
+            "attempts_added",
+            "attempts_removed",
+            "attempts_changed",
+            "attempts_unchanged",
+            "current_enrolment_changed",
+            "plans_to_create",
+            "scenarios_not_restored"
+          ]
+        }
+      }
     },
     "scenario_evaluation": {
       "type": "object",

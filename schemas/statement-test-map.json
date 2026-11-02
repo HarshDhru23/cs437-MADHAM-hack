@@ -606,8 +606,13 @@
     {
       "id": "CP-30",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_previews_diff_then_commits_only_on_confirmation",
+        "server.records.test_export.ExportRestoreTests.test_cp30_unknown_foreign_or_malformed_backups_are_rejected_without_changes",
+        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,

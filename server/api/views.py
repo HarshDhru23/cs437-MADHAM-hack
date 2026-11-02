@@ -17,7 +17,7 @@ from coursepath.issues import issue
 from coursepath.serialization import plain
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
 from coursepath.validation import plan_payload, current_enrolment, scenario_payload
-from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario
+from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts
 
 
 def response(data=None, issues=(), status=200):
@@ -208,6 +208,8 @@ def import_commit(request, preview_id):
         raise RevisionConflict(stored.revision)
     if preview.expires_at <= timezone.now():
         return response(issues=[issue('PREVIEW_EXPIRED', 'Create a new preview.', 'error')], status=422)
+    if preview.payload.get('kind') == 'backup':
+        return _restore_backup(request, preview, stored, expected)
     selected = request.payload.get('accepted_candidate_ids')
     candidates = preview.payload['candidate_attempts']
     if not isinstance(selected, list) or len(set(selected)) != len(selected) or set(selected) - {a['id'] for a in candidates}:
@@ -427,3 +429,78 @@ def scenario_apply(request, scenario_id):
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
     result = update_plan(plan, expected, plan_payload(edited))
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
+
+
+BACKUP_KIND = 'coursepath-backup'
+
+
+@endpoint({'GET'})
+def export(request):
+    if request.GET.get('kind', 'json') != 'json':
+        raise ValueError('Only kind=json is exported; print the report from the analysis view')
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    rules, policy = _curriculum_for(stored), _grading_policy()
+    data = {'kind': BACKUP_KIND, 'backup_version': '1', 'exported_at': timezone.now().isoformat(), 'account': {'username': request.user.username},
+            'rule_version': rules['version'], 'rule_review_status': rules['review_status'], 'sources': rules['sources'],
+            'missing_sources': rules.get('missing_sources', []), 'grading_policy': {'id': policy['id'], 'review_status': policy['review_status']},
+            'record': record_data(stored), 'plans': [plan_data(p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')],
+            'scenarios': [scenario_data(s) for s in Scenario.objects.filter(owner=request.user).order_by('id')]}
+    gaps = [] if rules['review_status'] == 'reviewed' else [issue('SOURCE_MISSING', 'This backup was made against draft rules; its audit is not an official verdict.', sources=[s['id'] for s in rules['sources']])]
+    result = response(data, gaps)
+    result['Content-Disposition'] = 'attachment; filename="coursepath-backup.json"'
+    return result
+
+
+@endpoint({'POST'})
+def backup_preview(request):
+    """Validate a JSON backup as a candidate restore. Nothing changes until /imports/{id}/commit with confirm=true."""
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    revision = expected_revision(request.payload)
+    backup = request.payload.get('backup')
+    if isinstance(backup, dict) and 'schema_version' in backup and isinstance(backup.get('data'), dict):
+        backup = backup['data']
+    if not isinstance(backup, dict) or backup.get('kind') != BACKUP_KIND or backup.get('backup_version') != '1':
+        return response(issues=[issue('BACKUP_VERSION_UNSUPPORTED', 'This is not a supported CoursePath backup version.', 'error')], status=422)
+    if not isinstance(backup.get('account'), dict) or backup['account'].get('username') != request.user.username:
+        return response(issues=[issue('BACKUP_OWNER_MISMATCH', 'A backup can be restored only into the account that exported it.', 'error')], status=422)
+    record = backup.get('record')
+    if not isinstance(record, dict) or not isinstance(record.get('profile'), dict):
+        raise ValueError('Backup record missing')
+    if (record['profile'].get('programme'), record['profile'].get('admission_year')) != ('BTECH_CSE', 2024):
+        return response(issues=[issue('COHORT_MISMATCH', 'The backup is not for the supported B.Tech CSE 2024 cohort.', 'error')], status=422)
+    attempts = validate_attempts(record.get('attempts'))
+    enrolment = current_enrolment(record.get('current_enrolment', []))
+    reported = record.get('reported_controls', [])
+    plans, scenarios = backup.get('plans', []), backup.get('scenarios', [])
+    if not isinstance(reported, list) or len(reported) > 50 or not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
+        raise ValueError('Backup lists exceed limits')
+    plans = [plan_payload({k: v for k, v in p.items() if k in {'semesters', 'label'}}) for p in plans]
+    if revision != stored.revision:
+        raise RevisionConflict(stored.revision)
+    existing = {a['id']: a for a in record_data(stored)['attempts']}
+    incoming = {a['id']: a for a in attempts}
+    shared = incoming.keys() & existing.keys()
+    diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
+            'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans), 'scenarios_not_restored': len(scenarios)}
+    issues = []
+    if backup.get('rule_version') != _curriculum_for(stored)['version']:
+        issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
+    if scenarios:
+        issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
+    preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
+                                           payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
+    return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
+                    issues, 201)
+
+
+def _restore_backup(request, preview, stored, expected):
+    """Runs inside import_commit's transaction: the record and new plans commit together or not at all."""
+    if request.payload.get('confirm') is not True:
+        raise ValueError('Restoring replaces the record; send confirm: true')
+    payload = preview.payload
+    restored = replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
+    AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
+    preview.committed_at = timezone.now()
+    preview.save(update_fields=['committed_at'])
+    return response(restored)
