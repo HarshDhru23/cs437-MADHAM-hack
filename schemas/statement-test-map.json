@@ -472,6 +472,10 @@
         "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty",
         "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_variant_satisfies_and_unlisted_course_stays_unknown",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_old_codes_find_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_internship_downstream_check_finds_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
       ],
       "implementation_scope": "backend_evidence",

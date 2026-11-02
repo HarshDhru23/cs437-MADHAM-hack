@@ -43,7 +43,8 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
         for course in semester.get('courses', []):
             code = course.get('normalized_code', course.get('course_id'))
             entity = course.get('id', code)
-            metadata = catalogue.get(code)
+            current = canonical_code(code, identity)  # D-04: catalogue and repeat checks use the resolved identity
+            metadata = catalogue.get(current)
             expression = metadata.get('prerequisites') if metadata and metadata.get('prerequisite_known') else None
             eligibility = evaluate_prerequisite(expression, term, attempts, planned, identity)
             # D-17: prerequisites are CoursePath team recommendations; an unmet one warns and never blocks.
@@ -55,14 +56,14 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             elif eligibility['status'] == 'conditional':
                 issues.append(issue('PREREQUISITE_CONDITIONAL', 'Recommended preparation (CoursePath team) is planned earlier; it helps only if passed.', 'warning',
                                     [entity], eligibility['source_refs']))
-            previous = seen.get(code, [])
-            completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == canonical_code(code, identity) and a['completion_status'] == 'completed']
+            previous = seen.get(current, [])
+            completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == current and a['completion_status'] == 'completed']
             if previous or completed:
                 if metadata is None or metadata.get('repeatable') is None:
                     issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeat eligibility requires reviewed policy.', entities=[entity]))
                 elif not metadata['repeatable'] or not course.get('instance_id'):
                     issues.append(issue('DUPLICATE_COURSE', 'Already completed/selected or missing repeat instance evidence.', 'error', [entity] + previous))
-            seen.setdefault(code, []).append(entity)
+            seen.setdefault(current, []).append(entity)
             availability = offering_availability(offering_snapshot, term, code)
             issues.extend(availability['issues'])
             ids = availability['offering_ids']

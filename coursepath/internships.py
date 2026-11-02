@@ -11,6 +11,7 @@ from decimal import Decimal
 from math import ceil
 from coursepath.calendar import MONTHS, add_calendar_months, as_date, term_dates
 from coursepath.eligibility import evaluate_prerequisite
+from coursepath.identity import canonical_code
 from coursepath.imports.grades import grade_status
 from coursepath.issues import issue
 from coursepath.models import term_key
@@ -150,7 +151,7 @@ def _downstream(context, plan_items, affected):
         changed = False
         kept = [row for row in plan_items if row['id'] not in removed]
         for row in kept:
-            metadata = context.get('catalogue', {}).get(row.get('normalized_code'))
+            metadata = context.get('catalogue', {}).get(canonical_code(row.get('normalized_code'), context.get('identity')))
             if not metadata or not metadata.get('prerequisite_known'):
                 continue
             before = evaluate_prerequisite(metadata['prerequisites'], row['term_id'], attempts, plan_items, context.get('identity'))
