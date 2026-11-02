@@ -10,8 +10,10 @@ import { PerformancePage } from '../features/performance/PerformancePage';
 import { PlanIndexPage, PlanPage } from '../features/plan/PlanPage';
 import { RecordPage } from '../features/record/RecordPage';
 import { RequirementsPage } from '../features/requirements/RequirementsPage';
+import { ScenarioPage } from '../features/scenarios/ScenarioPage';
+import { ScenariosPage } from '../features/scenarios/ScenariosPage';
 import { StatePanel } from '../components/StatePanel';
-import { AppShell, PLAN_TABS, RECORD_TABS, SubNav } from './AppShell';
+import { AppShell, RECORD_TABS, SubNav } from './AppShell';
 import { SessionProvider, useSession } from './session';
 import { usePublishView, ViewContextProvider } from './viewContext';
 
@@ -157,8 +159,17 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        // Signed-out visitors see the heading and a sign-in prompt from the page itself.
         path: '/scenarios',
-        element: <NotYet title="Scenarios" task="A09/H13" tabs={PLAN_TABS} detail="What-if and internship comparisons need the scenario API, which is not served yet." />,
+        element: <ScenariosPage />,
+      },
+      {
+        path: '/scenarios/:scenario_id',
+        element: (
+          <RequireAuth>
+            <ScenarioPage />
+          </RequireAuth>
+        ),
       },
       {
         path: '/report/:plan_id',
