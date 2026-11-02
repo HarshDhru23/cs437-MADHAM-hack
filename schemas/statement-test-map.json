@@ -552,8 +552,17 @@
     {
       "id": "CP-28",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_drop_reports_downstream_without_touching_the_baseline",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_failure_changes_projection_and_labelled_cpi_only",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_postpone_replace_and_cap_rerun_the_same_checks",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
+        "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,
@@ -655,6 +664,8 @@
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_partial_term_overlap_and_remote_mode_still_need_permission",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_invalid_dates_changed_length_and_missing_calendar",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_compare_none_three_six_on_one_unchanged_baseline",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp33_scenario_internship_runs_through_the_same_comparison",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_exam_window_without_dates_is_unknown_not_clear",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe"
       ],
@@ -683,6 +694,7 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_one_registration_counts_once_across_modules",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero"
       ],
       "implementation_scope": "backend_evidence",

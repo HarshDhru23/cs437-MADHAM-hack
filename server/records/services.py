@@ -110,3 +110,23 @@ def update_plan(plan, expected, payload):
 
 def plan_data(plan):
     return {'id': str(plan.id), 'revision': plan.revision, **plan.payload}
+
+
+def scenario_data(scenario):
+    payload = scenario.payload
+    return {'id': str(scenario.id), 'revision': scenario.revision, 'plan_id': str(scenario.plan_id), 'label': payload.get('label', ''),
+            'baseline_record_revision': scenario.baseline_record_revision, 'baseline_plan_revision': scenario.baseline_plan_revision,
+            'rule_version': scenario.rule_version, 'changes': payload.get('changes', []), 'internship': payload.get('internship'),
+            'award_ids': payload.get('award_ids', [])}
+
+
+@transaction.atomic
+def update_scenario(scenario, expected, payload, baseline=None):
+    updates = {'revision': F('revision') + 1, 'payload': payload}
+    if baseline:
+        updates.update(baseline)
+    if not type(scenario).objects.filter(pk=scenario.pk, owner=scenario.owner, revision=expected).update(**updates):
+        scenario.refresh_from_db()
+        raise RevisionConflict(scenario.revision)
+    scenario.refresh_from_db()
+    return scenario_data(scenario)
