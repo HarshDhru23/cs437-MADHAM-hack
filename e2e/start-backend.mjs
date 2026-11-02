@@ -4,10 +4,13 @@
 //   COURSEPATH_BACKEND_DIR  Repository checkout containing server/manage.py (default: repo root)
 //   COURSEPATH_E2E_NO_TIMETABLE  Set to skip loading the synthetic timetable snapshot
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// File holding the SQLite path of the run on this API port; tests/helpers.ts reads the same name.
+const dbPathFile = (port) => path.join(tmpdir(), `coursepath-e2e-${port}.db-path`);
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const backend = path.resolve(process.env.COURSEPATH_BACKEND_DIR ?? path.join(here, '..'));
@@ -32,6 +35,8 @@ for (const name of readdirSync(tmpdir())) {
 }
 const dbDir = mkdtempSync(path.join(tmpdir(), prefix));
 const env = { ...process.env, COURSEPATH_ENV: 'development', COURSEPATH_SQLITE_PATH: path.join(dbDir, 'e2e.sqlite3'), PYTHONUNBUFFERED: '1' };
+// Tell the specs which throwaway database this run uses (helpers.ts resetAccountThrottle).
+writeFileSync(dbPathFile(port), env.COURSEPATH_SQLITE_PATH, 'utf8');
 const migrate = spawnSync(python, [manage, 'migrate', '--noinput'], { cwd: backend, env, stdio: 'inherit' });
 if (migrate.status !== 0) process.exit(migrate.status ?? 1);
 // A08 / flow 4: a synthetic 2026-27 Semester I timetable (built once by the project's
