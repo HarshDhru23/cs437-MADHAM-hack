@@ -8,6 +8,7 @@ from coursepath.serialization import decimal_value, decimal_string
 from coursepath.rules.schema import walk_requirements
 from coursepath.rules.expressions import requirement_result
 from coursepath.issues import issue
+from coursepath.identity import identity_map, canonical_code
 
 
 def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget_seconds=0.5):
@@ -17,6 +18,7 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
     caps = curriculum.get('caps', [])
     issues, excluded, rows, seen = [], [], [], set()
     unknown_caps = False
+    identity = identity_map(curriculum.get('identity_groups'))
     for attempt in sorted(attempts, key=lambda a: a['id']):
         source_id = attempt.get('source_key', attempt['id'])
         reason = None
@@ -30,12 +32,13 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
         if reason:
             excluded.append({'attempt_id': attempt['id'], 'reason': reason})
             continue
-        code = attempt['normalized_code']
-        options = [i for i, leaf in enumerate(leaves) if code == leaf.get('course_id') or code in (leaf.get('course_ids') or [])]
+        code = canonical_code(attempt['normalized_code'], identity)
+        options = [i for i, leaf in enumerate(leaves) if code == canonical_code(leaf.get('course_id'), identity)
+                   or code in {canonical_code(c, identity) for c in leaf.get('course_ids') or []}]
         if not options:
             excluded.append({'attempt_id': attempt['id'], 'reason': 'NO_REVIEWED_ALLOCATION'})
             continue
-        metadata = catalogue.get(code, {})
+        metadata = catalogue.get(attempt['normalized_code']) or catalogue.get(code, {})
         if caps and 'tags' not in metadata:
             unknown_caps = True
         rows.append((attempt, options, metadata.get('tags', [])))

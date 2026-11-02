@@ -82,9 +82,9 @@ class SourceReference:
     def __post_init__(self):
         if not self.id or not self.locator or not self.version:
             raise ValueError('Source identity/version/locator are required')
-        if self.kind not in {'advisory', 'transcript', 'paste', 'timetable', 'course_plan', 'approval', 'student_example'}:
+        if self.kind not in {'advisory', 'transcript', 'paste', 'timetable', 'course_plan', 'approval', 'student_example', 'team_decision'}:
             raise ValueError('Invalid source kind')
-        if self.review_status not in {'draft', 'reviewed', 'conflicted'} or self.authority not in {'institutional', 'student_provided', 'example'}:
+        if self.review_status not in {'draft', 'reviewed', 'conflicted'} or self.authority not in {'institutional', 'student_provided', 'example', 'team'}:
             raise ValueError('Invalid source review/authority')
 
 

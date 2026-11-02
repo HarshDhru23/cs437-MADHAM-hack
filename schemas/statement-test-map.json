@@ -283,7 +283,8 @@
       "id": "CP-13",
       "oct27_target": true,
       "tests": [
-        "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues"
+        "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp13_d04_groups_map_old_and_variant_codes_to_the_current_course"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -371,7 +372,8 @@
       "id": "CP-17",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism"
+        "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -403,7 +405,8 @@
       "id": "CP-19",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted"
+        "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp19_identity_groups_are_sourced_and_never_overlap"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -451,7 +454,8 @@
       "id": "CP-22",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty"
+        "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

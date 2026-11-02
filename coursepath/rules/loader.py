@@ -5,6 +5,7 @@ from decimal import Decimal
 from coursepath.serialization import decimal_value
 from coursepath.rules.sources import validate_sources
 from coursepath.rules.schema import TYPES, walk_requirements
+from coursepath.identity import identity_map
 
 
 def validate_curriculum(curriculum):
@@ -43,6 +44,13 @@ def validate_curriculum(curriculum):
             raise ValueError('Invalid cap identity/source')
         ids.add(cap['id'])
         decimal_value(cap['maximum_credits'])
+    for group in curriculum.get('identity_groups', []) + curriculum.get('identity_review_pairs', []):
+        if not group.get('decision') or not group.get('source_refs') or set(group['source_refs']) - source_ids:
+            raise ValueError('Identity decisions need a decision ID and valid sources')
+    for group in curriculum.get('identity_groups', []):
+        if not group.get('current') or not isinstance(group.get('same'), list) or not group['same']:
+            raise ValueError('An identity group names its current code and the codes that are the same course')
+    identity_map(curriculum.get('identity_groups'))
     return deepcopy(curriculum)
 
 

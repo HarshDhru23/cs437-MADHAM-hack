@@ -252,8 +252,10 @@ def _offering_snapshots():
 
 def _validate_owned_plan(owner, plan):
     from coursepath.semester_plan import validate_plan
+    from coursepath.identity import identity_map
     record = AcademicRecord.objects.get(owner=owner)
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': {}, 'standing': record.profile.get('standing', 'unknown')},
+    identity = identity_map(_curriculum_for(record).get('identity_groups'))
+    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': {}, 'identity': identity, 'standing': record.profile.get('standing', 'unknown')},
                          plan.payload, list(_offering_snapshots().values()))
 
 
