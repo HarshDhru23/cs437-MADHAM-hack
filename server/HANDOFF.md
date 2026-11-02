@@ -1,3 +1,77 @@
+# Harsh — November 3 block handoff
+
+Prepared 31 October 2026 (IST) as stacked branches from `origin/main`
+`ece371c`, then opened as stacked PRs #10 to #18 (#10 is merged; the rest are
+in review and merge in order). Only committed repository files were used as
+sources.
+
+| Branch (stacked in this order) | PR | Task | Statements |
+| --- | --- | --- | --- |
+| `feature/harsh-h11-offerings-clashes` | #10 (merged) | H11 offerings and clashes | CP-23, CP-24 |
+| `feature/harsh-h12-internships` | #11 | H12 internships and IN 498 modules | CP-33, CP-34 |
+| `feature/harsh-h13-scenarios` | #12 | H13 scenarios, compare, plan apply | CP-28 (and the CP-33/34 API) |
+| `feature/harsh-h13-export` | #13 | H13 export and restore | CP-30 |
+| `feature/harsh-h14-privacy` | #14 | H14 deletion, preview purge, production check | CP-32 |
+| `feature/harsh-d04-course-identity` | #15 | D-01 to D-04 identity groups | CP-13, CP-17, CP-19, CP-22 |
+| `feature/harsh-d17-recommended-prerequisites` | #16 | `[contract]` D-17 recommended preparation | CP-05, CP-22 |
+| `feature/harsh-h15-nov3-integration` | #17 | H15 SPEC status and this note | none |
+| `feature/harsh-h06-adv13-curriculum` | #18 | H06 reviewed ADV13 curriculum | CP-03, CP-12, CP-14, CP-15, CP-17 to CP-20 |
+
+H10 (CP-25 to CP-27) is not started: D-18 defers it until the AI minor document
+and the CSE honours list exist (GAP-07).
+
+## Changed interfaces
+
+- New routes: `GET /offerings`, `/scenarios` (CRUD, `compare`, `{id}/apply-plan`),
+  `GET /export`, `POST /imports/backup-preview` (committed through
+  `/imports/{id}/commit` with `confirm: true`), `DELETE /account/data`. See
+  `server/README.md`.
+- Plan validation adds `offering_status`, `offering_ids` and
+  `meeting_check_status` per course and `meeting_checks` per term.
+- `PREREQUISITE_MISSING` is now severity `warning`, labelled "Recommended
+  preparation (CoursePath team)"; unlisted courses stay `PREREQUISITE_UNKNOWN`.
+- Schema additions: `offering_snapshot`, `meeting`, `scenario`,
+  `scenario_list`, `scenario_comparison`, `plan_apply`, `backup`,
+  `backup_preview`, `account_deletion`; curriculum `identity_groups`; source
+  kind `team_decision` and authority `team`. Examples: `offerings.json` (new),
+  `internship-comparison.json` (regenerated from the engine).
+- Migration `0003_offeringsnapshot`; staff commands `load_offerings` and
+  `purge_previews`.
+
+## Verification
+
+- `python .claude/skills/coursepath/scripts/preflight.py` on the top branch:
+  0 WARN; one FAIL, `SPEC -> tests` for CP-25, CP-26 and CP-27 (blocked by
+  D-18). `scripts/test.py` (Python, Django, frontend, e2e) passed.
+- Every new test was run red first (assertion failures against stubs), and a
+  deliberate defect per slice was caught and reverted: touching meetings
+  counted as a clash; unknown meetings flattened to clear; self-claimed module
+  approval; inclusive interval ends; apply without the stale check; restore
+  without the owner check; deletion without re-authentication; allocation
+  without identity resolution; recommendation severity back to error.
+- Real HTTP on an isolated SQLite database: signup, IMS import, plan,
+  scenarios, compare, apply, export, backup preview and deletion all behaved as
+  specified. No browser was used; that evidence is Aaryan's.
+
+## Open dependencies
+
+- Aaryan: scenario/internship comparison UI against
+  `examples/internship-comparison.json` and `/scenarios/compare`; section
+  choice and clash panel from `meeting_checks`; print view; data-deletion page
+  with the retention text; "recommended preparation (CoursePath team)" wording.
+  The record page cannot set `learning_designation`, and imported rows default
+  to `unknown`, which the audit excludes; this needs a team decision before the
+  demo.
+- Manashree: a reviewed 2026-27 Semester I snapshot (`build_timetable.py`, then
+  `load_offerings --reviewed --coverage ...`), lab alternative semantics
+  (AMB-12), quad dates (AMB-13) and the 2026-27 calendar (GAP-03). GAP-08 can
+  move to closed for H11 to H14. Proposed register updates: GAP-04 and AMB-04
+  resolved by D-04; AMB-08 per-quad limit dropped by D-14.
+- Harsh: D-05 to D-16 encoding in the curriculum and grading policy (discipline
+  electives by CS prefix, project order, online pool, P/F conversions, best
+  grade, viva); the institute core, maths, science and HSS lists need a committed
+  source first.
+
 # Harsh — October 27 backend handoff
 
 Prepared 23 October 2026 (IST), on `feature/harsh-oct27-backend`, from committed
