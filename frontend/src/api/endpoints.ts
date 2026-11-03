@@ -55,6 +55,13 @@ export const endpoints = {
   analysis: (api: ApiClient, body: AnalysisRequest, o?: RequestOptions) => api.send<AnalysisResult>('POST', '/analysis', body, o),
 };
 
+// A08: public term offering snapshot (latest reviewed, else latest draft).
+import type { TermOfferingSnapshot } from './types';
+
+export const offeringEndpoints = {
+  offerings: (api: ApiClient, termId: string, o?: RequestOptions) => api.get<TermOfferingSnapshot>(`/offerings?term_id=${encodeURIComponent(termId)}`, o),
+};
+
 // A09 — scenarios (server/README.md: /scenarios, /scenarios/{id}, /scenarios/compare, /scenarios/{id}/apply-plan).
 // GET /scenarios/{id} is accountEndpoints.scenario below.
 import type { ScenarioApplyRequest, ScenarioApplyResult, ScenarioCompareResult, ScenarioCreate, ScenarioPatch } from './types';
