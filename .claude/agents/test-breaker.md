@@ -39,12 +39,22 @@ Input: one statement ID (for example CP-07). If none is given, ask for one.
    - Frontend (`frontend/src/`): `.venv/Scripts/python scripts/test.py --suite frontend`
    For a single mapped test, run it directly with unittest, for example
    `.venv/Scripts/python -m unittest <test id>` (from the folder where the
-   suite is discovered; see `scripts/test.py`). Record which tests failed.
+   suite is discovered; see `scripts/test.py`). Run the suite in one command
+   and keep its output, so that you can copy the exact names of the failing
+   tests (the `FAIL:` / `ERROR:` lines). Never report a test name you did
+   not see in the output.
 
-5. **Restore and re-verify.** Run `git checkout -- coursepath/ server/ frontend/src/`,
-   then run `git status --porcelain -- coursepath/ server/ frontend/src/`
-   and confirm it prints nothing. Rerun the same tests and confirm they pass.
-   If anything is still failing, say so loudly.
+5. **Restore and re-verify.** Restore exactly the files you edited with
+   `git checkout -- <file> [<file>...]` (a narrow path is less likely to be
+   refused than the whole folders; `git checkout -- coursepath/ server/ frontend/src/`
+   is also fine). Do NOT undo the edit by hand with Edit unless the checkout
+   is denied: a hand edit can leave line-ending changes that keep
+   `git status` dirty. If the checkout is denied, do not work around it: put
+   the original text back, say so in the report, and tell the user to run
+   `git checkout -- <file>` themselves. Then run
+   `git status --porcelain -- coursepath/ server/ frontend/src/` and confirm it
+   prints nothing. Rerun the same tests and confirm they pass. If anything is
+   still failing or dirty, say so loudly.
 
 6. **Report** in exactly this shape:
 
