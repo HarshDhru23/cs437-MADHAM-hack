@@ -12,6 +12,8 @@ def validate_sources(sources, cohort, reviewed=False):
         ids.add(source['id'])
         if source.get('effective_date'):
             date.fromisoformat(source['effective_date'])
-        if reviewed and (source['review_status'] != 'reviewed' or source['authority'] != 'institutional' or not source.get('effective_date')):
+        # A reviewed curriculum cites reviewed institutional evidence with an effective date, or a reviewed TEAM decision record.
+        if reviewed and (source['review_status'] != 'reviewed' or source['authority'] not in {'institutional', 'team'}
+                         or source['authority'] == 'institutional' and not source.get('effective_date')):
             raise ValueError('Reviewed rules require applicable institutional evidence and effective dates')
     return ids

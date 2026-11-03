@@ -11,12 +11,13 @@ def evaluate_audit(curriculum, catalogue, record, plan=None, awards=(), approval
     current_rows = deepcopy(record.get('attempts', []))
     for row in record.get('current_enrolment', []):
         if row.get('confirmed'):
-            current_rows.append({**row, 'completion_status': 'completed', 'learning_designation': row.get('learning_designation', 'unknown')})
+            current_rows.append({**row, 'completion_status': 'completed', 'learning_designation': row.get('learning_designation', 'degree'), 'current': True})
     current = allocate(curriculum, catalogue, current_rows, **limits)
     projected_rows = deepcopy(current_rows)
     for semester in (plan or {}).get('semesters', []):
         for row in semester.get('courses', []):
-            projected_rows.append({**row, 'normalized_code': row.get('normalized_code', row.get('course_id')), 'completion_status': 'completed', 'learning_designation': row.get('learning_designation', 'unknown')})
+            projected_rows.append({**row, 'term_id': semester.get('term_id'), 'normalized_code': row.get('normalized_code', row.get('course_id')), 'completion_status': 'completed',
+                                   'learning_designation': row.get('learning_designation', 'degree'), 'planned': True})
     projected = allocate(curriculum, catalogue, projected_rows, **limits)
     if len(current_rows) > len(record.get('attempts', [])):
         _conditional(current['requirements'])

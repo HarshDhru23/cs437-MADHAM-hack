@@ -1,51 +1,99 @@
 {
-  "id": "cse-2024", "version": "cse-2024-draft-v1", "cohort": "BTECH_CSE-2024", "review_status": "draft", "total_credits": "170",
-  "sources": [{"id": "committed-roadmap", "kind": "student_example", "title": "Committed implementation roadmap (secondary planning evidence)", "version": "a53e7d3", "locator": "docs/implementation-roadmap.md sections 3.1-3.2 (describes advisory pp. 2,4,6,7,10,14,15,23)", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": null, "review_status": "draft", "authority": "example"}],
-  "missing_sources": ["Committed official January 2026 advisory and cohort amendments", "Reviewed catalogue and basket memberships", "Equivalence/substitution decisions", "Project/exposure/viva interpretation and approvals"],
-  "requirements": [
-    {"id": "institute-core", "label": "Institute core", "type": "minimum_credits", "minimum_credits": "31", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "materials", "label": "Materials choice", "type": "minimum_credits", "minimum_credits": "3", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "hss", "label": "HSS (GE included)", "type": "all_of", "minimum_credits": "28", "source_refs": ["committed-roadmap"], "children": [
-      {"id": "hs191", "type": "mandatory_course", "course_id": "HS 191", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
-      {"id": "hs192", "type": "mandatory_course", "course_id": "HS 192", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
-      {"id": "economics", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-      {"id": "philosophy", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-      {"id": "world-civilizations", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-      {"id": "ge", "type": "choose_courses", "minimum_courses": 2, "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-      {"id": "hss-other", "type": "minimum_credits", "minimum_credits": "8", "course_ids": null, "source_refs": ["committed-roadmap"]}
-    ]},
-    {"id": "math", "type": "all_of", "minimum_credits": "10", "source_refs": ["committed-roadmap"], "children": [
-      {"id": "ma103", "type": "mandatory_course", "course_id": "MA 103", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "ma104", "type": "mandatory_course", "course_id": "MA 104", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
-      {"id": "ma203", "type": "mandatory_course", "course_id": "MA 203", "minimum_credits": "2", "source_refs": ["committed-roadmap"]},
-      {"id": "math-choice", "type": "minimum_credits", "minimum_credits": "2", "course_ids": null, "source_refs": ["committed-roadmap"]}
-    ]},
-    {"id": "science-basket", "type": "minimum_credits", "minimum_credits": "8", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "bs-elective", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "cse-core", "type": "all_of", "minimum_credits": "36", "source_refs": ["committed-roadmap"], "children": [
-      {"id": "dsa", "type": "mandatory_course", "course_id": "ES 242", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "discrete", "type": "mandatory_course", "course_id": "ES 214", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "digital", "type": "mandatory_course", "course_id": "ES 204", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "organization", "type": "mandatory_course", "course_id": "ES 336", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "toc", "type": "mandatory_course", "course_id": "CS 201", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "os", "type": "mandatory_course", "course_id": "CS 330", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "tools", "type": "mandatory_course", "course_id": "CS 202", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "ai", "type": "mandatory_course", "course_id": "CS 329", "minimum_credits": "4", "source_refs": ["committed-roadmap"]},
-      {"id": "networks", "type": "mandatory_course", "course_id": "CS 331", "minimum_credits": "4", "source_refs": ["committed-roadmap"]}
-    ]},
-    {"id": "cse-electives", "type": "all_of", "minimum_credits": "26", "source_refs": ["committed-roadmap"], "children": [
-      {"id": "theory", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["ES 301", "CS 614", "CS 617", "CS 328"], "source_refs": ["committed-roadmap"]},
-      {"id": "systems", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["CS 327", "CS 332", "CS 431", "CS 432", "CS 434", "CS 435", "CS 615", "CS 616", "ES 668"], "source_refs": ["committed-roadmap"]},
-      {"id": "cse-general", "type": "minimum_credits", "minimum_credits": "10", "course_ids": null, "source_refs": ["committed-roadmap"]}
-    ]},
-    {"id": "open-electives", "type": "minimum_credits", "minimum_credits": "16", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "open-project", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]},
-    {"id": "foundation", "type": "minimum_credits", "minimum_credits": "4", "course_ids": null, "source_refs": ["committed-roadmap"]}
+  "id": "cse-2024", "version": "cse-2024-v1", "cohort": "BTECH_CSE-2024", "review_status": "reviewed", "total_credits": "170",
+  "sources": [
+    {"id": "adv13", "kind": "advisory", "title": "Academic Affairs Advisory No. 13, Norms for BTech Programme (January 2026)", "version": "January 2026", "locator": "pp. 1-4 (A.1-A.19), 7 (D), 10 (Annexure I), 14-15 (CSE), 23 (CSE 2022-24 sample path)", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": "2026-01-28", "review_status": "reviewed", "authority": "institutional", "file_sha256": "80d59bd2fb5b0096a57acd8192ba11387514cd8c08119e177cfd445c87c0861e", "notes": "Local copy 'Adv13_Norms for BTech Programme_28 Jan 2026.pdf' is git-ignored; cite by page."},
+    {"id": "academic-decisions", "kind": "team_decision", "title": "CoursePath academic decisions for CSE 2024 (team interpretation of ADV13)", "version": "2026-10-31", "locator": "docs/academic-decisions.md D-01 to D-21", "applicable_cohorts": ["BTECH_CSE-2024"], "effective_date": "2026-10-29", "review_status": "reviewed", "authority": "team", "notes": "TEAM decisions are labelled as such to students."}
   ],
-  "noncredit_obligations": [{"id": "pe", "required_semesters": 4, "completion_policy": null, "source_refs": ["committed-roadmap"]}, {"id": "viva", "required_each_active_semester": true, "recorded_grades": ["P", "F"], "completion_policy": null, "source_refs": ["committed-roadmap"]}],
+  "missing_sources": [],
+  "requirements": [
+    {"id": "foundation", "label": "Foundation Programme", "type": "any_of", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 23 (FP 100, 4 credits); p. 2 A.4 (GE alternative)", "children": [
+      {"id": "fp100", "label": "FP 100 Foundation Programme", "type": "mandatory_course", "course_id": "FP 100", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 23"},
+      {"id": "foundation-ge", "label": "4 GE credits if the Foundation Programme was not cleared", "type": "minimum_credits", "minimum_credits": "4", "course_prefixes": ["GE"], "source_refs": ["adv13"], "source_locator": "p. 2 A.4"}
+    ]},
+    {"id": "institute-core", "label": "Institute core", "type": "all_of", "minimum_credits": "31", "source_refs": ["adv13"], "source_locator": "p. 3 A.16", "children": [
+      {"id": "es101", "label": "Engineering Graphics", "type": "mandatory_course", "course_id": "ES 101", "minimum_credits": "3", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(a)"},
+      {"id": "es112", "label": "Computing", "type": "mandatory_course", "course_id": "ES 112", "minimum_credits": "3", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(b)"},
+      {"id": "es113", "label": "Data Centric Computing", "type": "mandatory_course", "course_id": "ES 113", "minimum_credits": "3", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(c)"},
+      {"id": "es114", "label": "Probability, Statistics and Data Visualization", "type": "mandatory_course", "course_id": "ES 114", "minimum_credits": "3", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(d)"},
+      {"id": "es115", "label": "Design, Innovation and Prototyping", "type": "mandatory_course", "course_id": "ES 115", "minimum_credits": "5", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(e)"},
+      {"id": "es116", "label": "Principles and Applications of Electrical Engineering", "type": "mandatory_course", "course_id": "ES 116", "minimum_credits": "5", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(f)"},
+      {"id": "es117", "label": "The World of Engineering", "type": "mandatory_course", "course_id": "ES 117", "minimum_credits": "2", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(g)"},
+      {"id": "es243", "label": "Biology for Engineers", "type": "mandatory_course", "course_id": "ES 243", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(h)"},
+      {"id": "bs192", "label": "Undergraduate Science Laboratory", "type": "mandatory_course", "course_id": "BS 192", "minimum_credits": "3", "source_refs": ["adv13"], "source_locator": "p. 3 A.16(i)"}
+    ]},
+    {"id": "materials", "label": "Materials Engineering basket", "type": "minimum_credits", "minimum_credits": "3", "course_ids": ["ES 118", "MSE 211", "MSE 314"], "source_refs": ["adv13"], "source_locator": "p. 3 A.15"},
+    {"id": "hss", "label": "Humanities and Social Sciences (GE included)", "type": "all_of", "minimum_credits": "28", "source_refs": ["adv13"], "source_locator": "p. 1 A.2; p. 23", "children": [
+      {"id": "hs191", "label": "Introduction to Writing I", "type": "mandatory_course", "course_id": "HS 191", "minimum_credits": "2", "source_refs": ["adv13"], "source_locator": "p. 1 A.2"},
+      {"id": "hs192", "label": "Introduction to Writing II", "type": "mandatory_course", "course_id": "HS 192", "minimum_credits": "2", "source_refs": ["adv13"], "source_locator": "p. 1 A.2"},
+      {"id": "economics", "label": "Economics", "type": "mandatory_course", "course_id": "HS 151", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 1 A.2; code from p. 23"},
+      {"id": "philosophy", "label": "Introduction to Philosophy", "type": "mandatory_course", "course_id": "HS 221", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 1 A.2; code from p. 23"},
+      {"id": "world-civilizations", "label": "World Civilizations and Cultures", "type": "mandatory_course", "course_id": "HS 201", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 1 A.2; code from p. 23"},
+      {"id": "ge", "label": "General Education basket (2 courses, pass/fail)", "type": "choose_courses", "minimum_courses": 2, "minimum_credits": "4", "course_prefixes": ["GE"], "decision": "D-19", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 1 A.2, p. 2 A.4; D-19 (GE-coded courses)"},
+      {"id": "hss-other", "label": "HSS electives", "type": "minimum_credits", "minimum_credits": "8", "course_prefixes": ["HS"], "course_ids": ["IN 498"], "exclude_course_ids": ["HS 191", "HS 192", "HS 151", "HS 221", "HS 201"], "decision": "D-19", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 1 A.2; p. 3 A.12 (IN 498, at most 8); D-19 (HS-coded courses)"}
+    ]},
+    {"id": "math", "label": "Mathematics", "type": "all_of", "minimum_credits": "10", "source_refs": ["adv13"], "source_locator": "p. 2 A.6", "children": [
+      {"id": "ma103", "label": "Calculus of Single Variable and Linear Algebra", "type": "mandatory_course", "course_id": "MA 103", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 2 A.6"},
+      {"id": "ma104", "label": "Ordinary Differential Equations", "type": "mandatory_course", "course_id": "MA 104", "minimum_credits": "2", "source_refs": ["adv13"], "source_locator": "p. 2 A.6"},
+      {"id": "ma203", "label": "Numerical Methods", "type": "mandatory_course", "course_id": "MA 203", "minimum_credits": "2", "source_refs": ["adv13"], "source_locator": "p. 2 A.6"},
+      {"id": "math-choice", "label": "Mathematics basket", "type": "minimum_credits", "minimum_credits": "2", "course_ids": ["MA 204", "MA 205", "MA 206"], "source_refs": ["adv13"], "source_locator": "p. 10 Annexure I"}
+    ]},
+    {"id": "science-basket", "label": "Science basket", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["PH 201", "PH 202", "PH 203", "PH 404", "PH 503", "PH 505", "PH 507", "PH 508", "PH 509", "PH 510", "CH 203", "CH 204", "CH 302", "CH 401", "CH 511", "CG 503", "CG 505", "EH 303", "EH 304", "EH 601", "EH 602", "EH 605", "EH 608", "EH 611", "EH 612", "EH 619", "EH 621"], "source_refs": ["adv13"], "source_locator": "p. 2 A.5; p. 10 Annexure I (no course specified for CSE)"},
+    {"id": "bs-elective", "label": "Basic Science elective", "type": "minimum_credits", "minimum_credits": "4", "course_ids": ["PH 201", "PH 202", "PH 203", "PH 404", "PH 503", "PH 505", "PH 507", "PH 508", "PH 509", "PH 510", "CH 203", "CH 204", "CH 302", "CH 401", "CH 511", "CG 503", "CG 505", "EH 303", "EH 304", "EH 601", "EH 602", "EH 605", "EH 608", "EH 611", "EH 612", "EH 619", "EH 621"], "course_prefixes": ["BS", "MA", "PH", "CH", "CG", "EH"], "exclude_course_ids": ["MA 103", "MA 104", "MA 203", "BS 192"], "decision": "D-20", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 2 A.5 and p. 10 note; D-20 (BS, MA, PH, CH, CG, EH codes)"},
+    {"id": "cse-core", "label": "CSE core", "type": "all_of", "minimum_credits": "36", "source_refs": ["adv13"], "source_locator": "p. 14; codes from p. 23", "children": [
+      {"id": "dsa", "label": "Data Structures and Algorithms I", "type": "mandatory_course", "course_id": "ES 242", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "discrete", "label": "Discrete Mathematics", "type": "mandatory_course", "course_id": "ES 214", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "digital", "label": "Digital Systems", "type": "mandatory_course", "course_id": "ES 204", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "organization", "label": "Computer Organization and Architecture", "type": "mandatory_course", "course_id": "ES 336", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "toc", "label": "Theory of Computing", "type": "mandatory_course", "course_id": "CS 201", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "os", "label": "Operating Systems", "type": "mandatory_course", "course_id": "CS 330", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "tools", "label": "Software Tools and Techniques for CSE", "type": "mandatory_course", "course_id": "CS 202", "minimum_credits": "4", "decision": "D-03", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 14; p. 23; D-03 (CS 203 does not satisfy this)"},
+      {"id": "ai", "label": "Foundations of AI: Multiagent Systems", "type": "mandatory_course", "course_id": "CS 329", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"},
+      {"id": "networks", "label": "Computer Networks", "type": "mandatory_course", "course_id": "CS 331", "minimum_credits": "4", "source_refs": ["adv13"], "source_locator": "p. 14; p. 23"}
+    ]},
+    {"id": "cse-electives", "label": "CSE discipline electives", "type": "all_of", "minimum_credits": "26", "decision": "D-06", "source_refs": ["adv13", "academic-decisions"], "source_locator": "pp. 14-15; p. 23 (8 + 8 + 10); D-06", "children": [
+      {"id": "theory", "label": "Theory & Algorithms basket", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["ES 301", "CS 614", "CS 617", "CS 328"], "source_refs": ["adv13"], "source_locator": "p. 15"},
+      {"id": "systems", "label": "Systems basket", "type": "minimum_credits", "minimum_credits": "8", "course_ids": ["CS 327", "CS 332", "CS 431", "CS 432", "CS 434", "CS 435", "CS 615", "CS 616", "ES 668"], "source_refs": ["adv13"], "source_locator": "p. 15"},
+      {"id": "cse-general", "label": "General CSE electives", "type": "minimum_credits", "minimum_credits": "10", "course_prefixes": ["CS"], "course_ids": ["ES 335", "ES 404", "ES 615", "ES 627", "ES 637", "ES 645", "ES 659", "ES 661", "ES 666", "ES 667", "ES 669", "ES 670", "ES 676", "ES 301", "ES 668"], "exclude_course_ids": ["ES 242", "ES 214", "ES 204", "ES 336", "CS 201", "CS 330", "CS 202", "CS 329", "CS 331"], "decision": "D-06", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 15 ('All CS Elective Courses' and the table); D-06 (every CS-coded course except the core)"}
+    ]},
+    {"id": "open-electives", "label": "Open electives", "type": "minimum_credits", "minimum_credits": "16", "any_course": true, "decision": "D-07", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 2 A.9; p. 3 A.12; D-07 (any course not claimed elsewhere)"},
+    {"id": "open-project", "label": "Open project", "type": "minimum_credits", "minimum_credits": "4", "course_patterns": ["^[A-Z]{2,4} [234]99\\b"], "course_ids": ["IN 498"], "decision": "D-10", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 2 A.7-A.8; p. 3 A.12; D-10"},
+    {"id": "pe", "label": "Physical Education (four semesters)", "type": "noncredit", "minimum_credits": "0", "minimum_courses": 4, "course_prefixes": ["PE"], "source_refs": ["adv13"], "source_locator": "p. 3 A.14"}
+  ],
+  "identity_groups": [
+    {"current": "ES 242", "same": ["ES 242(N)"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 214", "same": ["CS 322"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 204", "same": ["ES 203"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 336", "same": ["ES 215"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 330", "same": ["CS 301"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 331", "same": ["CS 433"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 335", "same": ["ES 654", "ES 678"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 667", "same": ["ES 413"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "ES 645", "same": ["CS 608"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"current": "CS 333", "same": ["CS 621"], "by": "name", "decision": "D-04", "source_refs": ["academic-decisions"]}
+  ],
+  "identity_review_pairs": [
+    {"codes": ["ES 668", "ES 417"], "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"codes": ["ES 659", "CS 429"], "decision": "D-04", "source_refs": ["academic-decisions"]},
+    {"codes": ["ES 661", "CS 691-XII"], "decision": "D-04", "source_refs": ["academic-decisions"]}
+  ],
+  "course_tags": {
+    "project": {"course_patterns": ["^[A-Z]{2,4} [234]99\\b"], "decision": "D-09", "source_refs": ["adv13", "academic-decisions"]},
+    "cs_project": {"course_patterns": ["^CS [234]99\\b"], "decision": "D-10", "source_refs": ["adv13", "academic-decisions"]},
+    "exposure": {"course_ids": ["IN 498"], "source_refs": ["adv13"]}
+  },
+  "pass_fail_courses": {"prefixes": ["FP", "GE", "PE"], "zero_credit_prefixes": ["IN"], "course_ids": ["SC 372"], "decision": "D-12", "source_refs": ["adv13", "academic-decisions"]},
+  "excluded_courses": [
+    {"course_id": "SC 372", "reason": "ONE_CREDIT_SHORT_COURSE", "decision": "D-08", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 7 D (one-credit short courses); D-08"}
+  ],
+  "repeat_policy": {"rule": "best_grade", "separate_course_tags": ["project", "exposure"], "decision": "D-15", "source_refs": ["adv13", "academic-decisions"], "source_locator": "D-15; D-01 (project registrations); p. 3 A.12 (IN 498 modules)"},
+  "noncredit_obligations": [
+    {"id": "viva", "label": "Comprehensive viva voce (P in every active semester)", "completion_policy": "pass_each_active_semester", "course_prefixes": ["IN"], "exclude_course_ids": ["IN 498"], "zero_credit_only": true, "passing_grades": ["P"], "decision": "D-16", "source_refs": ["adv13", "academic-decisions"], "source_locator": "pp. 3-4 A.18; D-16 (IN 1xx records are the viva)"}
+  ],
   "caps": [
-    {"id": "project-online-elective", "tags_any": ["cs_project", "online"], "requirement_ids": ["theory", "systems", "cse-general"], "maximum_credits": "8", "source_refs": ["committed-roadmap"]},
-    {"id": "project-total", "tags_any": ["project"], "maximum_credits": "16", "source_refs": ["committed-roadmap"], "interaction_status": "unknown"},
-    {"id": "external-exposure", "tags_any": ["exposure"], "maximum_credits": "16", "source_refs": ["committed-roadmap"], "interaction_status": "unknown"}
+    {"id": "project-online-elective", "tags_any": ["cs_project", "online"], "requirement_ids": ["theory", "systems", "cse-general"], "maximum_credits": "8", "reason_code": "DISCIPLINE_PROJECT_ONLINE_CAP", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 15; D-10"},
+    {"id": "project-total", "tags_any": ["project"], "maximum_credits": "16", "reason_code": "PROJECT_CAP", "source_refs": ["adv13", "academic-decisions"], "source_locator": "p. 7 D; D-09 (includes the open project)"},
+    {"id": "external-exposure", "tags_any": ["exposure"], "maximum_credits": "16", "reason_code": "EXPOSURE_CAP", "source_refs": ["adv13"], "source_locator": "p. 3 A.12"},
+    {"id": "exposure-hss", "tags_any": ["exposure"], "requirement_ids": ["hss-other"], "maximum_credits": "8", "reason_code": "EXPOSURE_HSS_CAP", "source_refs": ["adv13"], "source_locator": "p. 3 A.12"},
+    {"id": "online-pool", "tags_any": ["online"], "maximum_credits": "16", "reduced_by": "pass_fail_conversions", "reason_code": "ONLINE_POOL_CAP", "source_refs": ["academic-decisions"], "source_locator": "D-11"}
   ]
 }

@@ -6,6 +6,7 @@ actual view cannot change. Applying a scenario writes plan edits only.
 """
 from copy import deepcopy
 from coursepath.degree_audit import evaluate_audit
+from coursepath.identity import identity_map
 from coursepath.imports.grades import POINTS, grade_status
 from coursepath.internships import evaluate_internship
 from coursepath.issues import issue
@@ -40,7 +41,7 @@ def _semester(plan, term_id):
 def apply_changes(plan, changes, ops=OPS):
     """Return (plan copy, term caps, hypothetical attempts, skipped changes)."""
     plan = deepcopy(plan)
-    caps, hypothetical, skipped = {}, [], []
+    caps, hypothetical, skipped, graded = {}, [], [], set()
     if not isinstance(changes, list) or len(changes) > 100:
         raise ValueError('Expected at most 100 scenario changes')
     for change in changes:
@@ -51,6 +52,8 @@ def apply_changes(plan, changes, ops=OPS):
             validate_term_id(change['term_id'])
             credits = decimal_string(decimal_value(change['credits']))
         else:
+            if change.get('item_id') in graded:
+                raise ValueError('A course with a hypothetical grade takes no further changes')
             semester, course = _locate(plan, change.get('item_id'))
         if op == 'grade' and str(change.get('grade', '')).upper() not in POINTS:
             raise ValueError('Hypothetical grades must be letter grades')
@@ -71,20 +74,24 @@ def apply_changes(plan, changes, ops=OPS):
             for stale in ('course_id', 'course_version_id', 'offering_id', 'section_ids', 'instance_id'):
                 course.pop(stale, None)
         else:
-            semester['courses'].remove(course)
+            grade = change['grade'].upper() if op == 'grade' else 'F'
+            if op != 'grade' or grade_status(grade) == 'failed':
+                # A passing hypothetical grade keeps the course planned: only the labelled CPI sees that grade.
+                semester['courses'].remove(course)
             if op in {'fail', 'grade'}:
-                grade = 'F' if op == 'fail' else change['grade'].upper()
+                graded.add(course['id'])
                 hypothetical.append({'id': 'hypothetical:' + course['id'], 'normalized_code': course['normalized_code'], 'credits': course['credits'],
                                      'grade': grade, 'term_id': semester['term_id'], 'completion_status': grade_status(grade),
-                                     'learning_designation': course.get('learning_designation', 'unknown'), 'hypothetical': True})
+                                     'learning_designation': course.get('learning_designation', 'degree'), 'hypothetical': True})  # D-21
     return plan, caps, hypothetical, skipped
 
 
 def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None, award_ids=()):
     audit = evaluate_audit(context['curriculum'], context.get('catalogue', {}), record, plan, awards=tuple(award_ids))
-    performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'])
+    performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'],
+                                        identity_map(context['curriculum'].get('identity_groups')))
     planning = {'attempts': record.get('attempts', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
-                'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}}
+                'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}, 'identity': identity_map(context['curriculum'].get('identity_groups'))}
     validation = validate_plan(planning, plan, context.get('offering_snapshots'), context.get('calendar'))
     stay = None
     if internship:

@@ -71,7 +71,19 @@
           "$ref": "#/$defs/plan_apply"
         },
         {
+          "$ref": "#/$defs/backup"
+        },
+        {
+          "$ref": "#/$defs/backup_preview"
+        },
+        {
+          "$ref": "#/$defs/account_deletion"
+        },
+        {
           "type": "null"
+        },
+        {
+          "$ref": "#/$defs/scenario_stale"
         }
       ]
     },
@@ -389,6 +401,15 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/requirement_result"
+          }
+        },
+        "surplus_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "missing_terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/term_id"
           }
         }
       }
@@ -1048,6 +1069,68 @@
         },
         "noncredit_obligations": {
           "type": "array"
+        },
+        "identity_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "current",
+              "same",
+              "decision",
+              "source_refs"
+            ],
+            "properties": {
+              "current": {
+                "type": "string"
+              },
+              "same": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "by": {
+                "enum": [
+                  "name",
+                  "code"
+                ]
+              },
+              "decision": {
+                "type": "string"
+              },
+              "source_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "identity_review_pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "codes",
+              "decision",
+              "source_refs"
+            ]
+          }
+        },
+        "course_tags": {
+          "type": "object"
+        },
+        "pass_fail_courses": {
+          "type": "object"
+        },
+        "excluded_courses": {
+          "type": "array"
+        },
+        "repeat_policy": {
+          "type": "object"
         }
       },
       "additionalProperties": false
@@ -1117,7 +1200,8 @@
             "timetable",
             "course_plan",
             "approval",
-            "student_example"
+            "student_example",
+            "team_decision"
           ]
         },
         "title": {
@@ -1167,7 +1251,8 @@
           "enum": [
             "institutional",
             "student_provided",
-            "example"
+            "example",
+            "team"
           ]
         },
         "retrieved_at": {
@@ -1535,7 +1620,171 @@
                       "workload",
                       "cpi",
                       "meeting_checks"
-                    ]
+                    ],
+                    "properties": {
+                      "requirements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "label",
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "baseline": {
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "remaining_credits"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "enum": [
+                                    "satisfied",
+                                    "pending",
+                                    "conditional",
+                                    "needs_review"
+                                  ]
+                                },
+                                "remaining_credits": {
+                                  "$ref": "#/$defs/decimal"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "scenario": {
+                              "type": "object",
+                              "required": [
+                                "status",
+                                "remaining_credits"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "enum": [
+                                    "satisfied",
+                                    "pending",
+                                    "conditional",
+                                    "needs_review"
+                                  ]
+                                },
+                                "remaining_credits": {
+                                  "$ref": "#/$defs/decimal"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "new_issues": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/issue"
+                        }
+                      },
+                      "resolved_issues": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/issue"
+                        }
+                      },
+                      "downstream_affected": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "workload": {
+                        "type": "object",
+                        "propertyNames": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "baseline": {
+                              "$ref": "#/$defs/decimal"
+                            },
+                            "scenario": {
+                              "$ref": "#/$defs/decimal"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "cpi": {
+                        "type": "object",
+                        "required": [
+                          "baseline",
+                          "scenario",
+                          "hypothetical"
+                        ],
+                        "properties": {
+                          "baseline": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                          },
+                          "scenario": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                          },
+                          "hypothetical": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "meeting_checks": {
+                        "type": "object",
+                        "propertyNames": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "baseline",
+                            "scenario"
+                          ],
+                          "properties": {
+                            "baseline": {
+                              "enum": [
+                                "clear",
+                                "conflicts",
+                                "not_checked",
+                                null
+                              ]
+                            },
+                            "scenario": {
+                              "enum": [
+                                "clear",
+                                "conflicts",
+                                "not_checked"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      }
+                    }
                   }
                 ]
               },
@@ -1544,6 +1793,32 @@
                 "items": {
                   "$ref": "#/$defs/issue"
                 }
+              },
+              "scenario_id": {
+                "type": "string"
+              },
+              "rule_version": {
+                "type": "string"
+              },
+              "baseline": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/$defs/scenario_evaluation"
+                  }
+                ]
+              },
+              "scenario": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/$defs/scenario_evaluation"
+                  }
+                ]
               }
             }
           }
@@ -1582,6 +1857,344 @@
               "reason"
             ]
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "backup_version",
+        "exported_at",
+        "account",
+        "rule_version",
+        "rule_review_status",
+        "sources",
+        "missing_sources",
+        "grading_policy",
+        "record",
+        "plans",
+        "scenarios"
+      ],
+      "properties": {
+        "kind": {
+          "const": "coursepath-backup"
+        },
+        "backup_version": {
+          "const": "1"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "account": {
+          "type": "object",
+          "required": [
+            "username"
+          ],
+          "properties": {
+            "username": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "rule_review_status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "conflicted"
+          ]
+        },
+        "sources": {
+          "type": "array"
+        },
+        "missing_sources": {
+          "type": "array"
+        },
+        "grading_policy": {
+          "type": "object",
+          "required": [
+            "id",
+            "review_status"
+          ]
+        },
+        "record": {
+          "$ref": "#/$defs/record"
+        },
+        "plans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/plan"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        }
+      }
+    },
+    "backup_preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "base_record_revision",
+        "expires_at",
+        "diff"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "const": "backup"
+        },
+        "base_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "diff": {
+          "type": "object",
+          "required": [
+            "attempts_added",
+            "attempts_removed",
+            "attempts_changed",
+            "attempts_unchanged",
+            "current_enrolment_changed",
+            "plans_to_create",
+            "plans_skipped_existing",
+            "scenarios_not_restored"
+          ],
+          "properties": {
+            "plans_to_create": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "plans_skipped_existing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "account_deletion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deleted",
+        "account_deleted",
+        "record_revision",
+        "retention"
+      ],
+      "properties": {
+        "deleted": {
+          "type": "object",
+          "required": [
+            "attempts",
+            "plans",
+            "scenarios",
+            "import_previews",
+            "approval_evidence"
+          ],
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "account_deleted": {
+          "type": "boolean"
+        },
+        "record_revision": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "retention": {
+          "type": "string"
+        }
+      }
+    },
+    "scenario_evaluation": {
+      "type": "object",
+      "required": [
+        "audit",
+        "performance",
+        "validation",
+        "internship",
+        "completion_term",
+        "issues"
+      ],
+      "properties": {
+        "audit": {
+          "$ref": "#/$defs/audit"
+        },
+        "performance": {
+          "type": "object",
+          "required": [
+            "cumulative",
+            "terms",
+            "issues",
+            "hypothetical"
+          ],
+          "properties": {
+            "cumulative": {
+              "type": "object",
+              "required": [
+                "unrounded_value"
+              ],
+              "properties": {
+                "unrounded_value": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                }
+              }
+            },
+            "terms": {
+              "type": "array"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/issue"
+              }
+            },
+            "hypothetical": {
+              "type": "boolean"
+            }
+          }
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        },
+        "internship": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "duration_choice",
+                "credits",
+                "issues"
+              ],
+              "properties": {
+                "duration_choice": {
+                  "enum": [
+                    "none",
+                    "three_months",
+                    "six_months"
+                  ]
+                },
+                "credits": {
+                  "type": "object",
+                  "required": [
+                    "earned",
+                    "approved",
+                    "proposed"
+                  ],
+                  "properties": {
+                    "earned": {
+                      "$ref": "#/$defs/decimal"
+                    },
+                    "approved": {
+                      "$ref": "#/$defs/decimal"
+                    },
+                    "proposed": {
+                      "$ref": "#/$defs/decimal"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/issue"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "completion_term": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/term_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        }
+      }
+    },
+    "scenario_stale": {
+      "type": "object",
+      "required": [
+        "action",
+        "scenario_revision",
+        "current_record_revision",
+        "current_plan_revision",
+        "current_rule_version",
+        "baseline_record_revision",
+        "baseline_plan_revision",
+        "rule_version"
+      ],
+      "properties": {
+        "action": {
+          "const": "rebase"
+        },
+        "scenario_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_plan_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_rule_version": {
+          "type": "string"
+        },
+        "baseline_record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_plan_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule_version": {
+          "type": "string"
         }
       },
       "additionalProperties": false
