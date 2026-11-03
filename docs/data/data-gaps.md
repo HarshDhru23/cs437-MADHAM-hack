@@ -10,7 +10,7 @@ Status as of 26 Oct 2026. Only the transcript, IMS paste and advisory files have
 | GAP-04 | CSE equivalence/substitution list (CS 203 vs 202, ES 242(N), historical codes). | CP-03, CP-13, CP-17 | 27 Oct | open | Harsh |
 | GAP-05 | Approved CSE basket lists and BS/HSS/GE/open-elective guidance. | CP-17, CP-18 | 27 Oct | open | Harsh |
 | GAP-06 | Grading, repeat, incomplete/withdrawal and CPI/SPI policies. | CP-14, CP-15, CP-16 | 27 Oct | open | Harsh |
-| GAP-07 | Complete AI minor advisory and CSE honours definition. | CP-25, CP-26, CP-27 | 3 Nov | open (retrieval failed per roadmap) | Harsh |
+| GAP-07 | Complete AI minor advisory and CSE honours definition. | none (CP-25 to CP-27 withdrawn 3 Nov, D-18) | 3 Nov | out of this release (D-18, 3 Nov) | Harsh |
 | GAP-08 | Harsh's import, performance, audit and plan-workload services and Aaryan's frontend/browser suite are merged and run against the M03/M05 oracles. Clash, internship and scenario services (H11-H14) are not built, so those oracle cases cannot run yet. | CP-24, CP-33, CP-34; M03, M05 | 3 Nov | partly closed | Harsh |
 | GAP-09 | Course prerequisites/co-requisites/consent per course. Workbook "preferred knowledge" and minor columns are empty in matched rows and are never read as prerequisites. | CP-05, CP-22 | before feature accepted | open | Harsh |
 | GAP-10 | Project/online-course counting policy; external-exposure advisory, module mapping, approvers and load treatment; viva semantics. | CP-10, CP-18, CP-33, CP-34 | before feature accepted | open | Harsh |
