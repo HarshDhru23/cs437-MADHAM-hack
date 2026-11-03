@@ -54,3 +54,16 @@ export const endpoints = {
 
   analysis: (api: ApiClient, body: AnalysisRequest, o?: RequestOptions) => api.send<AnalysisResult>('POST', '/analysis', body, o),
 };
+
+// A11: backup, restore, data deletion and the report's scenario lookup.
+import type { BackupCommitPayload, BackupData, BackupPreview, DeleteDataPayload, DeleteDataResult, Scenario } from './types';
+
+export const accountEndpoints = {
+  exportBackup: (api: ApiClient, o?: RequestOptions) => api.get<BackupData>('/export?kind=json', o),
+  previewBackup: (api: ApiClient, body: { expected_revision: number; backup: unknown }, o?: RequestOptions) =>
+    api.send<BackupPreview>('POST', '/imports/backup-preview', body, o),
+  commitBackup: (api: ApiClient, previewId: string, body: BackupCommitPayload, o?: RequestOptions) =>
+    api.send<AcademicRecord>('POST', `/imports/${encodeURIComponent(previewId)}/commit`, body, o),
+  deleteData: (api: ApiClient, body: DeleteDataPayload, o?: RequestOptions) => api.send<DeleteDataResult>('DELETE', '/account/data', body, o),
+  scenario: (api: ApiClient, id: string, o?: RequestOptions) => api.get<Scenario>(`/scenarios/${encodeURIComponent(id)}`, o),
+};
