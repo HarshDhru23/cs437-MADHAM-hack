@@ -55,6 +55,25 @@ export const endpoints = {
   analysis: (api: ApiClient, body: AnalysisRequest, o?: RequestOptions) => api.send<AnalysisResult>('POST', '/analysis', body, o),
 };
 
+// A09 — scenarios (server/README.md: /scenarios, /scenarios/{id}, /scenarios/compare, /scenarios/{id}/apply-plan).
+// GET /scenarios/{id} is accountEndpoints.scenario below.
+import type { ScenarioApplyRequest, ScenarioApplyResult, ScenarioCompareResult, ScenarioCreate, ScenarioPatch } from './types';
+
+const scenarioPath = (id: string) => `/scenarios/${encodeURIComponent(id)}`;
+
+export const scenarioEndpoints = {
+  list: (api: ApiClient, o?: RequestOptions) => api.get<{ scenarios: Scenario[] }>('/scenarios', o),
+  create: (api: ApiClient, body: ScenarioCreate, o?: RequestOptions) => api.send<Scenario>('POST', '/scenarios', body, o),
+  patch: (api: ApiClient, id: string, body: ScenarioPatch, o?: RequestOptions) => api.send<Scenario>('PATCH', scenarioPath(id), body, o),
+  remove: (api: ApiClient, id: string, expectedRevision: number, o?: RequestOptions) =>
+    api.send<null>('DELETE', scenarioPath(id), { expected_revision: expectedRevision }, o),
+  compare: (api: ApiClient, scenarioIds: string[], o?: RequestOptions) =>
+    api.send<ScenarioCompareResult>('POST', '/scenarios/compare', { scenario_ids: scenarioIds }, o),
+  /** Always sends both revisions; the server must refuse a stale scenario or baseline (409). */
+  applyPlan: (api: ApiClient, id: string, body: ScenarioApplyRequest, o?: RequestOptions) =>
+    api.send<ScenarioApplyResult>('POST', `${scenarioPath(id)}/apply-plan`, body, o),
+};
+
 // A11: backup, restore, data deletion and the report's scenario lookup.
 import type { BackupCommitPayload, BackupData, BackupPreview, DeleteDataPayload, DeleteDataResult, Scenario } from './types';
 
