@@ -19,7 +19,9 @@
       ],
       "frontend_tests": [
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement grouped by basket before any history or sign-in",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows zero-credit PE/viva obligations with unknown completion policy, not as complete"
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows zero-credit PE/viva obligations with unknown completion policy, not as complete",
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > labels TEAM decisions and shows where each rule sits in the source",
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > shows the viva with its own label, a readable reviewed policy and its decision"
       ]
     },
     {
@@ -66,7 +68,8 @@
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows server statuses; a full progress bar never turns needs-review into satisfied",
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > expands to list counted attempts from the allocation ledger, with explanation",
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > keeps failed/unknown attempts visible as not counted with reasons",
-        "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json"
+        "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json",
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > shows the server surplus and the semesters still missing a viva P, without computing either"
       ]
     },
     {
@@ -112,7 +115,9 @@
       "frontend_tests": [
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > shows the server explanation of a nested unmet prerequisite and a duplicate on every affected item",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > groups validation issues; selecting one highlights the affected item and shows the remedy",
-        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows show \"Not checked\" instead of the previous revision's eligibility and issues"
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows show \"Not checked\" instead of the previous revision's eligibility and issues",
+        "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > shows missing preparation as a warning, never a red \"not eligible\"",
+        "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > keeps an unlisted course unknown, not \"none needed\""
       ]
     },
     {

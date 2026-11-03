@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Allocation, CourseAttempt, Curriculum, RequirementDefinition, RequirementResult } from '../../api/types';
 import { CreditProgress } from '../../components/CreditProgress';
-import { RequirementStatusBadge } from '../../components/StatusBadge';
-import { formatCredits, humanize } from '../../lib/format';
+import { DecisionBadge, RequirementStatusBadge } from '../../components/StatusBadge';
+import { formatCredits, formatTerm, humanize, isZeroDecimal } from '../../lib/format';
 
 export function requirementLabel(def: RequirementDefinition | undefined, result?: RequirementResult): string {
   if (def?.label) return def.label;
@@ -95,6 +95,7 @@ function RequirementRow({
         <div className="req-head">
           <div>
             <h3>{name}</h3>
+            {def?.decision ? <DecisionBadge decision={def.decision} /> : null}
             <p className="muted">{describeRule(def)}</p>
           </div>
           <div className="req-metrics">
@@ -105,6 +106,14 @@ function RequirementRow({
               <span className="num">Requires {formatCredits(def?.minimum_credits)} credits</span>
             )}
             {result ? <span className="num">Remaining: {formatCredits(result.remaining_credits)}</span> : null}
+            {result?.surplus_credits && !isZeroDecimal(result.surplus_credits) ? (
+              <span className="num" title="Counted beyond this requirement; never reused elsewhere (D-07)">
+                Surplus: {formatCredits(result.surplus_credits)} credits
+              </span>
+            ) : null}
+            {result?.missing_terms && result.missing_terms.length > 0 ? (
+              <span>No P recorded yet for: {result.missing_terms.map(formatTerm).join(', ')}</span>
+            ) : null}
             {result && result.required_courses != null ? (
               <span className="num">
                 Courses: {result.counted_courses ?? 'Unknown'} of {result.required_courses}
@@ -148,6 +157,7 @@ function RequirementRow({
               <p className="muted">Eligible course list: not provided by the reviewed data yet.</p>
             ) : null}
             <p className="muted">Sources: {(result?.source_refs ?? def?.source_refs ?? []).join(', ') || 'none provided'}</p>
+            {def?.source_locator ? <p className="muted">Where in the source: {def.source_locator}</p> : null}
           </div>
         ) : null}
       </div>

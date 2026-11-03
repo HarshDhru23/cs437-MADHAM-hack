@@ -8,8 +8,14 @@ import { Drawer } from '../../components/ConfirmDialog';
 import { IssueList } from '../../components/IssueList';
 import { SourcePanel } from '../../components/SourcePanel';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
+import { DecisionBadge } from '../../components/StatusBadge';
 import { formatCredits, humanize } from '../../lib/format';
 import { describeRule, indexDefinitions, requirementLabel, RequirementTree } from './RequirementTree';
+
+/** Readable text for the completion policies the reviewed rules use; anything else is shown humanized. */
+const COMPLETION_POLICY: Record<string, string> = {
+  pass_each_active_semester: 'A P is required in every active semester (D-16)',
+};
 
 type View = 'actual' | 'current' | 'projected';
 
@@ -222,15 +228,19 @@ export function RequirementsPage() {
 
       <section aria-label="Non-credit obligations" className="panel">
         <h2>Non-credit obligations</h2>
-        <p className="muted">Zero credits do not mean these are complete. Per-semester states need reviewed policy and active-semester evidence.</p>
+        <p className="muted">Zero credits do not mean these are complete; the audit shows which semesters still lack a recorded result.</p>
         <ul>
           {(c.noncredit_obligations ?? []).map((o) => (
             <li key={o.id}>
-              <strong>{o.id === 'pe' ? 'Physical education (PE)' : o.id === 'viva' ? 'Comprehensive viva' : humanize(o.id)}</strong>
+              <strong>{o.label ?? (o.id === 'pe' ? 'Physical education (PE)' : o.id === 'viva' ? 'Comprehensive viva' : humanize(o.id))}</strong>
               {o.required_semesters ? ` — required in ${o.required_semesters} semesters` : ''}
               {o.required_each_active_semester ? ' — required in every active semester' : ''}
               {o.recorded_grades ? ` (recorded grades: ${o.recorded_grades.join('/')})` : ''}.{' '}
-              {o.completion_policy ? `Completion policy: ${o.completion_policy}` : 'Completion policy not yet reviewed; semester states unavailable.'}
+              {o.completion_policy
+                ? `Completion policy: ${COMPLETION_POLICY[o.completion_policy] ?? humanize(o.completion_policy)}.`
+                : 'Completion policy not yet reviewed; semester states unavailable.'}{' '}
+              {o.decision ? <DecisionBadge decision={o.decision} /> : null}
+              {o.source_locator ? <span className="muted"> Source: {o.source_locator}</span> : null}
             </li>
           ))}
         </ul>
@@ -238,6 +248,12 @@ export function RequirementsPage() {
 
       <Drawer open={why !== null} title={`Why? ${requirementLabel(whyDef, whyResult)}`} onClose={() => setWhy(null)}>
         <p>{describeRule(whyDef)}</p>
+        {whyDef?.decision ? (
+          <p>
+            <DecisionBadge decision={whyDef.decision} />
+          </p>
+        ) : null}
+        {whyDef?.source_locator ? <p>Where in the source: {whyDef.source_locator}</p> : null}
         {whyResult ? (
           <p>
             Server status: <strong>{humanize(whyResult.status)}</strong>. Counted {formatCredits(whyResult.counted_credits)} of {formatCredits(whyResult.required_credits)} credits;
