@@ -98,3 +98,15 @@ python scripts/statement_report.py --all                    # all 34 statements
 ```
 
 Runs the tests named in `schemas/statement-test-map.json` and shows, per statement, whether all its tests passed, plus separate Browser, Frontend and Local columns. Local checks need the private files and never count towards tests-green. Tests-green is shown separately from release evidence (browser flow, review, merged PR) and is never reported as release-complete. Exit 1 if a statement is not tests-green or a mapped browser or frontend test failed.
+
+## Operations, backup and demo
+
+CoursePath is not hosted yet. Production gaps, environment names, the release procedure and the backup policy are in [docs/operations/runbook.md](docs/operations/runbook.md); variable names (no values) are in `.env.example`.
+
+```sh
+python scripts/backup.py summary
+python scripts/backup.py dump --out <backup.json>        # contains personal data and password hashes: never commit
+python scripts/backup.py restore --input <backup.json>   # only into an empty, separate database; verifies counts and revisions
+```
+
+User-test script: [docs/qa/user-test-script.md](docs/qa/user-test-script.md). Demo order and known limitations: [docs/demo.md](docs/demo.md).

@@ -44,6 +44,7 @@ OWNERSHIP = [
     ("tests/reference/*", "manashree"),
     ("tests/reference_fixtures/*", "manashree"),
     ("tests/data_sources/*", "manashree"),
+    ("tests/tooling/*", "manashree"),  # tests of the root scripts/ (M06-M08)
     ("tests/*", "harsh"),
     ("frontend/*", "aaryan"),
     ("e2e/*", "aaryan"),

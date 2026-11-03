@@ -536,7 +536,17 @@
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_without_snapshot_never_reports_clear",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_empty_term_is_not_checked_with_or_without_a_snapshot",
         "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot",
-        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema"
+        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_ph202_es667_lecture_clashes_on_both_documented_slots",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_ph202_cs331_clash_is_the_h2_tutorial_only",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_undated_meetings_give_a_possible_clash_not_a_certain_one",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_duplicate_source_rows_do_not_create_extra_clashes",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_unknown_lab_alternatives_give_a_possible_clash_never_clear",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_course_missing_from_snapshot_is_not_checked",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_no_snapshot_is_not_checked_never_clear",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_touching_endpoints_do_not_clash",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_same_slot_in_different_halves_of_term_does_not_clash",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -752,7 +762,14 @@
         "tests.domain.test_scenarios.ScenarioTests.test_cp33_scenario_internship_runs_through_the_same_comparison",
         "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_exam_window_without_dates_is_unknown_not_clear",
-        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe"
+        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe",
+        "tests.reference.test_nov3_regression.InternshipTests.test_calendar_month_arithmetic_on_leap_and_month_end",
+        "tests.reference.test_nov3_regression.InternshipTests.test_none_has_no_dates_no_credit_and_rejects_stale_modules",
+        "tests.reference.test_nov3_regression.InternshipTests.test_summer_internship_blocks_summer_courses_only",
+        "tests.reference.test_nov3_regression.InternshipTests.test_six_month_internship_spanning_semester_7_exposes_its_courses",
+        "tests.reference.test_nov3_regression.InternshipTests.test_remote_placement_needs_permission_not_a_silent_pass",
+        "tests.reference.test_nov3_regression.InternshipTests.test_without_a_calendar_nothing_is_reported_clear",
+        "tests.reference.test_nov3_regression.InternshipTests.test_three_cases_compare_on_one_untouched_baseline"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -781,7 +798,11 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
         "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
-        "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero"
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero",
+        "tests.reference.test_nov3_regression.InternshipTests.test_six_months_alone_earns_zero_credit",
+        "tests.reference.test_nov3_regression.InternshipTests.test_example_12oe_4hss_stays_proposed_without_approval",
+        "tests.reference.test_nov3_regression.InternshipTests.test_student_reported_approval_does_not_become_verified",
+        "tests.reference.test_nov3_regression.InternshipTests.test_caps_16_overall_8_hss_4_open_project"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
