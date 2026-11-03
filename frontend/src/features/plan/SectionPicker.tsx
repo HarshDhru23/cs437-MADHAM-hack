@@ -17,7 +17,8 @@ const NONE = '';
  * with unknown semantics or unresolved slots gets a clarification instead of
  * being treated as compulsory attendance at every listed slot. Saving only
  * records `offering_id`/`section_ids` on the plan item; the server decides
- * clashes on the next validation.
+ * clashes on the next validation. A stored `offering_id` that is no longer in
+ * the snapshot (OFFERING_VARIANT_UNKNOWN) is never preselected or sent back.
  */
 export function SectionPicker({
   course,
@@ -28,13 +29,14 @@ export function SectionPicker({
 }: {
   course: PlannedCourse;
   offerings: CourseOffering[];
-  /** The server reported OFFERING_SECTION_REQUIRED for this item. */
+  /** The server reported OFFERING_SECTION_REQUIRED or OFFERING_VARIANT_UNKNOWN for this item. */
   variantRequired: boolean;
   onSave: (choice: SectionChoice) => void;
   onCancel: () => void;
 }) {
   const id = useId();
-  const [variant, setVariant] = useState<string | null>(course.offering_id ?? (offerings.length === 1 ? offerings[0]!.id : null));
+  const staleId = course.offering_id && !offerings.some((o) => o.id === course.offering_id) ? course.offering_id : null;
+  const [variant, setVariant] = useState<string | null>(course.offering_id && !staleId ? course.offering_id : offerings.length === 1 ? offerings[0]!.id : null);
   const selected = new Set(course.section_ids ?? []);
   const [picks, setPicks] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -43,16 +45,31 @@ export function SectionPicker({
   });
   const offering = offerings.find((o) => o.id === variant) ?? null;
 
+  const staleNote = staleId ? (
+    <p className="callout" data-tone="warning">
+      Your saved variant <span className="mono">{staleId}</span> is not in the current timetable snapshot, so this course's clashes cannot be checked.
+      {offerings.length > 0 ? ' Choose a variant from the current snapshot.' : ' Clear the saved choice to remove it from your plan.'}
+    </p>
+  ) : null;
+
   if (offerings.length === 0) {
     return (
       <div>
+        {staleNote}
         <p>
           <span className="mono">{course.normalized_code}</span> is not in this term's timetable snapshot, so there are no meetings or sections to choose. Its
           availability is unknown unless the server says the snapshot is complete and reviewed.
         </p>
-        <button type="button" className="btn" onClick={onCancel}>
-          Close
-        </button>
+        <div className="panel-row">
+          {staleId ? (
+            <button type="button" className="btn btn-primary" onClick={() => onSave({ offering_id: null, section_ids: [] })}>
+              Clear saved variant
+            </button>
+          ) : null}
+          <button type="button" className="btn" onClick={onCancel}>
+            {staleId ? 'Cancel' : 'Close'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -61,7 +78,8 @@ export function SectionPicker({
     event.preventDefault();
     const groups = offering?.meeting_groups ?? [];
     const section_ids = groups.filter((g) => semantics(g.selection_semantics) === 'choose_one').map((g) => picks[g.id] ?? NONE).filter((m) => m !== NONE);
-    onSave({ offering_id: offerings.length > 1 ? variant : (course.offering_id ?? null), section_ids });
+    // A single offering stays unpinned (the server matches it by code) unless the course already pinned it.
+    onSave({ offering_id: offerings.length > 1 ? variant : staleId ? null : (course.offering_id ?? null), section_ids });
   };
 
   return (
@@ -70,10 +88,11 @@ export function SectionPicker({
         Meetings come from the term's timetable snapshot. Choosing a section records your intention in the plan; it is not a registration. The server checks clashes
         after the plan is saved.
       </p>
+      {staleNote}
       {offerings.length > 1 ? (
         <fieldset className="field">
           <legend>Source variant for {course.normalized_code}</legend>
-          {variantRequired ? (
+          {variantRequired && !staleId ? (
             <p className="callout" data-tone="warning">
               The timetable lists more than one variant of this course. Choose the one you will take before clashes can be checked.
             </p>
@@ -118,13 +137,16 @@ export function SectionPicker({
 
 function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: string; group: MeetingGroup; pick: string; onPick: (meetingId: string) => void }) {
   const kind = kindLabel(group.kind);
+  const exam = group.kind === 'exam';
   const mode = semantics(group.selection_semantics);
   const cells = refLocators(group.source_refs);
   const unresolved = group.unresolved ?? [];
   const header = (
     <>
       <span className="mono">{kind}</span>{' '}
-      {mode === 'all_required' ? (
+      {exam ? (
+        <Badge tone="neutral">Not a weekly class</Badge>
+      ) : mode === 'all_required' ? (
         <Badge tone="neutral">All listed meetings required</Badge>
       ) : mode === 'choose_one' ? (
         <Badge tone="neutral">Choose one</Badge>
@@ -150,7 +172,7 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
     ) : null;
   const notes = group.notes?.length ? <p className="muted">Notes: {group.notes.join('; ')}</p> : null;
 
-  if (mode === 'choose_one') {
+  if (mode === 'choose_one' && !exam) {
     return (
       <fieldset className="field" data-group={group.id}>
         <legend>
@@ -179,7 +201,9 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
     <section className="field" aria-label={`${code} ${kind} meetings`} data-group={group.id}>
       <h4 style={{ margin: 0 }}>{header}</h4>
       {sourceLine}
-      {mode === 'unknown' ? (
+      {exam ? (
+        <p className="muted">Exam meetings are listed for reference. They are not weekly classes, so the clash check does not include them.</p>
+      ) : mode === 'unknown' ? (
         <p className="callout" data-tone="warning">
           The timetable does not say whether you attend every listed {kind} slot or only one of them. CoursePath does not assume all of them are compulsory, and you cannot
           pick one until this is clarified. Ask the course office or timetable owner; until then, clashes involving these meetings are only possible clashes.
@@ -193,7 +217,8 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
         <ul>
           {group.meetings.map((m) => (
             <li key={m.id}>
-              {mode === 'all_required' ? <Badge tone="neutral">Required</Badge> : <Badge tone="unknown">Listed; meaning not stated</Badge>} {describeMeeting(m)}
+              {exam ? <Badge tone="neutral">Exam</Badge> : mode === 'all_required' ? <Badge tone="neutral">Required</Badge> : <Badge tone="unknown">Listed; meaning not stated</Badge>}{' '}
+              {describeMeeting(m)}
               {refLocators(m.source_refs).length ? <span className="muted"> · source {refLocators(m.source_refs).join(', ')}</span> : null}
             </li>
           ))}

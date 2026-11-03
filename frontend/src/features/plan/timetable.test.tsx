@@ -38,7 +38,8 @@ const noSnapshot = (term: string) => ({
 
 function conflict(a: OfferingMeeting, b: OfferingMeeting, certain: boolean, assumptions: string[] = []): MeetingConflict {
   return {
-    id: `clash:${a.id}|${b.id}`,
+    // The server's id shape: clash:{item}|{item}|{meeting}|{meeting} (coursepath/timetable.py).
+    id: `clash:c-ph|c-es|${a.id}|${b.id}`,
     item_ids: ['c-ph', 'c-es'],
     meeting_ids: [a.id, b.id],
     kinds: [a.kind ?? null, b.kind ?? null],
@@ -309,14 +310,96 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     expect(ph.section_ids).toEqual([]);
   });
 
-  it('an empty term says there is nothing to check rather than "No clashes found"', async () => {
+  it('an empty term shows the server\'s "Not checked" next to "No courses are planned", never "No clashes found"', async () => {
     const plan = basePlan();
     plan.semesters[1]!.courses = [];
-    // Even if a server reports an empty term as clear, an empty term is shown as empty.
-    const s = server({ plan, terms: { [TERM]: { status: 'conflicts' }, [LATER]: { status: 'clear' } }, snapshots: { [TERM]: snapshot() } });
+    // Main's server reports every empty term as not_checked (coursepath/timetable.py).
+    const s = server({ plan, terms: { [TERM]: { status: 'conflicts' }, [LATER]: { status: 'not_checked' } }, snapshots: { [TERM]: snapshot() } });
     render(s);
     const p = await panel('2027–28 Semester I');
-    await waitFor(() => expect(within(p).getByText('Nothing to check')).toBeInTheDocument());
+    await waitFor(() => expect(within(p).getByText('No courses are planned for this term.', { exact: false })).toBeInTheDocument());
+    expect(within(p).getByText('Not checked')).toBeInTheDocument();
     expect(within(p).queryByText('No clashes found')).not.toBeInTheDocument();
+    expect(within(p).queryByText('Nothing to check')).not.toBeInTheDocument();
+  });
+
+  it('a saved variant that is no longer in the snapshot can be fixed in the picker and is never sent back', async () => {
+    // Main's issue shape (coursepath/timetable.py): entities [item_id, stale_offering_id], severity error.
+    // The example snapshot lists only 2026-27-I:PH202; the plan still holds a #v2 picked under an earlier draft.
+    const stale = '2026-27-I:PH202#v2';
+    const plan = basePlan();
+    plan.semesters[0]!.courses[0] = { ...plan.semesters[0]!.courses[0]!, offering_id: stale, section_ids: [] };
+    const s = server({
+      plan,
+      terms: { [TERM]: { status: 'not_checked', offering: 'tentative', perItem: { 'c-ph': 'not_checked', 'c-es': 'clear' }, offeringIds: { 'c-ph': ['2026-27-I:PH202'] } } },
+      snapshots: { [TERM]: snapshot() },
+      issues: [issue('OFFERING_VARIANT_UNKNOWN', 'error', ['c-ph', stale], "The selected offering variant is not in this term's snapshot for PH 202.")],
+    });
+    render(s);
+    const p = await panel('2026–27 Semester I');
+    const button = await within(p).findByRole('button', { name: 'Choose sections for PH 202' });
+    expect(button).toHaveTextContent('Choose variant and sections');
+    expect(p).toHaveTextContent(`Saved variant ${stale} (not in snapshot)`);
+    await userEvent.click(button);
+    const dialog = screen.getByRole('dialog', { name: 'Sections for PH 202 in 2026–27 Semester I' });
+    expect(dialog).toHaveTextContent(`Your saved variant ${stale} is not in the current timetable snapshot`);
+    // The current offering's meetings are shown and the save is possible.
+    expect(within(dialog).getByRole('region', { name: 'PH 202 lecture meetings' })).toBeInTheDocument();
+    const save = within(dialog).getByRole('button', { name: 'Save section choice' });
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
+    const ph = s.patches[0]!.semesters.find((x) => x.term_id === TERM)!.courses.find((c) => c.id === 'c-ph')!;
+    expect(ph.offering_id).not.toBe(stale);
+    expect(ph.offering_id ?? null).toBeNull();
+  });
+
+  it('a saved variant for a course no longer in the snapshot can be cleared', async () => {
+    // Derived from the example: ES 667 is gone from a corrected snapshot, but the plan still pins its old offering.
+    const stale = '2026-27-I:ES667';
+    const corrected = snapshot((x) => {
+      x.offerings = x.offerings.filter((o) => o.code !== 'ES 667');
+    });
+    const plan = basePlan();
+    plan.semesters[0]!.courses[1] = { ...plan.semesters[0]!.courses[1]!, offering_id: stale, section_ids: ['2026-27-I:ES667:lecture:B1'] };
+    const s = server({
+      plan,
+      terms: { [TERM]: { status: 'not_checked', offering: 'unknown', offeringIds: { 'c-ph': ['2026-27-I:PH202'], 'c-es': [] } } },
+      snapshots: { [TERM]: corrected },
+      issues: [issue('OFFERING_VARIANT_UNKNOWN', 'error', ['c-es', stale], "The selected offering variant is not in this term's snapshot for ES 667.")],
+    });
+    render(s);
+    const p = await panel('2026–27 Semester I');
+    const button = await within(p).findByRole('button', { name: 'Choose sections for ES 667' });
+    expect(button).toHaveTextContent('Clear saved variant');
+    await userEvent.click(button);
+    const dialog = screen.getByRole('dialog', { name: 'Sections for ES 667 in 2026–27 Semester I' });
+    expect(dialog).toHaveTextContent("is not in this term's timetable snapshot");
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Clear saved variant' }));
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
+    const es = s.patches[0]!.semesters.find((x) => x.term_id === TERM)!.courses.find((c) => c.id === 'c-es')!;
+    expect(es.offering_id ?? null).toBeNull();
+    expect(es.section_ids ?? []).toEqual([]);
+  });
+
+  it('exam groups are not shown as required weekly meetings', async () => {
+    // Derived from the example: ES 667 gains an exam group; the server's clash check skips kind "exam".
+    const withExam = snapshot((x) => {
+      const es = offering(x, 'ES 667');
+      const b1 = es.meeting_groups[0]!.meetings[0]!;
+      es.meeting_groups.push({ id: '2026-27-I:ES667:exam', kind: 'exam', selection_semantics: 'all_required', meetings: [{ ...b1, id: '2026-27-I:ES667:exam:1', kind: 'exam', weekday: 3 }] });
+    });
+    const s = server({ terms: { [TERM]: { status: 'clear', offering: 'confirmed_in_snapshot' } }, snapshots: { [TERM]: withExam } });
+    render(s);
+    const p = await panel('2026–27 Semester I');
+    const list = await within(p).findByRole('list', { name: 'Weekly meetings for 2026–27 Semester I (list)' });
+    expect(list).not.toHaveTextContent('exam');
+    expect(list).not.toHaveTextContent('Thursday');
+    await userEvent.click(within(p).getByRole('button', { name: 'Choose sections for ES 667' }));
+    const dialog = screen.getByRole('dialog', { name: 'Sections for ES 667 in 2026–27 Semester I' });
+    const exam = within(dialog).getByRole('region', { name: 'ES 667 exam meetings' });
+    expect(exam).toHaveTextContent('Not a weekly class');
+    expect(exam).not.toHaveTextContent('Required');
+    expect(exam).not.toHaveTextContent('All listed meetings required');
   });
 });

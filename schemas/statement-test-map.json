@@ -566,7 +566,10 @@
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a group with unstated semantics gets a clarification, not radio buttons or \"required\"",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a future term with no snapshot is \"Not checked\" and its offering unknown, never clear",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > offers the variant choice the server asks for and renders unfamiliar issue codes generically",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > an empty term says there is nothing to check rather than \"No clashes found\""
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > an empty term shows the server's \"Not checked\" next to \"No courses are planned\", never \"No clashes found\"",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a saved variant that is no longer in the snapshot can be fixed in the picker and is never sent back",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a saved variant for a course no longer in the snapshot can be cleared",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > exam groups are not shown as required weekly meetings"
       ]
     },
     {

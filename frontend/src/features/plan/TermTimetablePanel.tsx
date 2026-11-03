@@ -58,6 +58,9 @@ export function OfferingStatusBadge({ status }: { status: string | null | undefi
 /** Timetable-related server issues, rendered generically by code and message. */
 const TIMETABLE_CODE = /^(MEETING|OFFERING|SECTION|TIMETABLE)/;
 
+/** The server asks for a variant: several exist, or the saved one is no longer in the snapshot. */
+const VARIANT_CODES = new Set(['OFFERING_SECTION_REQUIRED', 'OFFERING_VARIANT_UNKNOWN']);
+
 function meetingIndex(snapshot: TermOfferingSnapshot | null): Map<string, { code: string; meeting: OfferingMeeting }> {
   const index = new Map<string, { code: string; meeting: OfferingMeeting }>();
   for (const o of snapshot?.offerings ?? []) for (const g of o.meeting_groups) for (const m of g.meetings) index.set(m.id, { code: o.display_code ?? o.code, meeting: { kind: g.kind, ...m } });
@@ -99,6 +102,7 @@ export function TermTimetablePanel({
   const meetings = meetingIndex(snapshot);
   const codeOf = (itemId: string) => semester.courses.find((c) => c.id === itemId)?.normalized_code ?? itemId;
   const itemIssues = (itemId: string) => issues.filter((i) => i.entity_refs.includes(itemId) && TIMETABLE_CODE.test(i.code) && i.code !== 'TIMETABLE_CONFLICT');
+  const needsVariant = (itemId: string) => issues.some((i) => VARIANT_CODES.has(i.code) && i.entity_refs.includes(itemId));
 
   const reasons: { key: string; text: React.ReactNode }[] = [];
   if (status === 'not_checked' && !empty) {
@@ -138,7 +142,8 @@ export function TermTimetablePanel({
     const offering = chosenOffering(c, offeringsFor(c, snapshot, perCourse.get(c.id)));
     if (!offering) continue;
     const chosen = new Set(c.section_ids ?? []);
-    for (const g of offering.meeting_groups) {
+    // Exam groups are not weekly meetings; the server's clash check skips them too.
+    for (const g of offering.meeting_groups.filter((x) => x.kind !== 'exam')) {
       const mode = semantics(g.selection_semantics);
       const pick = mode === 'choose_one' ? g.meetings.find((m) => chosen.has(m.id)) : undefined;
       for (const m of pick ? [pick] : g.meetings)
@@ -157,12 +162,7 @@ export function TermTimetablePanel({
     <section className="panel timetable-panel" aria-label={`Timetable check for ${label}`}>
       <h3>Timetable and offerings</h3>
       <p>
-        Clash check:{' '}
-        {empty ? (
-          <Badge tone="neutral">Nothing to check</Badge>
-        ) : (
-          <MeetingCheckBadge status={status} />
-        )}
+        Clash check: <MeetingCheckBadge status={status} />
         {empty ? <span className="muted"> No courses are planned for this term.</span> : null}
         {status === 'clear' && !empty ? <span className="muted"> Among the meetings the snapshot lists for your planned courses and chosen sections.</span> : null}
       </p>
@@ -208,8 +208,9 @@ export function TermTimetablePanel({
               {semester.courses.map((c) => {
                 const row = validation ? perCourse.get(c.id) : undefined;
                 const matched = offeringsFor(c, snapshot, row);
-                const variantRequired = issues.some((i) => i.code === 'OFFERING_SECTION_REQUIRED' && i.entity_refs.includes(c.id));
+                const variantRequired = needsVariant(c.id);
                 const offering = chosenOffering(c, matched);
+                const staleVariant = Boolean(c.offering_id) && !offering && !matched.some((o) => o.id === c.offering_id);
                 const chosenText = (c.section_ids ?? []).map((id) => (meetings.get(id) ? `${kindLabel(meetings.get(id)!.meeting.kind)} ${describeMeeting(meetings.get(id)!.meeting)}` : `${id} (not in snapshot)`));
                 const status = row?.offering_status;
                 return (
@@ -225,13 +226,19 @@ export function TermTimetablePanel({
                       <MeetingCheckBadge status={row?.meeting_check_status} />
                     </td>
                     <td data-label="Sections">
-                      {matched.length > 1 ? <div>{offering ? `Variant: ${offering.raw_label ?? offering.display_code ?? offering.id}` : 'Variant not chosen'}</div> : null}
+                      {staleVariant ? (
+                        <div>
+                          Saved variant <span className="mono">{c.offering_id}</span> (not in snapshot)
+                        </div>
+                      ) : matched.length > 1 ? (
+                        <div>{offering ? `Variant: ${offering.raw_label ?? offering.display_code ?? offering.id}` : 'Variant not chosen'}</div>
+                      ) : null}
                       {chosenText.length ? chosenText.map((t) => <div key={t}>{t}</div>) : <span className="muted">No section chosen</span>}
                     </td>
                     <td data-label="Actions">
-                      {matched.length > 0 ? (
+                      {matched.length > 0 || staleVariant ? (
                         <button type="button" className="btn btn-small" aria-label={`Choose sections for ${c.normalized_code}`} onClick={() => setPicking(c.id)}>
-                          {variantRequired ? 'Choose variant and sections' : 'Choose sections'}
+                          {matched.length === 0 ? 'Clear saved variant' : variantRequired || staleVariant ? 'Choose variant and sections' : 'Choose sections'}
                         </button>
                       ) : (
                         <span className="muted">No meetings in snapshot</span>
@@ -258,7 +265,7 @@ export function TermTimetablePanel({
           <SectionPicker
             course={pickingCourse}
             offerings={offeringsFor(pickingCourse, snapshot, validation ? perCourse.get(pickingCourse.id) : undefined)}
-            variantRequired={issues.some((i) => i.code === 'OFFERING_SECTION_REQUIRED' && i.entity_refs.includes(pickingCourse.id))}
+            variantRequired={needsVariant(pickingCourse.id)}
             onCancel={() => setPicking(null)}
             onSave={(choice) => {
               onChooseSections(pickingCourse.id, choice);
