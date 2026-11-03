@@ -16,8 +16,8 @@ Work in this order. Do not skip ahead. Use `.venv/Scripts/python` for every Pyth
    - The request is ambiguous.
    - It needs an academic rule that `docs/academic-decisions.md` and `docs/implementation-roadmap.md` do not already settle. Examples are a credit, a cap, a grade rule, an equivalence or a requirement membership. `docs/academic-decisions.md` wins where the two differ.
 
-   Never invent academic rules.
-2. **Spec.** Add CP-NN as a new row in the current statement table in `SPEC.md`, the "October 27 implementation scope" table: `| CP-NN | <statement> | <how it will be checked> |`. In the same step, add its entry to `schemas/statement-test-map.json`, copying the fields of an existing entry, with `tests` listing the test from step 3. `tests/domain/test_statement_map.py` fails if the two files disagree. Both files are Harsh's, so say so in the PR.
+   Never invent academic rules. If you stop here, nothing was changed: switch back to the branch you started on and delete the empty branch from step 0 (`git branch -d feature/<owner>-cp<NN>-<short-name>`), so the next run can reuse CP-NN.
+2. **Spec.** Add CP-NN as a new row in the current statement table in `SPEC.md`, the "October 27 implementation scope" table: `| CP-NN | <statement> | <how it will be checked> |`. In the same step, add its entry to `schemas/statement-test-map.json`, copying the fields of an existing entry, with `tests` listing the test from step 3. `tests/domain/test_statement_map.py` fails if the two files disagree. `tests/tooling/test_statement_report.py` (`RealMapTests`) asserts the number of statements in the map. Raise that count by one in this same step and update its comment. This is spec bookkeeping, not a change to make code pass, so name it in the commit and the PR. Do not change any other existing test. `SPEC.md` and the map are Harsh's, so say so in the PR.
 3. **Failing test.** Add a `test_cpNN_...` method in the right module:
    - for domain logic in `coursepath/`, a module under `tests/domain/`, e.g. `tests/domain/test_planning.py`;
    - for the API in `server/`, a `server/records/test_*.py` module, e.g. `server/records/test_analysis.py`.
