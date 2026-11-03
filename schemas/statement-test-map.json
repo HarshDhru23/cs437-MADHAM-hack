@@ -521,7 +521,7 @@
       "academic_data": "draft_or_incomplete",
       "browser_tests": [
         "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
-        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no snapshot is \"Not checked\", never clear (CP-23/24)"
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no timetable is \"Not checked\", never clear (CP-23/24)"
       ],
       "frontend_tests": [
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"Not checked\" with the server's reasons, never a green check, and the snapshot label, date, review and coverage",
@@ -563,7 +563,7 @@
       "browser_tests": [
         "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
         "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and CS 331 clash on the Wednesday H2 tutorial even though their lectures differ (CP-24)",
-        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no snapshot is \"Not checked\", never clear (CP-23/24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no timetable is \"Not checked\", never clear (CP-23/24)",
         "e2e/tests/clashes.spec.ts::timetable clashes > the planner and timetable panel fit a 390px phone"
       ],
       "frontend_tests": [
