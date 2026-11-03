@@ -103,7 +103,6 @@ test.describe.serial('scenarios and internship comparison', () => {
     await createScenario('Three months');
     await page.getByRole('radio', { name: '3 months' }).check();
     await page.getByRole('radio', { name: 'Summer' }).check();
-    await expect(page.getByRole('note')).toContainText('GAP-03');
     await page.getByLabel('Start date').fill('2027-05-01');
     await page.getByLabel('Last day (inclusive)').fill('2027-07-31');
     await page.getByLabel('Placement').selectOption('onsite_full_time');
@@ -112,7 +111,9 @@ test.describe.serial('scenarios and internship comparison', () => {
     // 1 May to 31 July inclusive is 92 days, exactly three calendar months.
     await expect(time).toContainText('Actual duration (server)92 days');
     await expect(time).not.toContainText('These dates do not match');
-    await expect(time).toContainText('no academic calendar is loaded');
+    // data/calendars/2026-27.json (D-24): the summer term runs 7 May to 3 July 2027 (end-exclusive), 57 days,
+    // all inside these dates, and both summer exam windows fall in it.
+    await expect(time).toContainText('2026–27 Summer: 57 days away, including exams');
     const credit = page.getByRole('region', { name: 'Proposed academic credit' });
     await expect(credit).toContainText('Choosing a duration awards no credit.');
     await expect(credit.getByRole('group', { name: 'Exposure credits' })).toContainText('Proposed (pending approval)0');
