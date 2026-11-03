@@ -7,6 +7,9 @@ const frontend = path.join(here, '..', 'frontend');
 // Django API port; set COURSEPATH_E2E_API_PORT when 8000 is taken. The preview proxy follows it.
 const apiPort = process.env.COURSEPATH_E2E_API_PORT ?? '8000';
 const apiOrigin = `http://127.0.0.1:${apiPort}`;
+// Production preview port; set COURSEPATH_E2E_WEB_PORT to run two suites side by side.
+const webPort = process.env.COURSEPATH_E2E_WEB_PORT ?? '4173';
+const webOrigin = `http://127.0.0.1:${webPort}`;
 
 /**
  * Browser acceptance against the real stack: Django API (isolated temporary
@@ -25,7 +28,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: webOrigin,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -44,10 +47,10 @@ export default defineConfig({
       stderr: 'pipe',
     },
     {
-      command: 'npm run build && npm run preview',
+      command: `npm run build && npm run preview -- --port ${webPort}`,
       cwd: frontend,
       env: { COURSEPATH_API_ORIGIN: apiOrigin },
-      url: 'http://127.0.0.1:4173/',
+      url: `${webOrigin}/`,
       reuseExistingServer: false,
       timeout: 180_000,
     },
