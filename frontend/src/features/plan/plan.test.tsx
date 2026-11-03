@@ -191,11 +191,11 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
   });
 
   it('groups validation issues; selecting one highlights the affected item and shows the remedy', async () => {
-    const s = server({ extraIssues: () => [issue('PREREQUISITE_MISSING', 'error', ['c-net'], 'ZZ 331 needs ZZ 330 completed or planned earlier.')] });
+    const s = server({ extraIssues: () => [issue('PREREQUISITE_MISSING', 'warning', ['c-net'], 'ZZ 331 needs ZZ 330 completed or planned earlier.')] });
     render(s);
     const panel = await screen.findByRole('region', { name: 'Plan validation' });
     await within(panel).findByText('ZZ 331 needs ZZ 330 completed or planned earlier.');
-    expect(within(panel).getByRole('heading', { name: 'Errors (1)' })).toBeInTheDocument();
+    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // D-17: a recommendation, never an error
     await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items for PREREQUISITE_MISSING' }));
     const row = within(semester('2026–27 Semester II')).getByText('ZZ 331').closest('tr') as HTMLElement;
     expect(row).toHaveAttribute('data-highlight', 'true');
@@ -205,14 +205,15 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
   it('shows the server explanation of a nested unmet prerequisite and a duplicate on every affected item', async () => {
     const s = server({
       extraIssues: () => [
-        issue('PREREQUISITE_MISSING', 'error', ['c-net'], 'Missing: ZZ 201 and (ZZ 202 or ZZ 203)'),
+        issue('PREREQUISITE_MISSING', 'warning', ['c-net'], 'Missing: ZZ 201 and (ZZ 202 or ZZ 203)'),
         issue('DUPLICATE_COURSE', 'error', ['c-net', 'c-os'], 'Already completed/selected or missing repeat instance evidence.'),
       ],
     });
     render(s);
     const panel = await screen.findByRole('region', { name: 'Plan validation' });
     await within(panel).findByText('Missing: ZZ 201 and (ZZ 202 or ZZ 203)');
-    expect(within(panel).getByRole('heading', { name: 'Errors (2)' })).toBeInTheDocument();
+    expect(within(panel).getByRole('heading', { name: 'Errors (1)' })).toBeInTheDocument(); // the duplicate
+    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // D-17 recommendation
     const net = within(semester('2026–27 Semester II')).getByText('ZZ 331').closest('tr') as HTMLElement;
     expect(within(net).getByText('Missing: ZZ 201 and (ZZ 202 or ZZ 203)')).toBeInTheDocument();
     await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items for DUPLICATE_COURSE' }));
@@ -251,14 +252,14 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     render(s);
     const sem1 = await screen.findByRole('region', { name: '2026–27 Semester I' });
     const before = within(sem1).getByText('ZZ 330').closest('tr') as HTMLElement;
-    await waitFor(() => expect(within(before).getByText('Eligible')).toBeInTheDocument());
+    await waitFor(() => expect(within(before).getByText('Preparation met')).toBeInTheDocument()); // D-17 wording
     expect(within(before).getByText('Synthetic duplicate on ZZ 330.')).toBeInTheDocument();
     await userEvent.selectOptions(within(sem1).getByLabelText('Move ZZ 330 to'), '2027-28-I');
     await userEvent.click(within(sem1).getByRole('button', { name: 'Move ZZ 330' }));
     // The save fails (offline), so no newer validation arrives: old results must not stay on the row.
     await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Offline'), { timeout: 2000 });
     const moved = within(semester('2027–28 Semester I')).getByText('ZZ 330').closest('tr') as HTMLElement;
-    expect(within(moved).queryByText('Eligible')).not.toBeInTheDocument();
+    expect(within(moved).queryByText('Preparation met')).not.toBeInTheDocument();
     expect(within(moved).queryByText('Synthetic duplicate on ZZ 330.')).not.toBeInTheDocument();
     expect(within(moved).getAllByText('Not checked').length).toBeGreaterThan(0);
     expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/not validated yet/);

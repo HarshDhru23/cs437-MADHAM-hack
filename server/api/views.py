@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError, RequestDataTooBig
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import F, ProtectedError
 from django.http import JsonResponse, Http404
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -16,8 +16,8 @@ from django.utils import timezone
 from coursepath.issues import issue
 from coursepath.serialization import plain
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
-from coursepath.validation import plan_payload, current_enrolment, scenario_payload
-from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts
+from coursepath.validation import plan_payload, current_enrolment, scenario_payload, reported_controls
+from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts, restore_rejections
 
 
 def response(data=None, issues=(), status=200):
@@ -242,12 +242,13 @@ def _curriculum_for(record=None):
 
 
 def _offering_snapshots():
-    """Latest reviewed snapshot per term, else the latest draft."""
+    """Latest reviewed snapshot per term, else the latest draft. Payloads are loaded only for those versions."""
     from server.records.models import OfferingSnapshot
     latest = {}
-    for stored in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at'):
-        latest.setdefault(stored.term_id, stored.payload)
-    return latest
+    for term, version in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at').values_list('term_id', 'version'):
+        latest.setdefault(term, version)
+    payloads = dict(OfferingSnapshot.objects.filter(pk__in=latest.values()).values_list('version', 'payload'))
+    return {term: payloads[version] for term, version in latest.items()}
 
 
 def _validate_owned_plan(owner, plan):
@@ -419,13 +420,23 @@ def scenarios_compare(request):
 @transaction.atomic
 def scenario_apply(request, scenario_id):
     from coursepath.scenarios import plan_edits
-    scenario = get_object_or_404(Scenario, pk=scenario_id, owner=request.user)
+    scenario = get_object_or_404(Scenario.objects.select_for_update(), pk=scenario_id, owner=request.user)
     plan = AcademicPlan.objects.select_for_update().get(pk=scenario.plan_id, owner=request.user)
     stored = get_object_or_404(AcademicRecord, owner=request.user)
-    expected = request.payload.get('expected_plan_revision')
-    current = (stored.revision, plan.revision, _curriculum_for(stored)['version'])
-    if type(expected) is not int or expected != plan.revision or current != (scenario.baseline_record_revision, scenario.baseline_plan_revision, scenario.rule_version):
+    expected_scenario, expected = request.payload.get('expected_scenario_revision'), request.payload.get('expected_plan_revision')
+    if any(type(value) is not int or value < 0 for value in (expected_scenario, expected)):
+        raise ValueError('expected_scenario_revision and expected_plan_revision must be nonnegative integers')
+    if expected_scenario != scenario.revision:
+        raise RevisionConflict(scenario.revision)  # the scenario changed after the client compared it
+    if expected != plan.revision:
         raise RevisionConflict(plan.revision)
+    current = (stored.revision, plan.revision, _curriculum_for(stored)['version'])
+    if current != (scenario.baseline_record_revision, scenario.baseline_plan_revision, scenario.rule_version):
+        stale = {'action': 'rebase', 'scenario_revision': scenario.revision, 'current_record_revision': current[0], 'current_plan_revision': current[1],
+                 'current_rule_version': current[2], 'baseline_record_revision': scenario.baseline_record_revision,
+                 'baseline_plan_revision': scenario.baseline_plan_revision, 'rule_version': scenario.rule_version}
+        return response(stale, [issue('SCENARIO_STALE', 'The saved record, plan or rules changed after this scenario was created.', 'error', [str(scenario.pk)],
+                                      action='Rebase the scenario on the current record and plan, then compare again.')], 409)
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
     result = update_plan(plan, expected, plan_payload(edited))
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
@@ -458,7 +469,7 @@ def backup_preview(request):
     revision = expected_revision(request.payload)
     backup = request.payload.get('backup')
     if isinstance(backup, dict) and 'schema_version' in backup and isinstance(backup.get('data'), dict):
-        backup = backup['data']
+        backup = backup['data'] if backup['schema_version'] == '1' else None
     if not isinstance(backup, dict) or backup.get('kind') != BACKUP_KIND or backup.get('backup_version') != '1':
         return response(issues=[issue('BACKUP_VERSION_UNSUPPORTED', 'This is not a supported CoursePath backup version.', 'error')], status=422)
     if not isinstance(backup.get('account'), dict) or backup['account'].get('username') != request.user.username:
@@ -470,28 +481,49 @@ def backup_preview(request):
         return response(issues=[issue('COHORT_MISMATCH', 'The backup is not for the supported B.Tech CSE 2024 cohort.', 'error')], status=422)
     attempts = validate_attempts(record.get('attempts'))
     enrolment = current_enrolment(record.get('current_enrolment', []))
-    reported = record.get('reported_controls', [])
+    reported = reported_controls(record.get('reported_controls', []))
     plans, scenarios = backup.get('plans', []), backup.get('scenarios', [])
-    if not isinstance(reported, list) or len(reported) > 50 or not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
+    if not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
         raise ValueError('Backup lists exceed limits')
-    plans = [plan_payload({k: v for k, v in p.items() if k in {'semesters', 'label'}}) for p in plans]
+    if any(not isinstance(item, dict) for item in plans + scenarios):
+        raise ValueError('Backup plans and scenarios are objects')
+    plan_ids, plans = [str(p.get('id')) for p in plans], [plan_payload({k: v for k, v in p.items() if k in {'semesters', 'label'}}) for p in plans]
     if revision != stored.revision:
         raise RevisionConflict(stored.revision)
+    rejected = _backup_rejection(request, stored, attempts)
+    if rejected:
+        return rejected
+    owned = {str(p.pk): p.payload for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')}
+    matches = [plan_id if plan_id in owned else next((pk for pk, payload in owned.items() if payload == plan), None) for plan_id, plan in zip(plan_ids, plans)]
+    plans = [plan for plan, match in zip(plans, matches) if match is None]  # a plan that still exists, by ID or identical content, is not copied again
     existing = {a['id']: a for a in record_data(stored)['attempts']}
     incoming = {a['id']: a for a in attempts}
     shared = incoming.keys() & existing.keys()
     diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
             'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
-            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans), 'scenarios_not_restored': len(scenarios)}
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans),
+            'plans_skipped_existing': sorted({m for m in matches if m is not None}), 'scenarios_not_restored': len(scenarios)}
     issues = []
     if backup.get('rule_version') != _curriculum_for(stored)['version']:
         issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
     if scenarios:
         issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
+    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
                                            payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
     return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
                     issues, 201)
+
+
+def _backup_rejection(request, stored, attempts):
+    """A 422 naming the backup rows the record editor would reject; approvals resolve only to this owner's verified evidence."""
+    verified = {str(pk) for pk in ApprovalEvidence.objects.filter(owner=request.user, status='verified').values_list('pk', flat=True)}
+    rejected = restore_rejections(stored, attempts, verified)
+    if rejected:
+        return response(issues=[issue('BACKUP_INVALID', 'These rows differ from their source evidence or correction history without a justified correction, '
+                                      'or claim approvals or catalogue matches the server has not recorded.', 'error', rejected,
+                                      action='Restore an unedited backup, then correct rows in the record editor with a justification.')], status=422)
+    return None
 
 
 def _restore_backup(request, preview, stored, expected):
@@ -499,7 +531,10 @@ def _restore_backup(request, preview, stored, expected):
     if request.payload.get('confirm') is not True:
         raise ValueError('Restoring replaces the record; send confirm: true')
     payload = preview.payload
-    restored = replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
+    rejected = _backup_rejection(request, stored, payload['attempts'])
+    if rejected:
+        return rejected
+    restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
     preview.committed_at = timezone.now()
     preview.save(update_fields=['committed_at'])
@@ -515,8 +550,10 @@ RETENTION = ('Deleted from the CoursePath database immediately. This repository 
 def account_data(request):
     """Delete the owner's academic data, or the whole account, after re-authentication."""
     payload = request.payload
-    if payload.get('confirm') != 'delete my data':
-        raise ValueError('Type "delete my data" to confirm')
+    if payload.get('confirm') != 'delete my data' or not isinstance(payload.get('delete_account', False), bool):
+        raise ValueError('Type "delete my data" to confirm; delete_account is a JSON boolean')
+    if throttled(request):
+        return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
     if not request.user.check_password(payload.get('password') or ''):
         return response(issues=[issue('REAUTH_FAILED', 'Enter your current password to delete data.', 'error')], status=403)
     stored = AcademicRecord.objects.select_for_update().get(owner=request.user)
@@ -529,8 +566,13 @@ def account_data(request):
     counts = {name: query.count() for name, query in owned.items()}
     if payload.get('delete_account') is True:
         user = request.user
+        try:
+            with transaction.atomic():
+                user.delete()
+        except ProtectedError:  # a staff verifier's name stays on the evidence they verified for other students
+            return response(issues=[issue('ACCOUNT_HAS_VERIFICATIONS', 'This account verified approval evidence that other students rely on, so it cannot be deleted here. '
+                                          'Delete your data only, or ask an administrator to reassign those verifications.', 'error')], status=409)
         logout(request)
-        user.delete()
         return response({'deleted': counts, 'account_deleted': True, 'record_revision': None, 'retention': RETENTION})
     for name in ['scenarios', 'plans', 'import_previews', 'approval_evidence']:
         owned[name].delete()

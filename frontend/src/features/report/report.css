@@ -1,0 +1,74 @@
+/* A11 printable report: readable on screen at 390px, and on paper. */
+.report-sheet > section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.report-sheet .report-table {
+  margin-bottom: var(--space-4);
+}
+.report-sheet .plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.report-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+.report-facts dt {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.report-facts dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.report-semester {
+  margin-bottom: var(--space-3);
+}
+
+@media print {
+  body:has(.report-sheet) .context-bar,
+  body:has(.report-sheet) .skip-link,
+  body:has(.report-sheet) .mock-banner,
+  .report-actions {
+    display: none !important;
+  }
+  body:has(.report-sheet) {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+  }
+  body:has(.report-sheet) main {
+    max-width: none;
+    padding: 0;
+  }
+  .report-sheet > section {
+    border: none;
+    padding: 0;
+    margin-bottom: 1.25rem;
+  }
+  .report-sheet .table-wrap {
+    overflow: visible;
+  }
+  .report-sheet tr,
+  .report-sheet h2,
+  .report-sheet h3 {
+    break-inside: avoid;
+    break-after: avoid-page;
+  }
+  .report-sheet tr {
+    break-after: auto;
+  }
+  .report-sheet .badge {
+    border: 1px solid #000;
+    background: none;
+    color: #000;
+  }
+}

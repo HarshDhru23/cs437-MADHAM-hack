@@ -81,6 +81,29 @@ def current_enrolment(rows):
     return deepcopy(rows)
 
 
+REPORTED_CONTROL_FIELDS = {'earned_credits', 'performance_credits', 'grade_points', 'cpi'}
+
+
+def reported_controls(entries):
+    """Source-reported transcript totals, in the shape an import commit stores them: decimal strings as the PDF printed them, never floats."""
+    if not isinstance(entries, list) or len(entries) > 50:
+        raise ValueError('Expected at most 50 reported-control entries')
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {'preview_id', 'record_revision_at_import', 'controls', 'source_refs'}:
+            raise ValueError('Invalid reported-control entry')
+        text(entry['preview_id'])
+        if type(entry['record_revision_at_import']) is not int or entry['record_revision_at_import'] < 1:
+            raise ValueError('Invalid import revision')
+        controls = entry['controls']
+        if not isinstance(controls, dict) or not controls or set(controls) - REPORTED_CONTROL_FIELDS:
+            raise ValueError('Unsupported reported control')
+        if any(not isinstance(value, str) or not re.fullmatch(r'\d{1,9}(?:\.\d{1,9})?', value) for value in controls.values()):
+            raise ValueError('Reported controls are decimal strings')
+        if not isinstance(entry['source_refs'], list) or len(entry['source_refs']) > 2000 or any(not isinstance(ref, str) or len(ref) > 160 for ref in entry['source_refs']):
+            raise ValueError('Invalid reported-control sources')
+    return deepcopy(entries)
+
+
 SCENARIO_FIELDS = {'plan_id', 'label', 'changes', 'internship', 'award_ids', 'expected_revision', 'rebase'}
 CHANGE_FIELDS = {'op', 'item_id', 'term_id', 'credits', 'grade', 'course'}
 INTERNSHIP_FIELDS = {'duration_choice', 'preset', 'start_date', 'end_date_exclusive', 'placement_mode', 'modules', 'notes'}

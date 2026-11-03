@@ -125,6 +125,31 @@ class ScenarioTests(unittest.TestCase):
         self.assertNotIn('ADDITIONAL_LEARNING_POLICY_UNKNOWN', [i['code'] for i in result['scenario']['performance']['issues']])
         self.assertEqual(result['scenario']['performance']['cumulative']['unrounded_value'], '6')  # 72 / 12, as with a declared row
 
+    def test_cp28_passing_hypothetical_grade_keeps_the_course_planned(self):
+        # A passing grade changes only the labelled CPI; audit and validation still see the planned course.
+        for item_id, grade, cpi in [('pre', 'A', '9.333333'), ('os', 'A+', '9.666667')]:  # (72 + 40) / 12, (72 + 44) / 12
+            with self.subTest(grade=grade):
+                result = compare_scenario(context(), baseline(), scenario({'op': 'grade', 'item_id': item_id, 'grade': grade}))
+                deltas = result['deltas']
+                self.assertEqual(deltas['requirements'], [])
+                self.assertEqual(find(result['scenario']['audit']['projected'], 'os')['remaining_credits'], '0')
+                self.assertEqual(find(result['scenario']['audit']['projected'], 'cse-core')['remaining_credits'],
+                                 find(result['baseline']['audit']['projected'], 'cse-core')['remaining_credits'])
+                self.assertEqual((deltas['downstream_affected'], deltas['new_issues'], deltas['workload']), ([], [], {}))
+                self.assertEqual(result['scenario']['validation']['workload']['2026-27-I']['target_credits'], '12')
+                self.assertIn(item_id, [c['id'] for c in result['scenario']['validation']['per_course']])
+                self.assertEqual(Decimal(deltas['cpi']['scenario']).quantize(Decimal('0.000001')), Decimal(cpi))
+                self.assertTrue(deltas['cpi']['hypothetical'])
+        # A failing letter leaves the plan like `fail`: (72 + 4*2) / 12 for E.
+        failed = compare_scenario(context(), baseline(), scenario({'op': 'grade', 'item_id': 'pre', 'grade': 'E'}))
+        self.assertEqual(failed['deltas']['downstream_affected'], ['dep'])
+        self.assertEqual(failed['deltas']['workload']['2026-27-I'], {'baseline': '12', 'scenario': '8'})
+        self.assertEqual(Decimal(failed['deltas']['cpi']['scenario']).quantize(Decimal('0.000001')), Decimal('6.666667'))
+        # One hypothetical outcome per planned course: no second grade counted twice, no grade on a dropped course.
+        for second in [{'op': 'grade', 'item_id': 'os', 'grade': 'A'}, {'op': 'drop', 'item_id': 'os'}]:
+            with self.assertRaises(ValueError):
+                compare_scenario(context(), baseline(), scenario({'op': 'grade', 'item_id': 'os', 'grade': 'A'}, second))
+
     def test_cp33_scenario_internship_runs_through_the_same_comparison(self):
         internship = {'id': 'i6', 'duration_choice': 'six_months', 'start_date': '2027-07-01', 'end_date_exclusive': '2028-01-01',
                       'placement_mode': 'onsite_full_time', 'modules': [module('m1', 'open_elective')]}
