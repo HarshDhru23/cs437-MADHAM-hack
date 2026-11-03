@@ -6,6 +6,7 @@ from coursepath.eligibility import evaluate_prerequisite
 from coursepath.issues import issue
 from coursepath.offerings import offering_availability, snapshot_for_term
 from coursepath.timetable import check_meetings
+from coursepath.identity import canonical_code
 
 
 def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
@@ -26,6 +27,7 @@ def edit_semester_plan(plan, semester_id, add_courses=(), remove_course_ids=()):
 def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     catalogue = context.get('catalogue', {})
     attempts = context.get('attempts', [])
+    identity = context.get('identity')
     workload, per_course, issues, meeting_checks = {}, [], [], {}
     planned = [{**c, 'normalized_code': c.get('normalized_code', c.get('course_id')), 'term_id': semester['term_id']}
                for semester in plan.get('semesters', []) for c in semester.get('courses', [])]
@@ -41,23 +43,27 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
         for course in semester.get('courses', []):
             code = course.get('normalized_code', course.get('course_id'))
             entity = course.get('id', code)
-            metadata = catalogue.get(code)
+            current = canonical_code(code, identity)  # D-04: catalogue and repeat checks use the resolved identity
+            metadata = catalogue.get(current)
             expression = metadata.get('prerequisites') if metadata and metadata.get('prerequisite_known') else None
-            eligibility = evaluate_prerequisite(expression, term, attempts, planned)
+            eligibility = evaluate_prerequisite(expression, term, attempts, planned, identity)
+            # D-17: prerequisites are CoursePath team recommendations; an unmet one warns and never blocks.
             if eligibility['status'] == 'unknown':
-                issues.append(issue('PREREQUISITE_UNKNOWN', 'Prerequisite data is unknown.', entities=[entity]))
+                issues.append(issue('PREREQUISITE_UNKNOWN', 'No recommendation recorded for this course; its preparation is unknown, not "none".', entities=[entity]))
             elif eligibility['status'] == 'ineligible':
-                issues.append(issue('PREREQUISITE_MISSING', 'Missing: ' + ', '.join(eligibility['missing']), 'error', [entity], eligibility['source_refs']))
+                issues.append(issue('PREREQUISITE_MISSING', 'Recommended preparation (CoursePath team) missing: ' + ', '.join(eligibility['missing']), 'warning',
+                                    [entity], eligibility['source_refs'], 'Take the recommended course earlier, or keep the plan if you are prepared.'))
             elif eligibility['status'] == 'conditional':
-                issues.append(issue('PREREQUISITE_CONDITIONAL', 'Earlier planned prerequisite must be passed.', 'warning', [entity], eligibility['source_refs']))
-            previous = seen.get(code, [])
-            completed = [a for a in attempts if a['normalized_code'] == code and a['completion_status'] == 'completed']
+                issues.append(issue('PREREQUISITE_CONDITIONAL', 'Recommended preparation (CoursePath team) is planned earlier; it helps only if passed.', 'warning',
+                                    [entity], eligibility['source_refs']))
+            previous = seen.get(current, [])
+            completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == current and a['completion_status'] == 'completed']
             if previous or completed:
                 if metadata is None or metadata.get('repeatable') is None:
                     issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeat eligibility requires reviewed policy.', entities=[entity]))
                 elif not metadata['repeatable'] or not course.get('instance_id'):
                     issues.append(issue('DUPLICATE_COURSE', 'Already completed/selected or missing repeat instance evidence.', 'error', [entity] + previous))
-            seen.setdefault(code, []).append(entity)
+            seen.setdefault(current, []).append(entity)
             availability = offering_availability(offering_snapshot, term, code)
             issues.extend(availability['issues'])
             ids = availability['offering_ids']
@@ -97,10 +103,13 @@ def _load_issues(context, term, total):
     advisor = context.get('advisor_cap')
     if advisor is not None:
         cap = min(cap, decimal_value(advisor))
+    term_cap = context.get('term_caps', {}).get(term)
+    if term_cap is not None:
+        cap = min(cap, decimal_value(term_cap))
     if standing == 'unknown':
         issues.append(issue('STANDING_UNKNOWN', 'Confirm standing and any advisor cap.', entities=[term]))
     if total > cap:
-        may_overload = not summer and standing != 'GPS' and (advisor is None or decimal_value(advisor) >= 28) and total <= 32
+        may_overload = not summer and standing != 'GPS' and cap == 28 and total <= 32
         if may_overload:
             evidence = context.get('overload', {})
             approved = evidence.get('verified') is True and evidence.get('recommendation_verified') is True and decimal_value(evidence.get('cpi', '0')) >= 7

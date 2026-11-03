@@ -1,17 +1,18 @@
 from coursepath.models import term_key
 from coursepath.imports.grades import POINTS
+from coursepath.identity import canonical_code
 
 
 def _key(term):
     return (term, 0) if isinstance(term, int) else term_key(term)
 
 
-def evaluate_prerequisite(expression, term_id, attempts, planned=()):
+def evaluate_prerequisite(expression, term_id, attempts, planned=(), identity=None):
     if expression is None:
         return {'status': 'unknown', 'missing': [], 'proof': [], 'source_refs': []}
     kind = expression['type']
     if kind in {'and', 'or'}:
-        children = [evaluate_prerequisite(child, term_id, attempts, planned) for child in expression['children']]
+        children = [evaluate_prerequisite(child, term_id, attempts, planned, identity) for child in expression['children']]
         if kind == 'or':
             if not children:
                 return {'status': 'ineligible', 'missing': [], 'proof': [], 'source_refs': expression.get('source_refs', [])}
@@ -23,12 +24,12 @@ def evaluate_prerequisite(expression, term_id, attempts, planned=()):
                 'proof': [p for c in children for p in c['proof']], 'source_refs': expression.get('source_refs', [])}
     if kind != 'course':
         raise ValueError('Unsupported prerequisite expression')
-    code = expression['course_id']
+    code = canonical_code(expression['course_id'], identity)
     minimum = expression.get('minimum_grade')
     if minimum and minimum not in POINTS:
         return {'status': 'unknown', 'missing': [code], 'proof': [], 'source_refs': expression.get('source_refs', [])}
     for attempt in attempts:
-        if attempt['normalized_code'] != code:
+        if canonical_code(attempt['normalized_code'], identity) != code:
             continue
         if attempt.get('term_id') is None or _key(attempt['term_id']) >= _key(term_id):
             continue
@@ -41,7 +42,7 @@ def evaluate_prerequisite(expression, term_id, attempts, planned=()):
     for row in planned:
         earlier = _key(row['term_id']) < _key(term_id)
         same_coreq = expression.get('co_requisite') is True and row['term_id'] == term_id
-        if row['normalized_code'] == code and (earlier or same_coreq):
+        if canonical_code(row['normalized_code'], identity) == code and (earlier or same_coreq):
             return {'status': 'conditional', 'missing': [], 'proof': [row.get('id', code)],
                     'assumption': 'Pass the prerequisite with any required minimum grade.', 'source_refs': expression.get('source_refs', [])}
     return {'status': 'ineligible', 'missing': [code], 'proof': [], 'source_refs': expression.get('source_refs', [])}

@@ -1,10 +1,12 @@
 from copy import deepcopy
 import json
+import re
 from pathlib import Path
 from decimal import Decimal
 from coursepath.serialization import decimal_value
 from coursepath.rules.sources import validate_sources
 from coursepath.rules.schema import TYPES, walk_requirements
+from coursepath.identity import identity_map
 
 
 def validate_curriculum(curriculum):
@@ -28,6 +30,11 @@ def validate_curriculum(curriculum):
             raise ValueError('Invalid approved course set')
         if rule['type'] == 'mandatory_course' and not rule.get('course_id'):
             raise ValueError('Mandatory course missing identity')
+        for field in ('course_prefixes', 'course_patterns', 'exclude_course_ids'):
+            if rule.get(field) is not None and (not isinstance(rule[field], list) or not all(isinstance(v, str) and v for v in rule[field])):
+                raise ValueError('Invalid membership rule')
+        for pattern in rule.get('course_patterns') or []:
+            re.compile(pattern)
         if rule['type'] in {'all_of', 'any_of'} and not rule.get('children'):
             raise ValueError('Empty requirement expression')
         if rule.get('children') and rule['type'] == 'all_of':
@@ -38,11 +45,31 @@ def validate_curriculum(curriculum):
             raise ValueError('Impossible course count')
     if sum((decimal_value(r.get('minimum_credits', '0')) for r in curriculum['requirements']), Decimal(0)) != total:
         raise ValueError('Degree component total does not reconcile')
+    requirement_ids = set(ids)
     for cap in curriculum.get('caps', []):
         if not cap.get('id') or cap['id'] in ids or not cap.get('source_refs') or set(cap['source_refs']) - source_ids:
             raise ValueError('Invalid cap identity/source')
         ids.add(cap['id'])
         decimal_value(cap['maximum_credits'])
+        if set(cap.get('requirement_ids') or []) - requirement_ids or cap.get('reduced_by') not in {None, 'pass_fail_conversions'}:
+            raise ValueError('A cap names unknown requirements or an unsupported reduction')
+    sourced = list(curriculum.get('excluded_courses', [])) + list(curriculum.get('course_tags', {}).values())
+    sourced += [curriculum[k] for k in ('pass_fail_courses', 'repeat_policy') if curriculum.get(k)]
+    for entry in sourced + curriculum.get('noncredit_obligations', []):
+        if not entry.get('source_refs') or set(entry['source_refs']) - source_ids:
+            raise ValueError('Every course rule needs valid sources')
+    for obligation in curriculum.get('noncredit_obligations', []):
+        if obligation.get('completion_policy') not in {None, 'pass_each_active_semester'}:
+            raise ValueError('Unsupported obligation policy')
+    if curriculum.get('repeat_policy') and curriculum['repeat_policy'].get('rule') != 'best_grade':
+        raise ValueError('Unsupported repeat policy')
+    for group in curriculum.get('identity_groups', []) + curriculum.get('identity_review_pairs', []):
+        if not group.get('decision') or not group.get('source_refs') or set(group['source_refs']) - source_ids:
+            raise ValueError('Identity decisions need a decision ID and valid sources')
+    for group in curriculum.get('identity_groups', []):
+        if not group.get('current') or not isinstance(group.get('same'), list) or not group['same']:
+            raise ValueError('An identity group names its current code and the codes that are the same course')
+    identity_map(curriculum.get('identity_groups'))
     return deepcopy(curriculum)
 
 

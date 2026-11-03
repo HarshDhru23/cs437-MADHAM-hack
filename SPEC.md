@@ -79,7 +79,7 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-02 | A student can record/correct completed, in-progress and failed course attempts without losing prior attempts. | Existing test + edit/commit integration. |
 | CP-03 | A student can inspect counted completed courses/credits and remaining requirements. | Existing test + independently hand-audited record. |
 | CP-04 | A student can add/remove/move future courses and see semester credit totals. | Existing test + browser planner workflow. |
-| CP-05 | A student can see which prerequisite is missing when it is not completed or earlier planned. | Existing ordering matrix + visible issue. |
+| CP-05 | A student can see which recommended preparation (CoursePath team list) is missing when it is not completed or planned earlier; it warns and never blocks the plan. | Existing ordering matrix + visible warning; unlisted courses show "no recommendation recorded". |
 | CP-06 | A student can import a supported transcript PDF with correct semester/code/credit/grade rows. | 39-row independent oracle, wrapped titles, repeated headers, multipage. |
 | CP-07 | A student can paste an IMS grade table and recover all valid rows in their proper terms. | 40-row oracle + tab/whitespace/line-ending variants. |
 | CP-08 | A student can review and correct candidate rows before accepting an import. | Browser preview; no pre-commit record mutation. |
@@ -96,7 +96,7 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-19 | A student can trace every audit decision to its applicable rule version and source. | Explanation/source completeness; wrong-cohort rejection. |
 | CP-20 | A student sees separate actual/current/projected progress and cannot receive an unconditional completion result with missing required evidence. | Incomplete core, pending grade, missing policy and projected-pass cases. |
 | CP-21 | A student can see normal/GPS/summer/advisor load violations and approval-dependent overload status. | Boundary and approval-condition tests. |
-| CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations in plan validation. | Ordering truth tables, duplicate/repeat policy and unknown prerequisite. |
+| CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations for recommended preparation in plan validation. | Ordering truth tables, duplicate/repeat policy, identity-resolved codes and unknown (unlisted) recommendations. |
 | CP-23 | A student can inspect confirmed/tentative/unknown availability for the selected planning term. | Complete vs partial offering snapshot; historical pattern never confirmed. |
 | CP-24 | A student can choose sections and see overlapping required meetings, or that clashes could not be checked. | Lecture/lab, alternatives, touching endpoints, quads, missing meetings. |
 | CP-25 | A student can inspect CSE honours eligibility, progress and remaining approved requirements. | Reviewed honours dataset, required project and overlap constraints. |
@@ -108,4 +108,19 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-31 | A student can complete import, requirement inspection and planning using a phone or keyboard. | Browser accessibility/responsive flows plus observed user session. |
 | CP-32 | A student's personal data is accessible only to that account and can be deleted. | Two-user access/export/delete tests; CSRF, temporary-upload cleanup. |
 | CP-33 | A student can compare no-internship, 3-month and 6-month scenarios using exact dates and see affected courses and completion assumptions. | Calendar boundaries, summer/semester presets, full/partial term conflicts, downstream prerequisites and immutable baseline. |
-| CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4 credits per quad/16 overall; HSS/open-project caps; no duplicated modules or unauthorized approvals. |
+| CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4-credit modules, 16 overall, no per-quad limit (D-14); HSS/open-project caps; no duplicated modules or unauthorized approvals. |
+
+## November 3 implementation status (not release certification)
+
+Status per statement comes from running its mapped tests: `python scripts/statement_report.py --all` (add `--browser --frontend` for the UI suites). This section does not record a pass count. A statement is release-complete only with its tests green, a real browser flow, review by another member and a merged PR (`schemas/statement-test-map.json`). The table lists, for the November statements, what the backend now does and what is still missing.
+
+| ID | Backend behavior with tests | Still needed for release |
+| --- | --- | --- |
+| CP-17 to CP-22 | Reviewed `cse-2024-v1` curriculum from ADV13 (pp. 1-4, 7, 10, 14-15, 23) and D-01 to D-21: identity groups, CS-prefix electives, HSS/GE/BS memberships, project/online/exposure caps, best-grade repeats, viva per active semester, surplus; recommended preparation as warnings. A record following the p. 23 path audits complete. | D-02 fewer-credit equivalents and marking online courses (not yet in the record); browser evidence. |
+| CP-23, CP-24 | Availability from a stored term snapshot; clashes by weekday, minutes and active dates; undated or alternative meetings give possible clashes; no snapshot is `not_checked`, including a semester with no courses (#22). | A reviewed 2026-27 Semester I snapshot (GAP-02), lab/tutorial alternative semantics (AMB-12) and quad dates (AMB-13); section-choice UI. |
+| CP-25 to CP-27 | Not implemented: D-18 defers CSE honours and the AI minor. | The AI minor document and CSE honours list (GAP-07). |
+| CP-28 | Scenarios with drop, fail, postpone, replace, caps and hypothetical grades; deltas; stale scenarios need rebase; plan-only apply. | Scenario UI and browser evidence. |
+| CP-30 | Versioned JSON export; restore through preview, diff and confirmed commit. | Printable report view and browser evidence. |
+| CP-31 | Frontend responsibility. | Phone and keyboard browser flows and an observed user session. |
+| CP-32 | Owner-only data, re-authenticated deletion (data or account), expired-preview purge, production settings check. | Hosted deployment and PostgreSQL verification (GAP-13). |
+| CP-33, CP-34 | Exact-date internships, calendar-month arithmetic, attendance conflicts, downstream courses; IN 498 modules under D-14; none / 3 / 6 month comparison. | An academic calendar (GAP-03) for presets and overlap checks; internship UI and browser evidence. |

@@ -53,10 +53,11 @@ test.describe.serial('student flow', () => {
     await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Actual completed history');
     await expect(page.getByRole('region', { name: 'Attempts not counted' })).toContainText('ZZ 105');
     await expect(page.getByRole('region', { name: 'Unresolved decisions and issues' })).toBeVisible();
-    // Expected from the reviewed rule data, not from the app: CS 202 is a mandatory core course and CS 203 has
-    // no approved equivalence, so "tools" can never be satisfied; most core courses are absent, so no completion.
+    // Expected from the reviewed rule data, not from the app: CS 202 is a mandatory core course (ADV13 p. 14) and
+    // CS 203 does not satisfy it (D-03), so "tools" can never be satisfied; most core courses are absent, so no completion.
     await expect(page.getByRole('region', { name: 'Overview' }).getByText('Overall verdict').locator('..')).toContainText('Not complete');
-    const tools = page.getByRole('list', { name: 'Requirements' }).getByRole('heading', { name: 'Tools', exact: true }).locator('xpath=ancestor::li[1]');
+    const toolsHeading = page.getByRole('list', { name: 'Requirements' }).getByRole('heading', { name: 'Software Tools and Techniques for CSE', exact: true });
+    const tools = toolsHeading.locator('xpath=ancestor::li[1]');
     await expect(tools).toContainText('CS 202');
     await expect(tools).not.toContainText('Satisfied');
   });

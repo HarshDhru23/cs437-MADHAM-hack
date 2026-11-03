@@ -9,6 +9,9 @@ from coursepath.imports.grades import grade_status
 from coursepath.imports.grades import POINTS
 from coursepath.issues import issue
 
+# The learning designation every imported row starts with (D-21). Restore checks read it too, so change it only here.
+IMPORTED_LEARNING_DESIGNATION = 'degree'
+
 CODE = r'[A-Za-z]{2,5}\s*\d{2,4}(?:\s*\([^\n)]{1,20}\))?'
 TERM = r'20\d{2}\s*-\s*(?:20)?\d{2}\s*(?:-\s*)?(?:(?:Semester|Sem)\s*[-:]?\s*)?(?:SUMMER|II|I)\b'
 
@@ -45,7 +48,7 @@ def candidate(term, code, title, credits, grade, source_ref, locator, occurrence
     return {'id': key, 'source_key': key, 'normalized_code': normalized_code, 'original_code': code,
             'title': ' '.join(title.split()), 'credits': decimal_string(decimal_value(credits.strip())),
             'grade': grade, 'term_id': term, 'completion_status': grade_status(grade),
-            'learning_designation': 'unknown', 'course_version_id': None, 'instance_id': None,
+            'learning_designation': IMPORTED_LEARNING_DESIGNATION, 'course_version_id': None, 'instance_id': None,
             'source_refs': [source], 'user_corrections': [], 'approval_refs': [],
             'original': {'code': code, 'title': title, 'credits': credits, 'grade': grade}}
 

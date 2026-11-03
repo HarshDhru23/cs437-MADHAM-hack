@@ -11,7 +11,8 @@ class AnalysisAPITests(AccountAPIMixin, TestCase):
         curriculum = public.get('/api/v1/curricula/cse-2024')
         self.assertEqual(curriculum.status_code, 200)
         self.assertEqual(curriculum.json()['data']['total_credits'], '170')
-        self.assertTrue(curriculum.json()['issues'])
+        # Reviewed from ADV13 since 31 Oct 2026: no SOURCE_MISSING gap is reported any more.
+        self.assertEqual((curriculum.json()['data']['review_status'], curriculum.json()['issues']), ('reviewed', []))
         self.assertEqual(public.get('/api/v1/catalogue').status_code, 200)
         self.assertEqual(self.request(public, 'post', '/analysis', {'record_revision': 0}).status_code, 401)
         self.signup(public, 'analysis')

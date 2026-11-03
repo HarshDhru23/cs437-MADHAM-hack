@@ -13,9 +13,9 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
-        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with draft status and sources"
+        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with review status and sources"
       ],
       "frontend_tests": [
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement grouped by basket before any history or sign-in",
@@ -49,7 +49,8 @@
       "id": "CP-03",
       "oct27_target": true,
       "tests": [
-        "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement"
+        "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp03_record_following_the_p23_path_is_complete"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -57,7 +58,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
@@ -96,7 +97,9 @@
       "id": "CP-05",
       "oct27_target": true,
       "tests": [
-        "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order"
+        "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp05_unmet_recommendation_is_a_labelled_warning_that_never_blocks",
+        "server.records.test_recommendations.RecommendedPreparationAPITests.test_cp05_saved_plan_warns_about_recommended_preparation_without_blocking"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -262,7 +265,8 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_reconcile.ReconcileTests.test_cp12_totals_mismatch_and_unknown_grade_blocked",
-        "server.records.test_imports.ImportAPITests.test_pdf_preview_commit_retains_reported_controls_separately"
+        "server.records.test_imports.ImportAPITests.test_pdf_preview_commit_retains_reported_controls_separately",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp12_one_credit_short_course_stays_on_record_but_never_counts"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -270,7 +274,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent",
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
@@ -283,7 +287,8 @@
       "id": "CP-13",
       "oct27_target": true,
       "tests": [
-        "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues"
+        "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp13_d04_groups_map_old_and_variant_codes_to_the_current_course"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -291,7 +296,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
@@ -306,7 +311,8 @@
       "oct27_target": true,
       "tests": [
         "tests.domain.test_performance.PerformanceTests.test_cp14_grade_completion_exposure_and_performance_separate",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_p_grades_and_zero_credit_rows_excluded_with_reasons"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_p_grades_and_zero_credit_rows_excluded_with_reasons",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp14_viva_needs_a_pass_in_every_active_semester"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -329,7 +335,12 @@
       "oct27_target": true,
       "tests": [
         "tests.domain.test_performance.PerformanceTests.test_cp15_independent_849_over_92_arithmetic_control",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_performance_matches_independent_arithmetic",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_repeated_course_counts_its_best_grade_once",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_credit_and_cpi_supersede_the_same_failed_attempt",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_same_course_variants_are_chosen_by_rule_not_attempt_id",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp15_in498_modules_are_separate_courses_for_cpi_too",
+        "tests.domain.test_performance.BestGradeRepeatTests.test_cp15_repeat_keeps_best_grade_and_projects_stay_separate"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -371,7 +382,11 @@
       "id": "CP-17",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism"
+        "tests.domain.test_audit.AuditTests.test_cp17_adversarial_allocation_conservation_and_determinism",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_cs203_is_not_cs202_and_counts_only_as_an_elective",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_surplus_is_reported_and_courses_are_never_split",
+        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -379,7 +394,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -387,7 +402,9 @@
       "id": "CP-18",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive"
+        "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_project_caps_and_two_cs299_registrations",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_external_exposure_counts_only_toward_allowed_buckets"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -395,7 +412,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -403,7 +420,9 @@
       "id": "CP-19",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted"
+        "tests.domain.test_audit.AuditTests.test_cp19_draft_never_certifies_and_parent_not_double_counted",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp19_identity_groups_are_sourced_and_never_overlap",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp19_curriculum_is_reviewed_from_adv13_and_reconciles_to_170"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -411,7 +430,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -419,7 +438,9 @@
       "id": "CP-20",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget"
+        "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_hss_ge_and_bs_membership_follow_d19_d20",
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_allocation_stays_interactive_for_partial_and_full_records"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -427,7 +448,7 @@
         "human_review": false,
         "merged_pr": false
       },
-      "academic_data": "draft_or_incomplete",
+      "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
     },
@@ -451,7 +472,14 @@
       "id": "CP-22",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty"
+        "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty",
+        "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_variant_satisfies_and_unlisted_course_stays_unknown",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_old_codes_find_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_internship_downstream_check_finds_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -560,8 +588,22 @@
     {
       "id": "CP-28",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_drop_reports_downstream_without_touching_the_baseline",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_failure_changes_projection_and_labelled_cpi_only",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_postpone_replace_and_cap_rerun_the_same_checks",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_attempt_of_an_undesignated_planned_row_is_degree_learning",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_passing_hypothetical_grade_keeps_the_course_planned",
+        "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,
@@ -601,8 +643,17 @@
     {
       "id": "CP-30",
       "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "tests": [
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_previews_diff_then_commits_only_on_confirmation",
+        "server.records.test_export.ExportRestoreTests.test_cp30_unknown_foreign_or_malformed_backups_are_rejected_without_changes",
+        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_rejects_rows_the_record_editor_would_reject",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_keeps_justified_history_and_owned_verified_approvals",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_accepts_only_well_formed_reported_controls",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans"
+      ],
+      "implementation_scope": "backend_evidence",
       "release_evidence": {
         "browser": false,
         "human_review": false,
@@ -634,7 +685,15 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
-        "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile"
+        "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_password_rechecks_are_throttled_like_login",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_delete_account_must_be_a_json_boolean",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
+        "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
+        "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -662,7 +721,9 @@
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_six_months_spanning_semester_reveals_exams_and_downstream",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_partial_term_overlap_and_remote_mode_still_need_permission",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_invalid_dates_changed_length_and_missing_calendar",
-        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_compare_none_three_six_on_one_unchanged_baseline"
+        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_compare_none_three_six_on_one_unchanged_baseline",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp33_scenario_internship_runs_through_the_same_comparison",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -683,7 +744,8 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_only_verified_covering_approval_counts",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_caps_module_size_targets_and_duplicates",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
-        "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs"
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
