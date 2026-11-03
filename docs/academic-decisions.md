@@ -159,9 +159,9 @@ Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, 
 - A course without an entry shows "no recommendation recorded". That is still `unknown`, never "no prerequisites".
 - Every recommendation is checked against the ADV13 p. 23 sample path: two courses that p. 23 schedules in the same semester never require each other.
 
-## 7. Deferred
+## 7. Withdrawn
 
-**D-18. AI minor and CSE honours are deferred** (TEAM, 29 Oct). Neither CSE-CAT nor ADV13 has the AI minor document or the CSE honours course list; p. 6 gives only the 20-credit framework. CP-25, CP-26 and CP-27 stay red until those documents arrive.
+**D-18. AI minor and CSE honours are withdrawn from this release** (TEAM, deferred 29 Oct, withdrawn 3 Nov). Neither CSE-CAT nor ADV13 has the AI minor document or the CSE honours course list; p. 6 gives only the 20-credit framework. Rather than invent award rules or ship red promises, CP-25, CP-26 and CP-27 were removed from `SPEC.md` at the 3 Nov freeze; their IDs are not reused. Requests that name an award still return `AWARD_POLICY_MISSING`.
 
 ## 8. Memberships ADV13 names but does not list
 
@@ -208,7 +208,7 @@ Recorded 3 Nov 2026 by Harsh, when the official timetables and the calendar link
 | Are IN 101 to IN 104 the viva records (D-16)? | CP-14, CP-20 | Treated as the viva, labelled TEAM |
 | SPI of a term whose course was later repeated: unchanged or recalculated? | CP-16 | Unchanged (historical SPI) |
 | CPI display rounding (2 decimals, round or truncate?) | CP-15 | Unrounded value stored, 2 decimals shown |
-| AI minor document, CSE honours list | CP-25 to CP-27 | Deferred (D-18) |
+| AI minor document, CSE honours list | none (CP-25 to CP-27 withdrawn) | Out of this release (D-18); awards return `AWARD_POLICY_MISSING` |
 | D-02: does a same-named course with fewer credits (old ES 242, 3 credits) satisfy a 4-credit core requirement in the engine? | CP-03, CP-17 | Not yet: a core requirement still needs its full credits |
 | Is a P on IN 498 a pass/fail conversion (D-12)? | CP-18 | Counted as a conversion, which reduces the online pool |
 

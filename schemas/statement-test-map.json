@@ -558,48 +558,6 @@
       "frontend_tests": []
     },
     {
-      "id": "CP-25",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
-      "id": "CP-26",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
-      "id": "CP-27",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
       "id": "CP-28",
       "oct27_target": false,
       "tests": [

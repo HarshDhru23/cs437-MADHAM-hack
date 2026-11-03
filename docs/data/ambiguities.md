@@ -10,7 +10,7 @@ Every entry is unresolved. Where a committed document states the rule or the con
 | AMB-04 | Is ES 242(N) the core course ES 242, and which credits apply? | roadmap §3.2 | CP-10, CP-13 | Harsh + catalogue |
 | AMB-05 | Classification of SC 372 (1 credit, only in the IMS paste); advisory p. 7 excludes one-credit short courses from graduation. | roadmap §3.2, §4.4 | CP-12, CP-14 | Harsh + advisory |
 | AMB-06 | CPI/SPI treatment of failed, repeated, substituted, withdrawn and incomplete attempts; rounding and cap. | roadmap §5 | CP-15, CP-16 | Harsh + evaluation policy |
-| AMB-07 | Which courses are on the CSE honours and AI minor lists; joint sharing limits; base-core reuse. | roadmap §3.2, §5 | CP-25..27 | Harsh + AI minor document (missing) |
+| AMB-07 | Which courses are on the CSE honours and AI minor lists; joint sharing limits; base-core reuse. **Withdrawn 3 Nov (D-18):** honours and the AI minor are out of this release. | roadmap §3.2, §5 | none (CP-25..27 withdrawn) | Harsh + AI minor document (missing) |
 | AMB-08 | Approval, quad mapping and load treatment of IN 498 modules; does an advisory cap alone fix credited modules? | contracts §6; M04 step 7 | CP-33, CP-34 | Harsh + external-exposure advisory |
 | AMB-09 | Meaning of "Pass or Fail grade is mandatory" for the comprehensive viva; does zero remaining credits mean complete? | roadmap §3.1; findings | CP-14, CP-20 | Harsh + advisory clarification |
 | AMB-10 | Evidence for any term after 2026-27-I: offerings, slots, dates. **Resolved 3 Nov:** 2026-27-II is now official (D-22); later I/II terms use the same-parity 2026-27 list as a hint only (D-23); calendar dates after 2026-27 stay unknown (D-24). | team README; contracts §5 | CP-23, CP-24 | Manashree (collect) |
