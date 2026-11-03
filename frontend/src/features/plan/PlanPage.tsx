@@ -237,7 +237,7 @@ function Planner({ initial, recordRevision, latestCompleted }: { initial: Academ
       </div>
       <p className="muted">
         A projected plan is not completed history. Course choices are yours; CoursePath never reschedules courses automatically. Credits come from the server
-        after each save.
+        after each save. <Link to="/scenarios">What-if scenarios</Link>
       </p>
       <p className="visually-hidden" aria-live="polite">
         {announce}

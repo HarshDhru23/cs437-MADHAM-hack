@@ -120,7 +120,7 @@ Use Decimal points/credits; reproduce 849/92→9.23. Points: A+11,A10,A-9,B8,B-7
 
 Return per-term and cumulative contributing attempts/numerators/denominators, exclusions, policy/source and incomplete status; no denominator yields unavailable. Hypothetical scenario grades stay separately labeled and do not predict actual grades. Tests: independently calculated term SPI, weighted versus unweighted mean, P/zero-credit exclusion, E/F denominator, A+ and CPI cap, rounding boundaries, repeated project vs retake and unknown special grade. CP-14,15,16.
 
-## H10. Honours/AI minor and joint allocation — full-feature block (3 Nov)
+## H10. Honours/AI minor and joint allocation — withdrawn 3 Nov (D-18)
 
 Files: `coursepath/awards.py`, award data and shared allocation extensions.
 
@@ -168,7 +168,7 @@ Prepare production PostgreSQL settings/migrations and production server/static b
 
 Integrate all three workstreams against actual APIs/data; keep CP map honest. Resolve independent-oracle conflicts through source evidence, not by changing expected values to current output. The supplied sample must expose unresolved CS202, selected-course clashes and internship credit conditions rather than falsely label graduation complete.
 
-By 3 Nov: all34 statements passing with real browser evidence, approved required data, fresh-clone commands, production persistence and source traceability. Review another member's changes and obtain another member's review of yours; merge/tag only through the required process. On 3 Nov freeze SPEC at what actually works. Do not certify an award or exceptional grade policy whose source never arrived.
+By 3 Nov: all 31 statements passing (CP-25 to CP-27 withdrawn, D-18) with real browser evidence, approved required data, fresh-clone commands, production persistence and source traceability. Review another member's changes and obtain another member's review of yours; merge/tag only through the required process. On 3 Nov freeze SPEC at what actually works. Do not certify an award or exceptional grade policy whose source never arrived.
 
 ## Handoff checklist after each PR
 

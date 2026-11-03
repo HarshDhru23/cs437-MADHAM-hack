@@ -99,9 +99,6 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations for recommended preparation in plan validation. | Ordering truth tables, duplicate/repeat policy, identity-resolved codes and unknown (unlisted) recommendations. |
 | CP-23 | A student can inspect confirmed/tentative/unknown availability for the selected planning term. | Complete vs partial offering snapshot; historical pattern never confirmed. |
 | CP-24 | A student can choose sections and see overlapping required meetings, or that clashes could not be checked. | Lecture/lab, alternatives, touching endpoints, quads, missing meetings. |
-| CP-25 | A student can inspect CSE honours eligibility, progress and remaining approved requirements. | Reviewed honours dataset, required project and overlap constraints. |
-| CP-26 | A student can inspect AI minor eligibility, progress and remaining approved requirements. | Reviewed AI minor dataset; base-core exclusions and project limits. |
-| CP-27 | A student can inspect a joint base/honours/AI-minor allocation without exceeding allowed sharing. | Joint adversarial allocation; two-open-elective sharing limits. |
 | CP-28 | A student can compare isolated drop/fail/postpone/replace/credit-cap scenarios against a baseline. | Immutable-history check, downstream issues, hypothetical metric labels. |
 | CP-29 | A student can sign in on another device, retrieve saved records/plans, and resolve conflicting saves. | Signup/login/logout, two-browser test, stale-revision conflict and persistence. |
 | CP-30 | A student can export a readable audit/plan and a versioned backup of their own record. | Printed report + JSON round-trip, sources, unknowns and revision. |
@@ -109,6 +106,8 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-32 | A student's personal data is accessible only to that account and can be deleted. | Two-user access/export/delete tests; CSRF, temporary-upload cleanup. |
 | CP-33 | A student can compare no-internship, 3-month and 6-month scenarios using exact dates and see affected courses and completion assumptions. | Calendar boundaries, summer/semester presets, full/partial term conflicts, downstream prerequisites and immutable baseline. |
 | CP-34 | A student can inspect proposed versus approved internship modules and their eligible credit allocation without duration-based credit awards. | Zero automatic credit; 4-credit modules, 16 overall, no per-quad limit (D-14); HSS/open-project caps; no duplicated modules or unauthorized approvals. |
+
+**Withdrawn on 3 Nov (D-18):** CP-25 (CSE honours), CP-26 (AI minor) and CP-27 (joint base/honours/AI-minor allocation). No official CSE honours list or AI minor document could be obtained, and the team will not invent award rules, so these promises are removed from this release rather than left red. Their IDs are not reused. A request that names an award still returns `AWARD_POLICY_MISSING`.
 
 ## November 3 implementation status (not release certification)
 
@@ -118,7 +117,6 @@ Status per statement comes from running its mapped tests: `python scripts/statem
 | --- | --- | --- |
 | CP-17 to CP-22 | Reviewed `cse-2024-v1` curriculum from ADV13 (pp. 1-4, 7, 10, 14-15, 23) and D-01 to D-21: identity groups, CS-prefix electives, HSS/GE/BS memberships, project/online/exposure caps, best-grade repeats, viva per active semester, surplus; recommended preparation as warnings. A record following the p. 23 path audits complete. | D-02 fewer-credit equivalents and marking online courses (not yet in the record); browser evidence. |
 | CP-23, CP-24 | Availability and clashes from the official, reviewed and complete 2026-27 Semester I and II timetables (D-22), served without a manual load; a course missing from a term's list is not offered; later I/II terms show a same-parity `historical` hint only (D-23); clashes by weekday, minutes and active dates, with half-semester courses dated to their quads; undated or alternative meetings give possible clashes; no snapshot is `not_checked`, including a semester with no courses (#22). | Lab/tutorial alternative semantics (AMB-12); section-choice UI and browser evidence (#29). |
-| CP-25 to CP-27 | Not implemented: D-18 defers CSE honours and the AI minor. | The AI minor document and CSE honours list (GAP-07). |
 | CP-28 | Scenarios with drop, fail, postpone, replace, caps and hypothetical grades; deltas; stale scenarios need rebase; plan-only apply. | Scenario UI and browser evidence. |
 | CP-30 | Versioned JSON export; restore through preview, diff and confirmed commit. | Printable report view and browser evidence. |
 | CP-31 | Frontend responsibility. | Phone and keyboard browser flows and an observed user session. |

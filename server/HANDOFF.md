@@ -1,3 +1,23 @@
+# Harsh — CP-25 to CP-27 withdrawn (3 Nov)
+
+CSE honours, the AI minor and their joint allocation are out of this release
+(D-18): `SPEC.md` now has 31 statements and the statement map matches.
+
+```markdown
+To: Aaryan · From: Harsh · Task: A09 · Blocks: none
+Need: the `/awards` page (frontend/src/app/App.tsx) says awards "need the reviewed
+award definitions"; reword it as "not part of this release (D-18)" or drop the tab.
+docs/team/aaryan.md still lists CP-25..27 under A09 tests.
+Until then I will: nothing; the server keeps answering awards with AWARD_POLICY_MISSING.
+```
+
+```markdown
+To: Manashree · From: Harsh · Task: M07 · Blocks: none
+Need: review the count change in tests/tooling/test_statement_report.py
+(34 -> 31) and the GAP-07 / AMB-07 status edits in docs/data/.
+Until then I will: change the wording if you disagree.
+```
+
 # Harsh — official timetables and calendar (3 Nov)
 
 Branch `feature/harsh-h11-official-timetables-calendar`; decisions D-22 to D-25.
@@ -90,8 +110,8 @@ conflicting rows for IN 101 and MSE 317; 16 offerings with no meetings. With the
 H11 engine the draft reproduces the PH 202 / ES 667 lecture clashes (Tue B1,
 Fri B2) and the PH 202 / CS 331 H2 tutorial clash.
 
-H10 (CP-25 to CP-27) is not started: D-18 defers it until the AI minor document
-and the CSE honours list exist (GAP-07).
+H10 (CP-25 to CP-27) was withdrawn from the SPEC on 3 Nov (D-18): the AI minor
+document and the CSE honours list do not exist in usable form (GAP-07).
 
 ## Changed interfaces
 
