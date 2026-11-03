@@ -75,7 +75,8 @@ def _modules(context, modules, issues):
     registrations = {a.get('id') for a in context.get('attempts', [])} | {a.get('id') for a in context.get('current_enrolment', [])}
     remaining = context.get('remaining')
     record_ids, record = _record_credits(context)
-    seen, total, by_target, rows = set(), record, defaultdict(Decimal), []
+    unmatched = [i for i in record_ids if i not in {m.get('registration_id') for m in modules}]
+    seen, total, by_target, rows, unregistered = set(), record, defaultdict(Decimal), [], set()
     for module in modules:
         module_id, target = module.get('id'), module.get('intended_allocation')
         problems = []
@@ -109,11 +110,16 @@ def _modules(context, modules, issues):
             continue
         status = 'earned' if verified and completed and outcome == 'completed' else 'approved' if verified else 'proposed'
         rows.append({'id': module_id, 'intended_allocation': target, 'status': status, 'reasons': []})
+        if completed and outcome == 'completed' and not module.get('registration_id'):
+            unregistered.add(module_id)
     # Caps fill by tier, earned then approved then proposed (input order within a tier), so a proposal never pushes out credit already approved.
+    # A passed module without a registration may be an unmatched IN 498 attempt already in `record`, so up to that many are not added again.
     on_record = f', including {decimal_string(record)} already on the record' if record else ''
+    matched = []
     for row in sorted((r for r in rows if r['status'] in TIERS), key=lambda r: TIERS.index(r['status'])):
         module_id, target = row['id'], row['intended_allocation']
-        if total + MODULE_CREDITS > EXPOSURE_CAP:
+        same = module_id in unregistered and len(matched) < len(unmatched)
+        if not same and total + MODULE_CREDITS > EXPOSURE_CAP:
             code, message = 'EXPOSURE_CREDIT_CAP', f'At most 16 external-exposure credits count{on_record}.'
         elif TARGET_CAPS[target] is not None and by_target[target] + MODULE_CREDITS > TARGET_CAPS[target]:
             code, message = 'EXPOSURE_TARGET_CAP', f'At most {TARGET_CAPS[target]} exposure credits count toward {target}.'
@@ -128,8 +134,14 @@ def _modules(context, modules, issues):
             issues.append(issue('INTERNSHIP_TARGET_NEED_UNKNOWN', f'The remaining {target} need is unknown, so this module may be surplus.', 'unknown', [module_id], [DECISION]))
         elif need is not None and by_target[target] >= need:
             issues.append(issue('INTERNSHIP_TARGET_NOT_NEEDED', f'No remaining {target} credits need this module; its credits would be surplus.', 'warning', [module_id], [DECISION]))
-        total += MODULE_CREDITS
+        if same:
+            matched.append(module_id)
+        else:
+            total += MODULE_CREDITS
         by_target[target] += MODULE_CREDITS
+    if matched:
+        issues.append(issue('INTERNSHIP_RECORD_MATCH_UNKNOWN', 'A completed module without a registration may be an IN 498 attempt already on the record, so it is not counted twice.',
+                            'unknown', unmatched + matched, [DECISION], 'Record the registration ID of each completed module.'))
     capped = [r['id'] for r in rows if r['status'] in TIERS and TARGET_CAPS[r['intended_allocation']] is not None]
     if record and capped:
         issues.append(issue('INTERNSHIP_RECORD_TARGET_UNKNOWN', 'IN 498 credits already on the record have no stored target, so the HSS and open-project limits may already be partly used.',

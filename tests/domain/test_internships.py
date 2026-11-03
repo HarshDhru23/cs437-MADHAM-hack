@@ -237,6 +237,32 @@ class InternshipModuleTests(unittest.TestCase):
         unknown = [i for i in hss['issues'] if i['code'] == 'INTERNSHIP_RECORD_TARGET_UNKNOWN']
         self.assertEqual([(i['severity'], i['entity_refs']) for i in unknown], [('unknown', ['att-1', 'h1', 'h2'])])
 
+    def test_cp34_completed_module_without_registration_may_already_be_on_the_record(self):
+        # A completed module with no registration_id may be the IN 498 attempt already on the record, so it is not counted
+        # on top of it: 4 on the record (e1) + 12 proposed = 16 (D-14), nothing is rejected, and the match stays unknown.
+        passed = [{'id': f'att-{i}', 'normalized_code': 'IN 498', 'credits': '4', 'grade': 'P', 'completion_status': 'completed', 'term_id': '2026-27-I'} for i in (1, 2, 3, 4)]
+        verified = [{'id': 'a1', 'status': 'verified', 'covered_entities': ['e1', 'e2']}]
+        e1 = module('e1', 'open_elective', 'completed', approval_ref='a1', grade='P')
+        proposals = [module(f'x{i}', 'open_elective') for i in (1, 2, 3)]
+        result = self.evaluate([e1] + proposals, verified, passed[:1])
+        self.assertEqual([m['status'] for m in result['modules']], ['earned', 'proposed', 'proposed', 'proposed'])
+        self.assertNotIn('EXPOSURE_CREDIT_CAP', codes(result))
+        match = [i for i in result['issues'] if i['code'] == 'INTERNSHIP_RECORD_MATCH_UNKNOWN']
+        self.assertEqual([(i['severity'], i['entity_refs']) for i in match], [('unknown', ['att-1', 'e1'])])
+        # Four modules on the record already fill the cap; e1 may be one of them, so it is kept, but a proposal is rejected.
+        full = self.evaluate([e1, proposals[0]], verified, passed)
+        self.assertEqual([m['status'] for m in full['modules']], ['earned', 'rejected'])
+        # A registration that is not on the record makes it a separate module: it counts, so x3 no longer fits.
+        separate = self.evaluate([{**e1, 'registration_id': 'reg-new'}] + proposals, verified, passed[:1])
+        self.assertEqual([m['status'] for m in separate['modules']], ['earned', 'proposed', 'proposed', 'rejected'])
+        self.assertNotIn('INTERNSHIP_RECORD_MATCH_UNKNOWN', codes(separate))
+        # One record attempt can be at most one of two unregistered completed modules: 4 + 4 + 8 proposed = 16.
+        two = self.evaluate([e1, {**e1, 'id': 'e2'}] + proposals, verified, passed[:1])
+        self.assertEqual([m['status'] for m in two['modules']], ['earned', 'earned', 'proposed', 'proposed', 'rejected'])
+        # Proposed modules are not done yet, so they can never be the record's attempt.
+        self.assertEqual([m['status'] for m in self.evaluate(proposals + [module('x4', 'open_elective')], attempts=passed[:1])['modules']],
+                         ['proposed', 'proposed', 'proposed', 'rejected'])
+
     def test_cp34_cap_keeps_earned_and_approved_before_proposed(self):
         verified = [{'id': 'a1', 'status': 'verified', 'covered_entities': ['e1', 'a2', 'h3']}]
         proposed = [module(f'm{i}', 'open_elective') for i in range(1, 5)]
