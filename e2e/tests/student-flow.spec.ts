@@ -123,7 +123,7 @@ test.describe.serial('student flow', () => {
     await expect(semester(page, '2026–27 Semester II')).toContainText('ZZ 330');
     await expect(status).toContainText('Saved');
     await expect(semester(page, '2026–27 Semester II')).toContainText('Selected courses: 4 credits');
-    await expect(page.getByRole('region', { name: 'Plan validation' })).toContainText(/Prerequisite data is unknown|PREREQUISITE_UNKNOWN/);
+    await expect(page.getByRole('region', { name: 'Plan validation' })).toContainText(/No recommendation recorded|PREREQUISITE_UNKNOWN/);
   });
 
   test('a second browser context sees the acknowledged save; a stale edit gets a 409 (CP-29)', async ({ browser }) => {

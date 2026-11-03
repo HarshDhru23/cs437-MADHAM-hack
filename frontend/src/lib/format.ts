@@ -12,6 +12,11 @@ export function formatCredits(value: string | null | undefined): string {
   return trimmed === '' || trimmed === '-' ? '0' : trimmed;
 }
 
+/** True for a decimal string that is zero ("0", "0.0"); a string test, not arithmetic. */
+export function isZeroDecimal(value: string): boolean {
+  return /^-?0+(\.0+)?$/.test(value.trim());
+}
+
 const TERM = /^(\d{4})-(\d{2})-(I|II|SUMMER)$/;
 
 export function formatTerm(termId: string): string {

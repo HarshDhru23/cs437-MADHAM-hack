@@ -73,7 +73,7 @@ export function CoursePicker({ courses, coverage, onPick, submitLabel = 'Add cou
                   <EvidenceBadge value={c.offering_status ?? 'unknown'} />
                 </div>
                 <p className="muted">
-                  Could satisfy: {c.could_satisfy && c.could_satisfy.length > 0 ? c.could_satisfy.join(', ') : 'Unknown'} · Prerequisites:{' '}
+                  Could satisfy: {c.could_satisfy && c.could_satisfy.length > 0 ? c.could_satisfy.join(', ') : 'Unknown'} · Recommended preparation (CoursePath team):{' '}
                   {c.prerequisite_summary ?? 'Unknown'}
                 </p>
                 <button

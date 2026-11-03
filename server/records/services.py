@@ -7,10 +7,16 @@ from django.db.models import F
 from server.records.models import Attempt
 from coursepath.models import CourseAttempt
 from coursepath.imports.grades import grade_status
+from coursepath.imports import normalization
+from coursepath.imports.normalization import normalize_code, normalize_text
+from coursepath.imports.reconcile import FIELDS as REIMPORT_FIELDS
+from coursepath.serialization import decimal_string, decimal_value
 from coursepath.validation import course_code
 
 SCHEMA = json.loads((Path(__file__).resolve().parents[2] / 'schemas/coursepath-v1.schema.json').read_text())
 ATTEMPT_VALIDATOR = Draft202012Validator({'$ref': '#/$defs/attempt', '$defs': SCHEMA['$defs']}, format_checker=FormatChecker())
+EDITABLE_FIELDS = {'normalized_code', 'title', 'credits', 'grade', 'term_id', 'completion_status', 'learning_designation', 'instance_id'}
+_DERIVED = object()  # completion state that follows the grade, as an import sets it
 
 
 class RevisionConflict(Exception):
@@ -56,7 +62,7 @@ def corrected_record_rows(record, incoming, justifications):
     if not isinstance(justifications, dict):
         raise ValueError('Correction justifications must map attempt IDs to text')
     existing = {a.attempt_key: a.payload for a in record.attempts.all()}
-    editable = {'normalized_code', 'title', 'credits', 'grade', 'term_id', 'completion_status', 'learning_designation', 'instance_id'}
+    editable = EDITABLE_FIELDS
     for row in incoming:
         previous = existing.get(row['id'])
         if previous is None:
@@ -73,6 +79,71 @@ def corrected_record_rows(record, incoming, justifications):
             row['user_corrections'] = deepcopy(previous['user_corrections']) + [
                 {'field': key, 'raw': previous.get(key), 'accepted': row.get(key), 'justification': justification} for key in changed]
     return incoming
+
+
+def restore_rejections(record, rows, verified_approvals):
+    """IDs of backup rows that PATCH /record and imports could not have produced (CP-30).
+
+    A row already in the record keeps its stored evidence, server-assigned fields and whole correction history; it may
+    only append justified corrections. A row new to the record must match its own `original` source values except where
+    a justified correction says otherwise, claims no catalogue match, and cites only this owner's verified approvals."""
+    existing = {a.attempt_key: a.payload for a in record.attempts.all()}
+    return sorted(row['id'] for row in rows if not _restorable(row, existing.get(row['id']), verified_approvals))
+
+
+def _restorable(row, stored, verified_approvals):
+    history = row['user_corrections']
+    if stored is not None:
+        if any(row.get(k) != stored.get(k) for k in (set(row) | set(stored)) - EDITABLE_FIELDS - {'user_corrections'}):
+            return False
+        if history[:len(stored['user_corrections'])] != stored['user_corrections']:
+            return False
+        expected, history = {k: stored.get(k) for k in EDITABLE_FIELDS}, history[len(stored['user_corrections']):]
+    else:
+        if row.get('course_version_id') is not None or any(not isinstance(ref, str) or ref not in verified_approvals for ref in row.get('approval_refs', [])):
+            return False
+        if (row.get('source_refs') or row.get('source_key')) and not isinstance(row.get('original'), dict):
+            return False
+        expected = _source_values(row.get('original'))
+    for entry in history:
+        if not isinstance(entry, dict) or 'accepted' not in entry or not isinstance(entry.get('justification'), str) or not entry['justification'].strip():
+            return False
+        if entry.get('field') == 'reimport' and isinstance(entry['accepted'], dict):
+            expected.update({k: v for k, v in entry['accepted'].items() if k in REIMPORT_FIELDS}, learning_designation=normalization.IMPORTED_LEARNING_DESIGNATION, completion_status=_DERIVED)
+        elif isinstance(entry.get('field'), str) and entry['field'] in EDITABLE_FIELDS:
+            expected[entry['field']] = entry['accepted']
+        else:
+            return False
+    if expected.get('completion_status') is _DERIVED:
+        expected['completion_status'] = grade_status(row['grade'])
+    return all(row.get(k) == value or row.get(k) == _stored_form(k, value) for k, value in expected.items())
+
+
+def _source_values(original):
+    """An imported row's values before any correction, as normalization.candidate builds them. A manual row has none."""
+    if not isinstance(original, dict):
+        return {}
+    expected = {'learning_designation': normalization.IMPORTED_LEARNING_DESIGNATION, 'instance_id': None, 'completion_status': _DERIVED}
+    for field, key in [('original_code', 'code'), ('normalized_code', 'code'), ('title', 'title'), ('credits', 'credits'), ('grade', 'grade')]:
+        if key in original:
+            expected[field] = original[key]
+    return expected
+
+
+def _stored_form(field, value):
+    """A source or corrected value as an import stores it: codes, titles, credits and grades are normalized."""
+    try:
+        if field == 'normalized_code':
+            return normalize_code(value)
+        if field == 'title':
+            return ' '.join(value.split())
+        if field == 'credits':
+            return decimal_string(decimal_value(value.strip() if isinstance(value, str) else value))
+        if field == 'grade':
+            return normalize_text(value).strip().upper()
+    except (AttributeError, TypeError, ValueError):
+        pass
+    return value
 
 
 def record_data(record):

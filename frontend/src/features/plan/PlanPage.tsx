@@ -15,7 +15,7 @@ import { Dialog } from '../../components/Dialog';
 import { IssueList } from '../../components/IssueList';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
-import { Badge, EvidenceBadge, SeverityBadge } from '../../components/StatusBadge';
+import { Badge, EvidenceBadge, PreparationBadge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
 import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
@@ -440,7 +440,7 @@ function SemesterTable({
                 <th scope="col">Course / placeholder</th>
                 <th scope="col" className="num">Credits</th>
                 <th scope="col">Requirement intent</th>
-                <th scope="col">Prerequisites</th>
+                <th scope="col">Recommended preparation (CoursePath team)</th>
                 <th scope="col">Offering / sections</th>
                 <th scope="col">Issues</th>
                 <th scope="col">Actions</th>
@@ -460,8 +460,8 @@ function SemesterTable({
                       {formatCredits(c.credits)}
                     </td>
                     <td data-label="Requirement intent">{c.intended_allocation ? requirementName(c.intended_allocation) : <span className="muted">Not set</span>}</td>
-                    <td data-label="Prerequisites">
-                      <EvidenceBadge value={pc?.eligibility ?? 'not_checked'} />
+                    <td data-label="Recommended preparation">
+                      <PreparationBadge value={pc?.eligibility ?? 'not_checked'} />
                     </td>
                     <td data-label="Offering / sections">
                       <EvidenceBadge value={pc?.offering_status ?? 'not_checked'} /> <EvidenceBadge value={pc?.meeting_check_status ?? 'not_checked'} />
@@ -521,7 +521,7 @@ function SemesterTable({
                       {formatCredits(p.desired_credits)} (target)
                     </td>
                     <td data-label="Requirement intent">{requirementName(p.requirement_id)}</td>
-                    <td data-label="Prerequisites">
+                    <td data-label="Recommended preparation">
                       <span className="muted">Cannot be checked until a course is chosen</span>
                     </td>
                     <td data-label="Offering / sections">
