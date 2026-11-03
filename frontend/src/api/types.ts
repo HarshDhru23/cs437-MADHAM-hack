@@ -399,6 +399,142 @@ export interface RevisionConflictData {
   action: 'reload_compare';
 }
 
+// A08: term offering snapshots, meeting groups and per-term clash checks
+// (`GET /offerings?term_id=`, plan validation `meeting_checks`). Interface
+// merging adds the server's extra validation fields without editing above.
+
+/** Snapshot cell reference, for example `{ id: 'SRC-X', locator: 'Time table!K3' }`. */
+export interface SnapshotSourceRef {
+  id: string;
+  locator?: string | null;
+}
+
+/** Times are minutes from midnight (end-exclusive); weekday 0 is Monday. */
+export interface OfferingMeeting {
+  id: string;
+  kind?: string | null;
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+  active_start_date?: string | null;
+  active_end_date?: string | null;
+  room?: string | null;
+  room_options?: string[];
+  delivery_note?: string | null;
+  original_slot?: string | null;
+  source_refs?: SnapshotSourceRef[];
+  offering_id?: string;
+  group_id?: string;
+}
+
+export interface MeetingGroup {
+  id: string;
+  kind?: string | null;
+  raw_text?: string | null;
+  /** `all_required`, `choose_one` or `unknown`; any other value is treated as unknown. */
+  selection_semantics: string;
+  section_labels?: string[];
+  notes?: string[];
+  unresolved?: string[];
+  meetings: OfferingMeeting[];
+  source_refs?: SnapshotSourceRef[];
+}
+
+export interface CourseOffering {
+  id: string;
+  term_id?: string;
+  code: string;
+  display_code?: string;
+  raw_label?: string | null;
+  suffix?: string | null;
+  title?: string | null;
+  credits?: DecimalString | null;
+  section_labels?: string[];
+  meeting_groups: MeetingGroup[];
+  availability_status?: string;
+  remarks?: string | null;
+  source_refs?: SnapshotSourceRef[];
+}
+
+export interface TermOfferingSnapshot {
+  id: string | null;
+  term_id: string;
+  coverage: 'complete' | 'partial' | 'unknown' | string;
+  review_status: 'draft' | 'reviewed' | 'conflicted' | string | null;
+  publication_status?: string | null;
+  revision_date?: string | null;
+  offerings: CourseOffering[];
+  slot_map?: Record<string, unknown>;
+  source_refs?: SourceReference[];
+}
+
+export interface MeetingConflict {
+  id: string;
+  item_ids: string[];
+  meeting_ids: string[];
+  kinds: (string | null)[];
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+  certain: boolean;
+  assumptions: string[];
+  source_refs: SnapshotSourceRef[];
+}
+
+export type MeetingCheckStatus = 'clear' | 'conflicts' | 'not_checked';
+
+export interface TermMeetingCheck {
+  status: MeetingCheckStatus;
+  conflicts: MeetingConflict[];
+}
+
+export interface PlanValidation {
+  meeting_checks?: Record<string, TermMeetingCheck>;
+}
+
+export interface PerCourseValidation {
+  offering_ids?: string[];
+}
+
+// A09 — what-if scenarios and internship comparison (server/README.md "Scenario changes";
+// coursepath/scenarios.py, coursepath/internships.py). Status and issue values are open
+// strings: the UI renders unknown values generically instead of failing.
+
+export type ScenarioChange =
+  | { op: 'drop' | 'fail'; item_id: string }
+  | { op: 'grade'; item_id: string; grade: string }
+  | { op: 'postpone'; item_id: string; term_id: string }
+  | { op: 'replace'; item_id: string; course: { normalized_code: string; credits: DecimalString } }
+  | { op: 'cap'; term_id: string; credits: DecimalString };
+
+export type ScenarioOp = ScenarioChange['op'];
+export type DurationChoice = 'none' | 'three_months' | 'six_months';
+export type InternshipPreset = 'summer' | 'semester' | 'custom';
+export type PlacementMode = 'onsite_full_time' | 'remote_or_part_time' | 'unknown';
+
+/** What the student enters for one IN 498 module. It never carries an approval status. */
+export interface InternshipModuleInput {
+  id: string;
+  credits: DecimalString;
+  intended_allocation: string;
+  status: string;
+  grade?: string | null;
+  quad_id?: string | null;
+  approval_ref?: string | null;
+  registration_id?: string | null;
+}
+
+/** Stored internship choice. Dates are ISO strings; the end is exclusive. */
+export interface InternshipInput {
+  duration_choice: DurationChoice;
+  preset?: InternshipPreset;
+  start_date?: string | null;
+  end_date_exclusive?: string | null;
+  placement_mode?: PlacementMode;
+  modules?: InternshipModuleInput[];
+  notes?: string;
+}
+
 // A11: backup export/restore, account-data deletion and the report's scenario
 // lookup. Shapes follow server/api/views.py (export, backup_preview,
 // _restore_backup, account_data, scenario_detail) and server/README.md.
@@ -467,7 +603,146 @@ export interface Scenario {
   baseline_record_revision: number;
   baseline_plan_revision: number;
   rule_version: string;
-  changes: Record<string, unknown>[];
-  internship: Record<string, unknown> | null;
+  changes: ScenarioChange[];
+  internship: InternshipInput | null;
   award_ids: string[];
+  /** Not served yet (scenario_data has no timestamp); shown once the server adds it. */
+  baseline_captured_at?: string | null;
 }
+
+export interface ScenarioCreate {
+  plan_id: string;
+  label: string;
+  changes: ScenarioChange[];
+  internship?: InternshipInput | null;
+}
+
+export interface ScenarioPatch {
+  expected_revision: number;
+  label?: string;
+  changes?: ScenarioChange[];
+  internship?: InternshipInput | null;
+  rebase?: boolean;
+}
+
+export interface InternshipOverlap {
+  term_id: string;
+  overlap_days: number | null;
+  exam_overlap: boolean | null;
+  course_ids: string[];
+}
+
+export interface InternshipModuleResult {
+  id: string | null;
+  intended_allocation: string | null;
+  /** earned / approved / proposed / rejected today; new values (for example failed) render generically. */
+  status: string;
+  reasons: string[];
+}
+
+export interface InternshipCredits {
+  earned: DecimalString | null;
+  approved: DecimalString | null;
+  proposed: DecimalString | null;
+  earned_by_target?: Record<string, DecimalString>;
+  approved_by_target?: Record<string, DecimalString>;
+  proposed_by_target?: Record<string, DecimalString>;
+}
+
+export interface InternshipEvaluation {
+  id: string | null;
+  duration_choice: string;
+  placement_mode: string;
+  start_date: string | null;
+  end_date_exclusive: string | null;
+  expected_end_date_exclusive: string | null;
+  actual_days: number | null;
+  overlapping_terms: InternshipOverlap[];
+  affected_courses: string[];
+  downstream_courses: string[];
+  unchecked_courses: string[];
+  modules: InternshipModuleResult[];
+  credits: InternshipCredits;
+  issues: Issue[];
+}
+
+export interface ScenarioEvaluation {
+  audit: AuditResult;
+  performance: PerformanceResult & { hypothetical: boolean };
+  validation: PlanValidation;
+  internship: InternshipEvaluation | null;
+  completion_term: string | null;
+  issues: Issue[];
+}
+
+export interface RequirementDelta {
+  id: string;
+  label?: string;
+  baseline: { status: string; remaining_credits: DecimalString | null };
+  scenario: { status: string; remaining_credits: DecimalString | null };
+}
+
+export interface ScenarioDeltas {
+  requirements: RequirementDelta[];
+  new_issues: Issue[];
+  resolved_issues: Issue[];
+  downstream_affected: string[];
+  workload: Record<string, { baseline: DecimalString | null; scenario: DecimalString | null }>;
+  cpi: { baseline: string | null; scenario: string | null; hypothetical: boolean };
+  meeting_checks: Record<string, { baseline: string | null; scenario: string | null }>;
+}
+
+export interface ScenarioComparison {
+  scenario_id: string;
+  baseline_record_revision: number;
+  baseline_plan_revision: number;
+  rule_version: string;
+  stale: boolean;
+  baseline: ScenarioEvaluation | null;
+  scenario: ScenarioEvaluation | null;
+  deltas: ScenarioDeltas | null;
+  issues: Issue[];
+}
+
+export interface InternshipCase extends InternshipEvaluation {
+  approved_credits: DecimalString | null;
+  completion_assumptions: string[];
+  scenario_id: string;
+}
+
+export interface ScenarioCompareResult {
+  comparisons: ScenarioComparison[];
+  internship_cases: InternshipCase[];
+}
+
+export interface ScenarioNotApplied {
+  op: string;
+  item_id: string | null;
+  term_id: string | null;
+  reason: string;
+}
+
+export interface ScenarioApplyResult {
+  plan: PlanMutationResult;
+  not_applied: ScenarioNotApplied[];
+}
+
+export interface ScenarioApplyRequest {
+  expected_plan_revision: number;
+  expected_scenario_revision: number;
+}
+
+/** 409 body for a stale baseline on apply: the schema's `scenario_stale` (examples/scenario-stale.json). */
+export interface ScenarioStaleData {
+  action: 'rebase';
+  scenario_revision: number;
+  current_record_revision: number;
+  current_plan_revision: number;
+  current_rule_version: string;
+  baseline_record_revision: number;
+  baseline_plan_revision: number;
+  rule_version: string;
+}
+
+/** 409 body: `reload_compare` for a stale scenario or plan revision, `rebase` for a stale baseline. */
+export type ScenarioConflictData = RevisionConflictData | ScenarioStaleData;

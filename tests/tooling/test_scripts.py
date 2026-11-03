@@ -1,4 +1,6 @@
+import contextlib
 import importlib.util
+import io
 import os
 import signal
 import socket
@@ -122,6 +124,20 @@ class TestRunnerTests(unittest.TestCase):
         self.assertEqual(self.t.exit_code([R("a", "PASS"), R("b", "MISSING")]), 1)
         self.assertEqual(self.t.exit_code([R("a", "PASS")]), 0)
         self.assertEqual(self.t.exit_code([]), 1)
+
+    def test_failure_detail_the_console_cannot_encode_is_still_reported(self):
+        # Vitest prints U+276F; a cp1252 console or redirected log must not turn a FAIL into a crash.
+        self.t.RUNNERS["fake"] = lambda root: self.t.Result("fake", "FAIL", 0, "npm run test:\n" + chr(0x276F) + " broken.test.tsx")
+        self.addCleanup(self.t.RUNNERS.pop, "fake")
+        self.addCleanup(setattr, self.t, "SUITES", self.t.SUITES)
+        self.t.SUITES = (*self.t.SUITES, "fake")
+        raw = io.BytesIO()
+        console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict", write_through=True)
+        with contextlib.redirect_stdout(console):
+            code = self.t.main(["--suite", "fake"], root=ROOT)
+        self.assertEqual(code, 1)
+        self.assertIn(b"broken.test.tsx", raw.getvalue())
+        self.assertIn(b"FAILED", raw.getvalue())
 
     def test_django_suite_that_runs_no_tests_fails(self):
         files = dict(self.PASSING)

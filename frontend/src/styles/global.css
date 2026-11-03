@@ -777,3 +777,73 @@ dialog::backdrop {
     display: none !important;
   }
 }
+
+/* A08 timetable panel */
+/* Long sentence badges (for example "Future term — …") wrap on a 390px phone. */
+.semester-head .badge,
+.timetable-panel .badge {
+  white-space: normal;
+  max-width: 100%;
+}
+/* Sits directly under its semester card. */
+.semester + .timetable-panel {
+  margin-top: calc(-1 * var(--space-4));
+  border-top-style: dashed;
+}
+.timetable-panel {
+  container-type: inline-size;
+}
+@container (max-width: 40rem) {
+  .timetable-panel table.data.stack-mobile thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .timetable-panel table.data.stack-mobile,
+  .timetable-panel table.data.stack-mobile tbody,
+  .timetable-panel table.data.stack-mobile tr,
+  .timetable-panel table.data.stack-mobile td,
+  .timetable-panel table.data.stack-mobile th[scope='row'] {
+    display: block;
+    width: 100%;
+  }
+  .timetable-panel table.data.stack-mobile td[data-label]::before {
+    content: attr(data-label) ': ';
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+}
+.timetable-panel h3,
+.timetable-panel h4 {
+  margin-top: var(--space-2);
+}
+.snapshot-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+.snapshot-facts dt {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.snapshot-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.snapshot-issues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.weekly-grid [data-conflict='true'] {
+  background: var(--danger-soft);
+  border-left: 4px solid var(--danger);
+  padding-left: var(--space-2);
+}
+.timetable-panel fieldset label,
+.timetable-panel li {
+  overflow-wrap: anywhere;
+}

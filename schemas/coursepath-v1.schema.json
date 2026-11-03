@@ -59,6 +59,9 @@
           "$ref": "#/$defs/offering_snapshot"
         },
         {
+          "$ref": "#/$defs/calendar"
+        },
+        {
           "$ref": "#/$defs/scenario"
         },
         {
@@ -2198,6 +2201,242 @@
         }
       },
       "additionalProperties": false
+    },
+    "calendar": {
+      "type": "object",
+      "required": [
+        "id",
+        "review_status",
+        "source_refs",
+        "terms",
+        "internship_presets"
+      ],
+      "description": "GET /calendar: the committed academic calendar (D-24) and internship preset dates (D-25). Every end date is exclusive.",
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "review_status": {
+          "enum": [
+            "reviewed",
+            null
+          ]
+        },
+        "source_refs": {
+          "type": "array"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "start_date",
+              "end_date_exclusive",
+              "classes_start_date",
+              "classes_end_date_exclusive",
+              "exams",
+              "quads"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/term_id"
+              },
+              "start_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "end_date_exclusive": {
+                "type": "string",
+                "format": "date"
+              },
+              "classes_start_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "classes_end_date_exclusive": {
+                "type": "string",
+                "format": "date"
+              },
+              "exams": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "start_date",
+                    "end_date_exclusive"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "end_date_exclusive": {
+                      "type": "string",
+                      "format": "date",
+                      "description": "End-exclusive."
+                    }
+                  }
+                }
+              },
+              "quads": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "start_date",
+                    "end_date_exclusive"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "end_date_exclusive": {
+                      "type": "string",
+                      "format": "date",
+                      "description": "End-exclusive."
+                    }
+                  }
+                }
+              },
+              "make_up_exams": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "start_date",
+                      "end_date_exclusive"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "end_date_exclusive": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "End-exclusive."
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "recess": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "start_date",
+                      "end_date_exclusive"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "end_date_exclusive": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "End-exclusive."
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "start_date",
+                    "end_date_exclusive"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "end_date_exclusive": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  }
+                }
+              },
+              "source_locator": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "internship_presets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "duration_choice",
+              "preset",
+              "term_id",
+              "start_date",
+              "end_date_exclusive"
+            ],
+            "properties": {
+              "duration_choice": {
+                "enum": [
+                  "three_months",
+                  "six_months"
+                ]
+              },
+              "preset": {
+                "enum": [
+                  "summer",
+                  "semester"
+                ]
+              },
+              "term_id": {
+                "$ref": "#/$defs/term_id"
+              },
+              "start_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "end_date_exclusive": {
+                "type": "string",
+                "format": "date"
+              },
+              "decision": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

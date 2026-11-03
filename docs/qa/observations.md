@@ -6,7 +6,7 @@ Copy one block per participant, using the task numbers from [user-test-script.md
 
 ```markdown
 ## Session <n>: <date>, participant <P1/P2>, moderator <name>
-Commit: <sha> · Where: hosted <url> | local fallback · Device/browser/screen: <...>
+Commit: <sha> · Where: localhost (one server) · Device/browser/screen: <...>
 
 | Task | Completed (yes / hint / no / skipped) | Time (s) | Errors | Quote or observed confusion |
 | --- | --- | --- | --- | --- |

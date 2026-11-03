@@ -11,7 +11,7 @@ Date: 22 October 2026, IST. This package is the implementation handoff. Commit s
 
 ## Decisions already settled
 
-- Release cohort: B.Tech CSE admitted in 2024. Awards: base CSE, CSE honours, AI minor and their joint evaluation. Other batches/minors use the same future data interfaces, but are not release promises.
+- Release cohort: B.Tech CSE admitted in 2024. Awards: base CSE only. CSE honours, the AI minor and their joint evaluation (CP-25 to CP-27) were withdrawn on 3 Nov because their official definitions are unavailable (D-18). Other batches/minors use the same future data interfaces, but are not release promises.
 - Full-degree planner: show every remaining semester, initially through semester 8, with an explicit extend-plan action. Do not hardcode eight as the maximum permitted duration. Current supplied timetable applies only to 2026-27 Semester I. Later offerings are tentative/unknown until supported by dated data.
 - The current term is not completed history. The June 2026 transcript ends after semester 4; the example's semester-5 plan is not proof of current registration. Ask the student to confirm current enrolment and sections.
 - Import choices: PDF transcript or IMS grade-table paste; manual corrections/current-enrolment entry remain available. The example XLSX is a planning reference/fixture, not a third public upload feature.
@@ -49,7 +49,7 @@ The roadmap defines CP-01..CP-34. Harsh integrates these into SPEC before featur
 
 - October 16 required at least ten statements, one test per statement, runnable app. The inspected local state has five; recover immediately and do not backdate evidence.
 - **October 27: at least 17 of 34 statements green**, each delivered through a reviewed merged PR. Planned set: **CP-01 through CP-16, plus CP-29**. Account isolation must already be tested even though the full CP-32 deletion/cleanup scope finishes later.
-- **November 3: all 34 green, specification frozen**. Data-dependent features require an approved real supported dataset; a synthetic-only test or permanent unknown does not satisfy the release promise.
+- **November 3: all 31 green, specification frozen** (34 minus CP-25 to CP-27, withdrawn on 3 Nov under D-18). Data-dependent features require an approved real supported dataset; a synthetic-only test or permanent unknown does not satisfy the release promise.
 - The assignment gives dates, not an hour for these checkpoints. Keep the official dates. There are no additional previous-evening checkpoints; confirm any instructor-specific cutoff separately.
 
 ## Independent work and actual dependencies

@@ -94,14 +94,14 @@ Read-only; the workbook is never modified. Exit 0 = ok, 1 = bad input, 2 = writt
 
 ```sh
 python scripts/statement_report.py --frontend --browser     # the 27 Oct first-release statements, as CI checks them
-python scripts/statement_report.py --all                    # all 34 statements
+python scripts/statement_report.py --all                    # all 31 statements
 ```
 
 Runs the tests named in `schemas/statement-test-map.json` and shows, per statement, whether all its tests passed, plus separate Browser, Frontend and Local columns. Local checks need the private files and never count towards tests-green. Tests-green is shown separately from release evidence (browser flow, review, merged PR) and is never reported as release-complete. Exit 1 if a statement is not tests-green or a mapped browser or frontend test failed.
 
 ## Operations, backup and demo
 
-CoursePath is not hosted yet. Production gaps, environment names, the release procedure and the backup policy are in [docs/operations/runbook.md](docs/operations/runbook.md); variable names (no values) are in `.env.example`.
+CoursePath runs on localhost only; there is no hosted deployment, so saving across devices is shown with two browsers against one local server. How to start it, the environment settings, migrations, backup and restore (SQLite file copy, `scripts/backup.py`, and the in-app JSON backup) and the backup rules are in [docs/operations/runbook.md](docs/operations/runbook.md). Variable names (no values) are in `.env.example`.
 
 ```sh
 python scripts/backup.py summary

@@ -1,48 +1,55 @@
 # CoursePath operations runbook (M08)
 
-Status 3 Nov 2026, checked against `main` at `43c5d96`. **CoursePath is not hosted.** No host, URL, managed PostgreSQL or production secret exists yet (GAP-13), and the production serving pieces below are not on `main`. Everything marked *verified* was run; everything else is a procedure still to execute.
+Status 3 Nov 2026, checked against `main` at `5d3cdfd`. **There is no hosted deployment.** CoursePath runs on localhost only. The team has nothing to host on yet, so production serving and a managed PostgreSQL database are on hold (team decision, 3 Nov). Saving across devices is shown only on one local server: two browsers, or two browser profiles, signed in to the same account against that one server. Nothing here claims hosted persistence. Steps marked *verified* were run on 3 Nov; the rest are procedures.
 
-## 1. What works today
+## 1. Start it
 
-| Item | State | Evidence |
-| --- | --- | --- |
-| Local run, SQLite | verified | `python scripts/run.py` (Django 8000 + Vite 5173), README |
-| Full test command | verified on Windows | `python scripts/test.py` (see `docs/submissions/2026-11-03.md`) |
-| PostgreSQL migrations + Django tests | CI job `postgres` | `.github/workflows/ci.yml`; not run locally (no PostgreSQL server on this machine) |
-| Production settings guard | test | `server.records.test_privacy` runs `check --deploy --fail-level WARNING` with production settings |
-| Backup and verified restore | verified on SQLite; CI step on PostgreSQL | §4 |
-| Hosted deploy, HTTPS, cross-device on a shared server | **not done** | no host chosen |
+One-time setup is in the README (virtual environment, `pip install -r requirements.txt`, `npm ci` for `frontend/` and `e2e/`). Then:
 
-## 2. Production gaps (blocking a hosted release)
+```sh
+python server/manage.py migrate      # creates server/.local/coursepath.sqlite3 on first run
+python scripts/run.py                # Django API on 127.0.0.1:8000, Vite on localhost:5173
+```
 
-Each was searched for in `server/` and `requirements*.txt` on `43c5d96`.
+Open the URL `run.py` prints and create an account in the app; there is no default login. `run.py` exits with code 2 and says what is missing if setup is incomplete or a port is taken (`--api-port`, `--web-port` move them). Ctrl+C stops both servers. *Verified* on Windows on 27 Oct and 3 Nov.
 
-| Gap | Owner | Why it blocks |
-| --- | --- | --- |
-| No production WSGI server pinned (gunicorn or similar) | Harsh (H14) | `runserver` is not a production server |
-| No static-file serving of `frontend/dist` (`STATIC_ROOT`, WhiteNoise or host static) | Harsh + Aaryan (A12) | the built UI has no same-origin route |
-| No SPA fallback (non-`/api` paths -> `index.html`) | Harsh + Aaryan | deep links such as `/plan/<id>` 404 on reload |
-| No `SECURE_PROXY_SSL_HEADER`, no `CSRF_TRUSTED_ORIGINS` | Harsh | behind a TLS proxy `SECURE_SSL_REDIRECT` loops and CSRF checks fail |
-| No `GET /api/v1/health` touching the database | Harsh | host readiness checks and smoke tests have nothing cheap to call; `/api/v1/session` is the stand-in |
-| No host, URL or managed PostgreSQL | team (GAP-13) | cross-device persistence (CP-29) cannot be shown hosted |
+Cross-device check (CP-29, local only): with `run.py` running, sign in to the same account in a second browser or a second browser profile, open the plan saved in the first, then edit it in both. The second save of a stale copy gets a conflict instead of overwriting.
 
-## 3. Environment (names only; values live in the host's secret settings)
+## 2. Environment settings
 
-| Name | Meaning |
+Nothing needs to be set for a local run. The git-ignored `server/.local/` holds the SQLite database, sessions and a generated development secret.
+
+| Name | Local use |
 | --- | --- |
-| `COURSEPATH_ENV` | `production` turns DEBUG off and requires PostgreSQL, HTTPS and secure cookies |
-| `COURSEPATH_SECRET_KEY` | required in production; start-up fails without it |
-| `COURSEPATH_ALLOWED_HOSTS` | comma-separated host names |
-| `COURSEPATH_DB_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | PostgreSQL connection |
-| `COURSEPATH_DB_ENGINE=postgresql` | development/CI only: use PostgreSQL without production mode |
-| `COURSEPATH_SQLITE_PATH` | development/test only: an isolated SQLite file |
-| `COURSEPATH_API_ORIGIN` | Vite dev/preview proxy target (default `http://127.0.0.1:8000`) |
+| `COURSEPATH_SQLITE_PATH` | Use another SQLite file instead of `server/.local/coursepath.sqlite3`. Read only in development (`COURSEPATH_ENV` unset). Used for restore (§4) and by the tests. |
+| `COURSEPATH_API_ORIGIN` | Where the Vite proxy sends `/api` (default `http://127.0.0.1:8000`); `run.py` sets it from `--api-port`. |
+| `COURSEPATH_DB_ENGINE=postgresql` with `COURSEPATH_DB_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | Run against a local PostgreSQL instead of SQLite. CI does this in its `postgres` job. |
+| `COURSEPATH_REAL_INPUT_DIR` | Folder of private inputs for the optional real-file tests (README, Test). |
+| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS and a secret key. |
 
-See `.env.example`. Never put a real value in Git, CI logs or screenshots.
+Names only are in `.env.example`. Never put a real value in Git, CI logs or screenshots.
+
+## 3. Migrations
+
+Run `python server/manage.py migrate` after every pull that adds a migration (`git log --stat -- server/records/migrations`), with `run.py` stopped. Take a backup first (§4.1) if the database holds anything you want to keep. `python server/manage.py showmigrations records` lists what is applied.
 
 ## 4. Backup and restore
 
-`scripts/backup.py` uses whatever database the environment selects (§3).
+### 4.1 Whole local database: copy the SQLite file
+
+1. Stop `run.py`. Do not copy the file while the server is running: a copy taken during a write can be inconsistent.
+2. Copy `server/.local/coursepath.sqlite3` to a dated file outside the repository, e.g. `coursepath-2026-11-03.sqlite3`.
+
+To restore, either point the server at the copy without touching the original:
+
+```sh
+COURSEPATH_SQLITE_PATH=/path/to/coursepath-2026-11-03.sqlite3 python scripts/run.py
+# PowerShell: $env:COURSEPATH_SQLITE_PATH = "C:\path\to\coursepath-2026-11-03.sqlite3"; python scripts/run.py
+```
+
+or, with `run.py` stopped, copy the file back over `server/.local/coursepath.sqlite3`. A copy taken before a migration needs `migrate` again after it is put back.
+
+### 4.2 Whole database, any engine: `scripts/backup.py`
 
 ```sh
 python scripts/backup.py summary                        # counts, revisions, latest migration
@@ -50,31 +57,82 @@ python scripts/backup.py dump --out <backup.json>       # versioned file with an
 python scripts/backup.py restore --input <backup.json>  # into an EMPTY, separate database only
 ```
 
-`restore` migrates the target, refuses a non-empty database, an unknown backup format or a backup from a newer migration, loads the data and then fails unless every row count and every record/plan/scenario revision equals the summary written at dump time. Included: accounts (password hashes), records, attempts, plans, scenarios, approval evidence, rule and offering snapshots. Excluded on purpose: import previews (extracted transcript rows, expiring), sessions, login throttles.
+It uses whichever database the environment selects (§2), so it also works on PostgreSQL. `restore` migrates the target and refuses three things: a non-empty database, an unknown backup format, or a backup from a newer migration. It then loads the data and fails unless every row count and every record, plan and scenario revision equals the summary written at dump time.
 
-**Rehearsal, 3 Nov, verified (SQLite):** on a temporary database A, over real HTTP: synthetic signup, IMS paste preview and commit (2 attempts, record revision 1), plan created (revision 0). Server stopped; `dump`; `restore` into a separate temporary database B reported counts and revisions equal. Server started on B: sign-in with the same password succeeded, `GET /record` returned revision 1 with 2 attempts, `GET /plans` returned the same plan ID and revision, and a stale `PATCH /record` still returned 409. Both temporary databases were deleted afterwards. Automated equivalents: `tests/tooling/test_backup.py` (8 tests).
+- Included: accounts (password hashes), records, attempts, plans, scenarios, approval evidence, and rule and offering snapshots.
+- Left out on purpose: import previews (extracted transcript rows that expire), sessions, and login throttles.
 
-**PostgreSQL:** the CI `postgres` job seeds a synthetic account, dumps, creates `coursepath_restore` and restores into it. This step has **not yet executed** (written on this branch).
+`tests/tooling/test_backup.py` has 8 tests for it. The CI `postgres` job also runs it against a synthetic account; that step has not yet run on GitHub.
 
-Handling rules (proposed; needs team agreement before the first real user):
+### 4.3 One student's data: the in-app JSON backup
 
-1. Take a backup immediately before every production migration; keep it until the post-migration smoke test (§5) passes, and at most 7 days.
-2. A backup holds personal records and password hashes. Store it only in the host's private storage; never in Git, CI artifacts, chat or a shared drive.
-3. An account deleted through `DELETE /account/data` can still exist inside a backup until that backup is deleted. The current deletion message (`server/api/views.py` `RETENTION`) says "this repository configures no database backups"; if rule 1 is adopted, that text must be updated to state the retention period (handoff to Harsh).
+Under **Account, Your data**, a signed-in student can download `coursepath-backup-<date>.json` (`GET /api/v1/export`). The file holds their accepted record and plans and the rule version; it has no password or session.
 
-## 5. Release procedure (once §2 is closed)
+Restoring has three steps:
 
-1. `main` green in CI, including the PostgreSQL job. Note the commit SHA.
-2. Build: `npm ci --prefix frontend && npm run build --prefix frontend`; `pip install -r requirements.txt`; collect static files.
-3. Back up the production database (§4), then `python server/manage.py migrate --noinput`.
-4. `COURSEPATH_ENV=production python server/manage.py check --deploy`: no unaccepted warnings.
-5. Smoke test on the hosted URL with a fresh synthetic account: sign up -> paste the synthetic IMS sample -> review -> confirm -> audit -> add a course to the plan -> save -> open the same account in a second browser -> reload a deep link -> restart the app process and reload again.
-6. Record URL, SHA and smoke-test result in the checkpoint evidence. A local run is not evidence of hosted persistence.
+1. Choose the file. `POST /api/v1/imports/backup-preview` checks it and shows what would change.
+2. Confirm. `POST /api/v1/imports/<id>/commit` with `confirm: true` replaces the record and adds the backup's plans in one transaction.
+3. Check the result. The server-side behaviour is:
+   - Only the account that exported the file can restore it.
+   - A restore without confirmation is refused.
+   - Restored plans get new IDs and start at revision 0.
+   - The record revision moves forward; it does not go back.
+   - Scenarios are not restored and must be recreated.
 
-## 6. Demo-day fallback
+This is the student's own copy. It does not back up other accounts or the database.
 
-`python scripts/run.py` on a laptop with a fresh local SQLite database and synthetic accounts (setup in README). Verified to start both servers and stop them cleanly on 27 Oct and again today (§1). It demonstrates the app, not hosted cross-device saving; say so if it is used.
+### 4.4 Rehearsal, 3 Nov, *verified* (synthetic data only)
 
-## 7. Account deletion and data
+The run used the current `main` plus this branch, on Windows, in a temporary folder that was deleted afterwards. The account was the synthetic `rehearsal-student`, with a two-course IMS paste of invented `ZZ` courses.
 
-`DELETE /account/data` deletes the owner's attempts, enrolment, controls, plans, scenarios, previews and approval evidence immediately (and the account when asked). Run `python server/manage.py purge_previews` on a schedule in production so expired previews do not accumulate (server/README.md).
+**Database copy (§4.1):**
+
+| Step | Result |
+| --- | --- |
+| 1. Fresh SQLite database A, migrated, served over real HTTP | ready |
+| 2. Sign up, IMS preview and commit, create a plan, edit it once | record revision 1, 2 attempts, plan revision 1 |
+| 3. Stop the server; copy A's file to B (249,856 bytes) | copied |
+| 4. Start the server with `COURSEPATH_SQLITE_PATH` pointed at B; sign in with the same password | sign-in succeeded |
+| 5. Compare B with A | same record revision (1), same 2 attempt IDs, same plan ID and revision (1) |
+| 6. Send a stale `PATCH /record` on B | 409, as expected |
+
+**In-app JSON backup (§4.3), on B:**
+
+| Step | Result |
+| --- | --- |
+| 1. Export before deleting | `coursepath-backup`, version 1 |
+| 2. "Delete my data" | record emptied, revision 2, no plans |
+| 3. Backup preview | 2 attempts to add, 1 plan to create, no issues |
+| 4. Commit without `confirm` | refused (400) |
+| 5. Commit with `confirm` | 200 |
+| 6. Export again and compare | attempts identical to the first export; plan label and semesters identical (new plan ID, revision 0; record revision 3) |
+| 7. Another synthetic account tries to preview the same file | 422 `BACKUP_OWNER_MISMATCH` |
+
+The temporary folder was deleted afterwards. A separate rehearsal of §4.2 also passed on 3 Nov: `dump` from one SQLite database and `restore` into a separate empty one gave the same counts and revisions, sign-in worked, and a stale write still got 409. The browser tests `e2e/tests/student-flow.spec.ts` and `save-states.spec.ts` cover the two-browser case (CP-29) on one server.
+
+## 5. Backup rules for localhost (proposed; for review in this PR)
+
+These rules are proposed and not yet agreed. They apply to the team's local databases, not to a host.
+
+1. Back up (§4.1 or §4.2) before every `migrate` and before a demo or user session. Keep the copy until the app has been checked after the change, and for no more than 7 days; then delete it.
+2. Use synthetic accounts for development, demos and user sessions. A database or backup that holds a real student's record stays on that student's own machine and account.
+3. Keep backups outside the repository, never in Git, CI artifacts, chat or a shared drive. `server/.local/` and `*.sqlite3` are git-ignored; a backup copied elsewhere is not.
+4. A backup holds password hashes and every account's records. Delete it like the original when it is no longer needed.
+5. "Delete my data" removes data from the running database immediately. A copy made earlier under rule 1 still holds it until that copy is deleted, which rule 1 limits to 7 days. The deletion message ("this repository configures no database backups") is accurate for localhost: the repository configures none, and these copies are taken by hand. Revisit the message only if a hosted database with backups is ever set up.
+
+## 6. Demo and user sessions
+
+Start from a fresh database (move `server/.local/coursepath.sqlite3` aside, or set `COURSEPATH_SQLITE_PATH` to a new file, then `migrate`). Use only synthetic accounts and inputs: the IMS sample on the import page or the PDF from `e2e/fixtures/make_synthetic_pdf.py`. Say that it runs on localhost. Order and limitations: [docs/demo.md](../demo.md).
+
+## 7. On hold: hosted deployment
+
+Not needed for the localhost release and not a blocker (team, 3 Nov). These are recorded so they are not mistaken for done:
+
+- production web server;
+- serving the built UI and deep links from Django;
+- HTTPS proxy and CSRF origin settings;
+- health-check endpoint;
+- host and URL;
+- managed PostgreSQL and its backups.
+
+`server.records.test_privacy` still checks the production settings guard (`check --deploy`). If hosting is taken up, this runbook needs a release and smoke-test section before any hosted claim is made.

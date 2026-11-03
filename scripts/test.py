@@ -44,7 +44,7 @@ def _run(cmd, cwd, env=None, stream=False):
     p = subprocess.run(cmd, cwd=cwd, env=full_env, capture_output=True, text=True, encoding="utf-8", errors="replace")
     out = (p.stdout or "") + (p.stderr or "")
     if stream:
-        print(out)
+        say(out)
     return p.returncode, out
 
 
@@ -176,6 +176,14 @@ RUNNERS = {"python": run_python_suite, "django": run_django_suite,
            "frontend": run_frontend_suite, "e2e": run_e2e_suite}
 
 
+def say(text):
+    try:
+        print(text, flush=True)
+    except UnicodeEncodeError:  # e.g. Vitest's U+276F on a cp1252 console or redirected log
+        enc = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(text.encode(enc, "replace").decode(enc), flush=True)
+
+
 def main(argv=None, root=ROOT):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--suite", action="append", choices=SUITES, help="run only this suite (repeatable)")
@@ -188,10 +196,10 @@ def main(argv=None, root=ROOT):
     print("\nSuite      Status    Tests  Detail")
     for r in results:
         first = r.detail.splitlines()[0] if r.detail else ""
-        print(f"{r.name:<10} {r.status:<9} {r.tests:<6} {first}")
+        say(f"{r.name:<10} {r.status:<9} {r.tests:<6} {first}")
     for r in results:
         if r.status != "PASS" and r.detail:
-            print(f"\n--- {r.name}: {r.status}\n{r.detail}")
+            say(f"\n--- {r.name}: {r.status}\n{r.detail}")
     if args.suite:
         print("\nNarrow selector used: this is not a checkpoint result.")
     code = exit_code(results)

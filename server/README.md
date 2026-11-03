@@ -75,7 +75,8 @@ Implemented routes:
 | `GET/PATCH/DELETE /plans/{id}` | Owned lookup; PATCH/DELETE require `expected_revision`. PATCH accepts full plan payload. |
 | `POST /plans/{id}/validate` | `{record_revision,plan_revision}`; no mutation. |
 | `POST /analysis` | `{record_revision,plan_id?,plan_revision?,award_ids?}`; actual/current/projected audit, metrics and plan validation. Awards remain unsupported with an explicit policy issue. |
-| `GET /offerings?term_id=2026-27-I` | Public. Stored timetable snapshot for that term (latest reviewed, else latest draft) with coverage, review status, meeting groups and source cells; `coverage: "unknown"` and `OFFERING_UNKNOWN` when none is loaded. |
+| `GET /offerings?term_id=2026-27-I` | Public. Timetable snapshot for that term with coverage, review status, meeting groups and source cells: the latest staff-loaded reviewed snapshot, else the committed official one (`data/offerings/`, D-22), else the latest draft; `coverage: "unknown"` and `OFFERING_UNKNOWN` when there is none. |
+| `GET /calendar` | Public. The committed academic calendar (`data/calendars/`, D-24): terms with classes, quads, exam windows, make-up exams, recess and events, all end-exclusive, plus `internship_presets` (D-25). Always carries `CALENDAR_MISSING` for the unpublished later years. Example: `examples/calendar.json`. |
 | `GET/POST /scenarios` | Owned list (`{scenarios:[...]}`) / create `{plan_id,label?,changes?,internship?,award_ids?}`. The baseline record, plan and rule revisions are captured at creation. |
 | `GET/PATCH/DELETE /scenarios/{id}` | PATCH/DELETE need `expected_revision`; PATCH with `rebase: true` moves the baseline to the current record and plan. |
 | `POST /scenarios/compare` | `{scenario_ids:[1-6, same plan]}`; for each, baseline and scenario evaluations (audit, labelled hypothetical performance, plan validation, internship) and their deltas. Stale scenarios return `stale: true` and `SCENARIO_STALE`, no evaluation. `internship_cases` tabulates none / 3 / 6 month choices. |
@@ -153,8 +154,10 @@ A module cannot carry an approval status: only staff-verified `ApprovalEvidence`
 covering it approves it. A completed module without `registration_id` may be an
 IN 498 attempt already on the record, so (up to the number of unmatched record
 attempts) it is not counted toward the 16-credit cap again and raises
-`INTERNSHIP_RECORD_MATCH_UNKNOWN`. No academic calendar is loaded, so internship cases
-report `CALENDAR_MISSING` and leave affected courses unchecked.
+`INTERNSHIP_RECORD_MATCH_UNKNOWN`. Internship cases are checked against the committed
+2026-27 calendar; courses in later terms, which have no published dates, are listed
+as unchecked with `CALENDAR_MISSING`. Plan validation of a later I or II term shows a
+same-parity `historical` hint (D-23) and never checks its clashes.
 
 ## Rules and deployment configuration
 
@@ -176,6 +179,15 @@ structural check. One of `--reviewed` (staff checked it against the workbook) or
 SHA-256 of the stored snapshot's content, so a corrected snapshot of the same
 workbook is a new version while reloading an identical one is refused. The term
 ID must be a valid academic term.
+
+Committed reference data needs no load step. `data/offerings/2026-27-I.json` and
+`2026-27-II.json` are built from the official timetables in the repository root
+(D-22); after a source changes, rebuild them with
+`python -m coursepath.data_sources.official_timetables` and commit the result (a
+test fails if the committed files and the sources drift apart).
+`data/calendars/2026-27.json` is the published calendar (D-24). Settings
+`COURSEPATH_OFFERINGS_DIR` and `COURSEPATH_CALENDAR_DIR` point at them; `None`
+switches a source off.
 
 For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 `COURSEPATH_ALLOWED_HOSTS` (comma separated), and `COURSEPATH_DB_NAME`,
