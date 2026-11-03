@@ -74,6 +74,50 @@ export function splitChanges(changes: ScenarioChange[]): { planEdits: ScenarioCh
   };
 }
 
+export interface RefusedChange {
+  index: number;
+  change: ScenarioChange;
+  reason: string;
+}
+
+/**
+ * The server's structural checks on a change list (coursepath/scenarios.py
+ * apply_changes), so the editor offers only changes it will accept and a
+ * rebase can name the ones that no longer match the plan. Changes run in
+ * order: a dropped or failed course leaves the plan, a course with a
+ * hypothetical grade takes no further changes, and a postpone must move the
+ * course to a later term than where the earlier changes left it.
+ * `open` lists the items that can still take a change, with their term.
+ */
+export function fitChanges(changes: ScenarioChange[], items: PlanItem[]): { fits: ScenarioChange[]; refused: RefusedChange[]; open: PlanItem[] } {
+  const where = new Map(items.map((i) => [i.id, i.term_id]));
+  const graded = new Set<string>();
+  const fits: ScenarioChange[] = [];
+  const refused: RefusedChange[] = [];
+  changes.forEach((change, index) => {
+    if (change.op === 'cap') {
+      fits.push(change);
+      return;
+    }
+    const term = where.get(change.item_id);
+    let reason: string | null = null;
+    if (graded.has(change.item_id)) reason = 'An earlier change gives this course a hypothetical grade or fail, so it takes no further changes.';
+    else if (term === undefined) reason = 'This course is not in the plan at this point (it was dropped, or is no longer in the saved plan).';
+    else if (change.op === 'postpone' && compareTerms(change.term_id, term) <= 0)
+      reason = `The course is already in ${formatTerm(term)}; a postpone must move it to a later term.`;
+    if (reason) {
+      refused.push({ index, change, reason });
+      return;
+    }
+    fits.push(change);
+    if (change.op === 'drop' || change.op === 'fail') where.delete(change.item_id);
+    else if (change.op === 'postpone') where.set(change.item_id, change.term_id);
+    if (change.op === 'fail' || change.op === 'grade') graded.add(change.item_id);
+  });
+  const open = items.filter((i) => where.has(i.id) && !graded.has(i.id)).map((i) => ({ ...i, term_id: where.get(i.id)! }));
+  return { fits, refused, open };
+}
+
 /** Later terms a course can move to: the plan's later terms plus the next two regular terms. */
 export function laterTerms(plan: AcademicPlan | null, fromTerm: string): string[] {
   const terms = new Set((plan?.semesters ?? []).map((s) => s.term_id));
@@ -168,6 +212,13 @@ export function formatDate(iso: string | null | undefined): string {
   const m = ISO_DATE.exec(iso);
   const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
   return m && month ? `${Number(m[3])} ${month} ${m[1]}` : iso;
+}
+
+/** The server's exam overlap for a term: null means unknown (no exam dates), never "no overlap". */
+export function examOverlapText(value: boolean | null | undefined): string {
+  if (value === true) return ', including exams';
+  if (value === false) return '';
+  return ', exam overlap unknown';
 }
 
 /** A server value that may be missing. Missing is "Unavailable", never 0. */

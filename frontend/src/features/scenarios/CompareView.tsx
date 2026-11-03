@@ -3,7 +3,7 @@ import type { InternshipCase, InternshipEvaluation, Issue, Scenario, ScenarioCom
 import { IssueList } from '../../components/IssueList';
 import { EvidenceBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm, humanize } from '../../lib/format';
-import { describeChange, durationLabel, exclusiveToInclusive, formatDate, itemCode, orUnavailable, type PlanItem } from './model';
+import { describeChange, durationLabel, examOverlapText, exclusiveToInclusive, formatDate, itemCode, orUnavailable, type PlanItem } from './model';
 
 interface CompareViewProps {
   comparisons: ScenarioComparison[];
@@ -30,7 +30,7 @@ function termsAway(stay: InternshipEvaluation | null | undefined): ReactNode {
   if (stay.duration_choice === 'none') return 'None (no internship)';
   if (stay.overlapping_terms.length > 0)
     return list(
-      stay.overlapping_terms.map((t) => `${formatTerm(t.term_id)}: ${orUnavailable(t.overlap_days, (v) => `${v} days`)}${t.exam_overlap ? ', including exams' : ''}`),
+      stay.overlapping_terms.map((t) => `${formatTerm(t.term_id)}: ${orUnavailable(t.overlap_days, (v) => `${v} days`)}${examOverlapText(t.exam_overlap)}`),
       'None',
     );
   if ((stay.issues ?? []).some((i) => i.code === 'CALENDAR_MISSING')) return 'Unavailable (no academic calendar)';

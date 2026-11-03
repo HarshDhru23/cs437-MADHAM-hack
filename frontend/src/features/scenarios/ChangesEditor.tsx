@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from 'react';
 import type { AcademicPlan, ScenarioChange, ScenarioOp } from '../../api/types';
 import { compareTerms, formatTerm } from '../../lib/format';
 import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
-import { describeChange, laterTerms, LETTER_GRADES, OP_LABEL, PLAN_OPS, type PlanItem } from './model';
+import { describeChange, fitChanges, laterTerms, LETTER_GRADES, OP_LABEL, PLAN_OPS, type PlanItem } from './model';
 
 interface ChangesEditorProps {
   plan: AcademicPlan | null;
@@ -13,7 +13,11 @@ interface ChangesEditorProps {
 
 const OPS: ScenarioOp[] = ['drop', 'fail', 'grade', 'postpone', 'replace', 'cap'];
 
-/** Typed controls for each change the server supports, plus the exact list of hypothetical changes. */
+/**
+ * Typed controls for each change the server supports, plus the exact list of
+ * hypothetical changes. Only changes the server will accept after the earlier
+ * ones are offered; a listed change it would refuse says why.
+ */
 export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorProps) {
   const formId = useId();
   const [op, setOp] = useState<ScenarioOp>('drop');
@@ -24,7 +28,10 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
   const [credits, setCredits] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const item = items.find((i) => i.id === itemId) ?? null;
+  const { refused, open } = fitChanges(changes, items);
+  const refusedAt = new Map(refused.map((r) => [r.index, r.reason]));
+  // A course's term after the earlier changes; dropped, failed and graded courses take no further changes.
+  const item = open.find((i) => i.id === itemId) ?? null;
   const planTerms = [...(plan?.semesters ?? [])].map((s) => s.term_id).sort(compareTerms);
   const postponeTerms = item ? laterTerms(plan, item.term_id) : [];
   const needsItem = op !== 'cap';
@@ -89,6 +96,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
         <ol className="scenario-changes" aria-label="Hypothetical changes">
           {changes.map((change, index) => {
             const text = describeChange(change, items);
+            const why = refusedAt.get(index);
             return (
               <li key={`${change.op}-${index}`}>
                 <span>{text}</span>{' '}
@@ -96,6 +104,11 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
                 <button type="button" className="btn btn-small" aria-label={`Remove change: ${text}`} onClick={() => remove(index)}>
                   Remove
                 </button>
+                {why ? (
+                  <p className="field-error">
+                    The server will refuse this change: {why} Remove it before saving.
+                  </p>
+                ) : null}
               </li>
             );
           })}
@@ -133,13 +146,17 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
               }}
             >
               <option value="">Choose a course</option>
-              {items.map((i) => (
+              {open.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.code} — {formatTerm(i.term_id)}
                 </option>
               ))}
             </select>
-            {items.length === 0 ? <span className="hint">The baseline plan has no selected courses to change.</span> : null}
+            {items.length === 0 ? (
+              <span className="hint">The baseline plan has no selected courses to change.</span>
+            ) : open.length < items.length ? (
+              <span className="hint">Courses this scenario already drops, fails or grades take no further changes, so they are not listed.</span>
+            ) : null}
           </div>
         ) : null}
         {op === 'grade' ? (
@@ -160,7 +177,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
           <div className="field">
             <label htmlFor={`${formId}-later`}>Later term</label>
             <select id={`${formId}-later`} value={term} onChange={(e) => setTerm(e.target.value)} disabled={!item}>
-              <option value="">{item ? 'Choose a later term' : 'Choose a course first'}</option>
+              <option value="">{item ? `Choose a term after ${formatTerm(item.term_id)}` : 'Choose a course first'}</option>
               {postponeTerms.map((t) => (
                 <option key={t} value={t}>
                   {formatTerm(t)}

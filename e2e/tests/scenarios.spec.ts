@@ -158,7 +158,7 @@ test.describe.serial('scenarios and internship comparison', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 
-  test('apply writes only plan edits and leaves the accepted record unchanged (CP-28)', async () => {
+  test('apply writes only plan edits, leaves the accepted record unchanged and rebases afterwards (CP-28)', async () => {
     await page.goto(dropScenarioUrl);
     await page.getByRole('button', { name: 'Apply to plan…' }).click();
     const dialog = page.getByRole('dialog', { name: 'Apply plan edits' });
@@ -172,6 +172,15 @@ test.describe.serial('scenarios and internship comparison', () => {
     await expect(done).toContainText('grade');
     // The baseline moved, so the scenario now asks for an explicit rebase.
     await expect(page.getByRole('button', { name: 'Rebase on current record and plan' })).toBeVisible();
+    // Rebasing leaves out the drop that is now in the plan (the server would refuse it) and keeps the hypothetical grade.
+    await page.getByRole('button', { name: 'Rebase on current record and plan' }).click();
+    await expect(page.getByText('The baseline changed.')).toBeHidden();
+    await expect(page.getByText(/Something went wrong/)).toHaveCount(0);
+    const changes = page.getByRole('list', { name: 'Hypothetical changes' });
+    await expect(changes).toContainText('Hypothetical grade B for CS 330');
+    await expect(changes).not.toContainText('Drop CS 202');
+    await expect(page.getByRole('table', { name: 'Baseline vs scenario (server evaluation)' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply to plan…' })).toBeDisabled();
 
     const after = await record();
     expect(after.revision).toBe(recordBefore.revision);

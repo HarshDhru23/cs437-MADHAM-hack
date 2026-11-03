@@ -1,26 +1,23 @@
 /**
- * A09 scenarios against a fake API. Evaluations are built from the shared
- * contract examples (examples/audit.json, plan-validation.json and
- * internship-comparison.json); there is no scenario example yet, so the
- * scenario record and deltas follow coursepath/scenarios.py field for field.
+ * A09 scenarios against a fake API. Every server body comes from the shared
+ * contract examples: the scenario (examples/scenario.json), its comparison
+ * (scenario-comparison.json), the stale-baseline 409 (scenario-stale.json),
+ * the apply result (plan-apply.json), the revision 409 (revision-conflict.json)
+ * and the internship cases (internship-comparison.json). Where a test needs a
+ * value the example lacks, it is re-pointed at the shared plan fixture with
+ * the change spelled out. The fake PATCH refuses a change on an item the
+ * saved plan no longer has, as coursepath/scenarios.py apply_changes does.
  */
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import auditExample from '../../../../examples/audit.json';
 import internshipExample from '../../../../examples/internship-comparison.json';
-import planValidationExample from '../../../../examples/plan-validation.json';
-import type {
-  AcademicPlan,
-  AuditResult,
-  InternshipCase,
-  Issue,
-  PlanValidation,
-  Scenario,
-  ScenarioComparison,
-  ScenarioEvaluation,
-  ScenarioPatch,
-} from '../../api/types';
+import applyExample from '../../../../examples/plan-apply.json';
+import conflictExample from '../../../../examples/revision-conflict.json';
+import comparisonExample from '../../../../examples/scenario-comparison.json';
+import staleExample from '../../../../examples/scenario-stale.json';
+import scenarioExample from '../../../../examples/scenario.json';
+import type { AcademicPlan, InternshipCase, Issue, PlanValidation, Scenario, ScenarioApplyResult, ScenarioComparison, ScenarioEvaluation, ScenarioPatch } from '../../api/types';
 import { analysis, plan } from '../../test/fixtures';
 import { fakeApi, issue, renderApp } from '../../test/harness';
 import { ScenarioPage } from './ScenarioPage';
@@ -29,36 +26,31 @@ import { ScenariosPage } from './ScenariosPage';
 const exampleCases = internshipExample.data.cases as unknown as InternshipCase[];
 const exampleCase = (duration: string) => structuredClone(exampleCases.find((c) => c.duration_choice === duration)!);
 
-function evaluation(over: Partial<ScenarioEvaluation> = {}): ScenarioEvaluation {
-  return {
-    audit: auditExample.data as unknown as AuditResult,
-    performance: { ...structuredClone(analysis.performance), hypothetical: false },
-    validation: structuredClone(planValidationExample.data) as unknown as PlanValidation,
-    internship: null,
-    completion_term: null,
-    issues: planValidationExample.issues as Issue[],
-    ...over,
-  };
-}
+const exampleComparison = comparisonExample.data.comparisons[0] as unknown as ScenarioComparison;
+const exampleValidation = () => structuredClone(exampleComparison.scenario!.validation) as PlanValidation;
+const exampleApply = applyExample.data as unknown as ScenarioApplyResult;
 
+/** examples/scenario.json re-pointed at the shared plan fixture (plan-1, revision 2, items c-os and c-net). */
 const baseScenario: Scenario = {
+  ...(structuredClone(scenarioExample.data) as unknown as Scenario),
   id: 'sc-1',
-  revision: 0,
-  plan_id: 'plan-1',
+  plan_id: plan.id,
   label: 'Lighter third year',
   baseline_record_revision: 3,
-  baseline_plan_revision: 2,
+  baseline_plan_revision: plan.revision,
   rule_version: 'cse-2024-v1',
   changes: [],
-  internship: null,
-  award_ids: [],
 };
 
 interface ServerOptions {
   scenario?: Partial<Scenario>;
   stale?: boolean;
   conflictPatch?: boolean;
-  applyConflict?: { action: string; code: string };
+  applyConflict?: 'reload_compare' | 'rebase';
+  /** DELETE answers 409 this many times first. */
+  deleteConflicts?: number;
+  /** The saved plan the server holds now (default: the fixture plan). */
+  currentPlan?: AcademicPlan;
   /** Override the scenario evaluation the fake compare returns. */
   scenarioEval?: (s: Scenario) => Partial<ScenarioEvaluation>;
   plans?: AcademicPlan[];
@@ -67,50 +59,37 @@ interface ServerOptions {
 function server(opts: ServerOptions = {}) {
   let current: Scenario = { ...structuredClone(baseScenario), ...opts.scenario };
   let stale = opts.stale ?? false;
+  // A stale baseline means the saved plan moved on (revision 3) after the scenario was made at revision 2.
+  let savedPlan: AcademicPlan = structuredClone(opts.currentPlan ?? (stale ? { ...plan, revision: plan.revision + 1 } : plan));
+  let deleteConflicts = opts.deleteConflicts ?? 0;
+  const revisionConflict = (revision: number) => ({ status: 409, data: { ...conflictExample.data, current_revision: revision }, issues: conflictExample.issues as Issue[] });
   const patches: ScenarioPatch[] = [];
   const applies: unknown[] = [];
   const creates: unknown[] = [];
   const deletes: unknown[] = [];
   let compares = 0;
-  const comparison = (s: Scenario): ScenarioComparison =>
-    stale
-      ? {
-          scenario_id: s.id,
-          baseline_record_revision: 3,
-          baseline_plan_revision: 3,
-          rule_version: 'cse-2024-v1',
-          stale: true,
-          baseline: null,
-          scenario: null,
-          deltas: null,
-          issues: [issue('SCENARIO_STALE', 'error', [s.id], 'The saved record, plan or rules changed after this scenario was created.')],
-        }
-      : {
-          scenario_id: s.id,
-          baseline_record_revision: 3,
-          baseline_plan_revision: 2,
-          rule_version: 'cse-2024-v1',
-          stale: false,
-          baseline: evaluation(),
-          scenario: evaluation({
-            performance: { ...structuredClone(analysis.performance), hypothetical: true },
-            internship: s.internship ? { ...exampleCase(s.internship.duration_choice), modules: (s.internship.modules ?? []).map((m) => ({ id: m.id, intended_allocation: m.intended_allocation, status: 'proposed', reasons: [] })) } : null,
-            ...opts.scenarioEval?.(s),
-          }),
-          deltas: {
-            requirements: [{ id: 'cse-core', label: 'CSE core', baseline: { status: 'pending', remaining_credits: '20' }, scenario: { status: 'pending', remaining_credits: '28' } }],
-            new_issues: [],
-            resolved_issues: [],
-            downstream_affected: [],
-            workload: {},
-            cpi: { baseline: null, scenario: null, hypothetical: true },
-            meeting_checks: {},
-          },
-          issues: [],
-        };
+  const ids = (p: AcademicPlan) => new Set(p.semesters.flatMap((x) => x.courses.map((c) => c.id)));
+  // Same top-level fields as examples/scenario-comparison.json, re-pointed at this scenario and baseline.
+  const comparison = (s: Scenario): ScenarioComparison => {
+    const head = { ...structuredClone(exampleComparison), scenario_id: s.id, baseline_record_revision: 3, baseline_plan_revision: savedPlan.revision, rule_version: 'cse-2024-v1' };
+    if (stale) {
+      // The server's stale comparison (coursepath/scenarios.py compare_scenario) with the stale example's issue.
+      return { ...head, stale: true, baseline: null, scenario: null, deltas: null, issues: (staleExample.issues as Issue[]).map((i) => ({ ...i, entity_refs: [s.id] })) };
+    }
+    const evaluated = structuredClone(exampleComparison.scenario!) as ScenarioEvaluation;
+    return {
+      ...head,
+      stale: false,
+      scenario: {
+        ...evaluated,
+        internship: s.internship ? { ...exampleCase(s.internship.duration_choice), modules: (s.internship.modules ?? []).map((m) => ({ id: m.id, intended_allocation: m.intended_allocation, status: 'proposed', reasons: [] })) } : null,
+        ...opts.scenarioEval?.(s),
+      },
+    };
+  };
   const api = fakeApi({
     'GET /plans': () => ({ data: opts.plans ?? [plan] }),
-    'GET /plans/:id': () => ({ data: plan }),
+    'GET /plans/:id': () => ({ data: savedPlan }),
     'GET /scenarios': () => ({ data: { scenarios: [current] } }),
     'POST /scenarios': (req) => {
       creates.push(req.body);
@@ -120,15 +99,23 @@ function server(opts: ServerOptions = {}) {
     'PATCH /scenarios/:id': (req) => {
       const body = req.body as ScenarioPatch;
       patches.push(body);
-      if (opts.conflictPatch || body.expected_revision !== current.revision)
-        return { status: 409, data: { current_revision: current.revision + 3, action: 'reload_compare' }, issues: [issue('REVISION_CONFLICT', 'error')] };
+      if (opts.conflictPatch || body.expected_revision !== current.revision) return revisionConflict(current.revision + 3);
       const { expected_revision: _expected, rebase, ...rest } = body;
-      current = { ...current, ...rest, revision: current.revision + 1, ...(rebase ? { baseline_plan_revision: 3 } : {}) };
+      const changes = rest.changes ?? current.changes;
+      const known = ids(savedPlan);
+      const unknown = changes.find((c) => c.op !== 'cap' && !known.has(c.item_id));
+      if (unknown && unknown.op !== 'cap') return { status: 400, issues: [issue('INVALID_INPUT', 'error', [], `Unknown planned item ${unknown.item_id}`)] };
+      current = { ...current, ...rest, revision: current.revision + 1, ...(rebase ? { baseline_plan_revision: savedPlan.revision } : {}) };
       if (rebase) stale = false;
       return { data: current };
     },
     'DELETE /scenarios/:id': (req) => {
       deletes.push(req.body);
+      if (deleteConflicts > 0) {
+        deleteConflicts -= 1;
+        current = { ...current, revision: current.revision + 1 };
+        return revisionConflict(current.revision);
+      }
       return { data: null };
     },
     'POST /scenarios/compare': () => {
@@ -138,18 +125,14 @@ function server(opts: ServerOptions = {}) {
     },
     'POST /scenarios/:id/apply-plan': (req) => {
       applies.push(req.body);
-      if (opts.applyConflict)
-        return {
-          status: 409,
-          data: { current_revision: 3, action: opts.applyConflict.action },
-          issues: [issue(opts.applyConflict.code, 'error', [], opts.applyConflict.code === 'SCENARIO_STALE' ? 'The baseline changed.' : 'Reload and compare the newer saved revision.')],
-        };
-      return {
-        data: {
-          plan: { ...plan, revision: 3, validation: planValidationExample.data },
-          not_applied: [{ op: 'grade', item_id: 'c-net', term_id: null, reason: 'Hypothetical grades, failures and caps never enter a saved plan or the record.' }],
-        },
-      };
+      if (opts.applyConflict === 'rebase') return { status: 409, data: staleExample.data, issues: staleExample.issues as Issue[] };
+      if (opts.applyConflict === 'reload_compare') return revisionConflict(3);
+      // The server writes the drops to the saved plan (postpone and replace are not used by these tests); the baseline is then stale.
+      const dropped = new Set(current.changes.filter((c) => c.op === 'drop').map((c) => (c as { item_id: string }).item_id));
+      savedPlan = { ...savedPlan, revision: savedPlan.revision + 1, semesters: savedPlan.semesters.map((x) => ({ ...x, courses: x.courses.filter((c) => !dropped.has(c.id)) })) };
+      stale = true;
+      // examples/plan-apply.json with its plan re-pointed at the fixture plan.
+      return { data: { ...structuredClone(exampleApply), plan: { ...exampleApply.plan, ...savedPlan, validation: exampleValidation() } } };
     },
   });
   return {
@@ -211,14 +194,13 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
     const s = server();
     renderScenario(s);
     await screen.findByRole('option', { name: /ZZ 330 — 2026–27 Semester I/ }, wait);
-    await addChange('drop', async (f) => userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-os'));
-    await addChange('grade', async (f) => {
-      await userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-net');
-      await userEvent.selectOptions(within(f).getByLabelText('Hypothetical letter grade'), 'B');
-    });
     await addChange('postpone', async (f) => {
       await userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-net');
       await userEvent.selectOptions(within(f).getByLabelText('Later term'), '2027-28-I');
+    });
+    await addChange('grade', async (f) => {
+      await userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-net');
+      await userEvent.selectOptions(within(f).getByLabelText('Hypothetical letter grade'), 'B');
     });
     // A replacement with an invalid code is refused with a specific message; nothing is added.
     await addChange('replace', async (f) => {
@@ -231,18 +213,20 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
     await userEvent.clear(within(form).getByLabelText('Replacement course code'));
     await userEvent.type(within(form).getByLabelText('Replacement course code'), 'zz332');
     await userEvent.click(within(form).getByRole('button', { name: 'Add change' }));
+    await addChange('drop', async (f) => userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-os'));
     await addChange('cap', async (f) => {
       await userEvent.selectOptions(within(f).getByLabelText('Term to cap'), '2026-27-II');
       await userEvent.type(within(f).getByLabelText('Credit cap'), '16');
     });
     const listed = screen.getByRole('list', { name: 'Hypothetical changes' });
     expect(within(listed).getAllByRole('listitem').map((li) => li.firstChild?.textContent)).toEqual([
-      'Drop ZZ 330 (2026–27 Semester I)',
-      'Hypothetical grade B for ZZ 331 (2026–27 Semester II)',
       'Postpone ZZ 331 (2026–27 Semester II) to 2027–28 Semester I',
+      'Hypothetical grade B for ZZ 331 (2026–27 Semester II)',
       'Replace ZZ 330 (2026–27 Semester I) with ZZ 332 (4 credits)',
+      'Drop ZZ 330 (2026–27 Semester I)',
       'Cap 2026–27 Semester II at 16 credits',
     ]);
+    expect(listed).not.toHaveTextContent('The server will refuse this change');
     expect(screen.getByRole('status', { name: 'Scenario save status' })).toHaveTextContent('Unsaved changes');
     await userEvent.click(screen.getByRole('button', { name: 'Save scenario' }));
     await waitFor(() => expect(s.patches).toHaveLength(1));
@@ -251,10 +235,10 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
       label: 'Lighter third year',
       internship: null,
       changes: [
-        { op: 'drop', item_id: 'c-os' },
-        { op: 'grade', item_id: 'c-net', grade: 'B' },
         { op: 'postpone', item_id: 'c-net', term_id: '2027-28-I' },
+        { op: 'grade', item_id: 'c-net', grade: 'B' },
         { op: 'replace', item_id: 'c-os', course: { normalized_code: 'ZZ 332', credits: '4' } },
+        { op: 'drop', item_id: 'c-os' },
         { op: 'cap', term_id: '2026-27-II', credits: '16' },
       ],
     });
@@ -302,7 +286,7 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
       scenario: { internship: { duration_choice: 'three_months', preset: 'custom', start_date: '2027-05-01', end_date_exclusive: '2027-08-01', placement_mode: 'onsite_full_time', modules: [] } },
       scenarioEval: () => ({
         performance: { ...structuredClone(analysis.performance), cumulative: { ...structuredClone(analysis.performance.cumulative), display_value: null, unrounded_value: null }, hypothetical: true },
-        validation: { ...(structuredClone(planValidationExample.data) as unknown as PlanValidation), workload: { '2026-27-I': { selected_credits: '0', placeholder_credits: '0', target_credits: '0' } }, completion_term: null } }),
+        validation: { ...exampleValidation(), workload: { '2026-27-I': { selected_credits: '0', placeholder_credits: '0', target_credits: '0' } }, completion_term: null } }),
     });
     renderScenario(s);
     const table = await screen.findByRole('table', { name: 'Baseline vs scenario (server evaluation)' }, wait);
@@ -432,13 +416,16 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
   });
 
   it('a 409 on apply for a stale scenario revision offers reload and compare, never retrying', async () => {
-    const s = server({ scenario: { changes: [{ op: 'drop', item_id: 'c-os' }] }, applyConflict: { action: 'reload_compare', code: 'REVISION_CONFLICT' } });
+    const s = server({ scenario: { changes: [{ op: 'drop', item_id: 'c-os' }] }, applyConflict: 'reload_compare' });
     renderScenario(s);
     await screen.findByRole('table', { name: 'Baseline vs scenario (server evaluation)' }, wait);
     await userEvent.click(screen.getByRole('button', { name: 'Apply to plan…' }));
     await userEvent.click(within(screen.getByRole('dialog', { name: 'Apply plan edits' })).getByRole('button', { name: 'Apply to plan' }));
     expect(await screen.findByText(/Not applied\./)).toBeInTheDocument();
-    expect(screen.getByText(/Not applied\./).closest('[role="alert"]')).toHaveTextContent('nothing is retried automatically');
+    const refused = screen.getByText(/Not applied\./).closest('[role="alert"]')!;
+    expect(refused).toHaveTextContent('nothing is retried automatically');
+    // The server message (examples/revision-conflict.json) already ends in a full stop; it is not doubled.
+    expect(refused).toHaveTextContent('Not applied. Another device saved a newer revision (server revision 3). Nothing was written');
     await new Promise((r) => setTimeout(r, 300));
     expect(s.applies).toHaveLength(1);
     const before = s.compares;
@@ -448,14 +435,110 @@ describe('ScenarioPage (A09, CP-28/33/34)', () => {
   });
 
   it('a 409 on apply for a stale baseline offers rebase', async () => {
-    const s = server({ scenario: { changes: [{ op: 'drop', item_id: 'c-os' }] }, applyConflict: { action: 'rebase', code: 'SCENARIO_STALE' } });
+    const s = server({ scenario: { changes: [{ op: 'drop', item_id: 'c-os' }] }, applyConflict: 'rebase' });
     renderScenario(s);
     await screen.findByRole('table', { name: 'Baseline vs scenario (server evaluation)' }, wait);
     await userEvent.click(screen.getByRole('button', { name: 'Apply to plan…' }));
     await userEvent.click(within(screen.getByRole('dialog', { name: 'Apply plan edits' })).getByRole('button', { name: 'Apply to plan' }));
     expect(await screen.findByRole('button', { name: 'Rebase on current record and plan' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reload and compare' })).not.toBeInTheDocument();
+    // examples/scenario-stale.json's message ends in a full stop and has no current_revision: one full stop, not two.
+    const refused = screen.getByText(/Not applied\./).closest('[role="alert"]')!;
+    expect(refused).toHaveTextContent('after this scenario was created. Nothing was written');
+    expect(refused.textContent).not.toMatch(/\.\./);
     expect(s.applies).toHaveLength(1);
+  });
+
+  it('offers only changes the server accepts after the earlier ones, and says why a loaded one would be refused', async () => {
+    // coursepath/scenarios.py apply_changes: a dropped or graded course takes no further changes; a postpone must move later.
+    const s = server({ scenario: { changes: [{ op: 'grade', item_id: 'c-net', grade: 'B' }, { op: 'postpone', item_id: 'c-net', term_id: '2027-28-I' }] } });
+    renderScenario(s);
+    const listed = await screen.findByRole('list', { name: 'Hypothetical changes' }, wait);
+    await waitFor(() => expect(within(listed).getAllByRole('listitem')[1]).toHaveTextContent('The server will refuse this change'));
+    expect(within(listed).getAllByRole('listitem')[0]).not.toHaveTextContent('The server will refuse this change');
+    expect(within(listed).getAllByRole('listitem')[1]).toHaveTextContent('takes no further changes');
+    const form = screen.getByRole('form', { name: 'Add a hypothetical change' });
+    // The graded course is not offered again; the other one is.
+    const course = within(form).getByLabelText('Planned course');
+    expect(within(course).queryByRole('option', { name: /ZZ 331/ })).not.toBeInTheDocument();
+    expect(within(course).getByRole('option', { name: /ZZ 330/ })).toBeInTheDocument();
+    // A drop removes the course from the choices too.
+    await addChange('drop', async (f) => userEvent.selectOptions(within(f).getByLabelText('Planned course'), 'c-os'));
+    expect(within(within(form).getByLabelText('Planned course')).queryByRole('option', { name: /ZZ 330/ })).not.toBeInTheDocument();
+  });
+
+  it('a postpone offers only terms after where earlier changes left the course', async () => {
+    const s = server({ scenario: { changes: [{ op: 'postpone', item_id: 'c-net', term_id: '2027-28-I' }] } });
+    renderScenario(s);
+    await screen.findByRole('option', { name: /ZZ 331 — 2027–28 Semester I/ }, wait);
+    const form = screen.getByRole('form', { name: 'Add a hypothetical change' });
+    await userEvent.selectOptions(within(form).getByLabelText('Change type'), 'postpone');
+    await userEvent.selectOptions(within(form).getByLabelText('Planned course'), 'c-net');
+    const later = within(within(form).getByLabelText('Later term')).getAllByRole('option').map((o) => o.getAttribute('value')).filter(Boolean);
+    expect(later).not.toContain('2027-28-I');
+    expect(later).not.toContain('2026-27-II');
+    expect(later[0]).toBe('2027-28-II');
+  });
+
+  it('rebase after "Apply to plan" leaves out the applied plan edits and keeps the hypothetical ones', async () => {
+    const s = server({ scenario: { changes: [{ op: 'drop', item_id: 'c-os' }, { op: 'grade', item_id: 'c-net', grade: 'B' }] } });
+    renderScenario(s);
+    await screen.findByRole('table', { name: 'Baseline vs scenario (server evaluation)' }, wait);
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to plan…' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Apply plan edits' })).getByRole('button', { name: 'Apply to plan' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Rebase on current record and plan' }, wait));
+    await waitFor(() => expect(s.patches).toEqual([{ expected_revision: 0, rebase: true, changes: [{ op: 'grade', item_id: 'c-net', grade: 'B' }] }]));
+    await waitFor(() => expect(screen.queryByText(/The baseline changed\./)).not.toBeInTheDocument());
+    expect(screen.queryByText(/Something went wrong/)).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Scenario (hypothetical)' })).toHaveTextContent('revision 3');
+    expect(screen.getByRole('list', { name: 'Hypothetical changes' })).not.toHaveTextContent('Drop');
+  });
+
+  it('rebase names the changes that no longer match the saved plan and leaves them out only when asked', async () => {
+    // The saved plan dropped ZZ 330 elsewhere; the scenario still drops it and grades ZZ 331.
+    const moved: AcademicPlan = { ...structuredClone(plan), revision: 3, semesters: plan.semesters.map((x) => ({ ...x, courses: x.courses.filter((c) => c.id !== 'c-os') })) };
+    const s = server({ stale: true, currentPlan: moved, scenario: { changes: [{ op: 'drop', item_id: 'c-os' }, { op: 'grade', item_id: 'c-net', grade: 'B' }] } });
+    renderScenario(s);
+    await userEvent.click(await screen.findByRole('button', { name: 'Rebase on current record and plan' }, wait));
+    const named = await screen.findByRole('alert', { name: 'Changes that no longer match the plan' });
+    expect(named).toHaveTextContent(/Drop .*c-os.*: This course is not in the plan/);
+    expect(named).not.toHaveTextContent('Hypothetical grade');
+    expect(s.patches).toHaveLength(0);
+    await userEvent.click(within(named).getByRole('button', { name: 'Rebase without these changes' }));
+    await waitFor(() => expect(s.patches).toEqual([{ expected_revision: 0, rebase: true, changes: [{ op: 'grade', item_id: 'c-net', grade: 'B' }] }]));
+    await waitFor(() => expect(screen.queryByRole('alert', { name: 'Changes that no longer match the plan' })).not.toBeInTheDocument());
+    expect(screen.queryByText(/The baseline changed\./)).not.toBeInTheDocument();
+  });
+
+  it('"Keep my version" after a 409 on delete deletes over the newer revision and never PATCHes', async () => {
+    const s = server({ scenario: { revision: 2 }, deleteConflicts: 1 });
+    renderScenario(s);
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete scenario…' }, wait));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Delete scenario' })).getByRole('button', { name: 'Delete scenario' }));
+    const panel = (await screen.findByText(/This was saved elsewhere/)).closest('[role="alert"]') as HTMLElement;
+    expect(panel).toHaveTextContent('Delete this scenario.');
+    expect(s.deletes).toEqual([{ expected_revision: 2 }]);
+    await userEvent.click(within(panel).getByRole('button', { name: 'Keep my version' }));
+    await waitFor(() => expect(s.deletes).toEqual([{ expected_revision: 2 }, { expected_revision: 3 }]));
+    expect(s.patches).toHaveLength(0);
+    expect(await screen.findByText('navigated-away')).toBeInTheDocument();
+  });
+
+  it('shows an unknown exam overlap as unknown, not as no overlap', async () => {
+    // Derived from examples/internship-comparison.json: the server has no exam dates for the overlapping term (exam_overlap null).
+    const unknownExams = (): InternshipCase => {
+      const c = exampleCase('three_months');
+      c.overlapping_terms = c.overlapping_terms.map((t) => ({ ...t, exam_overlap: null }));
+      return c;
+    };
+    const s = server({
+      scenario: { internship: { duration_choice: 'three_months', preset: 'custom', start_date: '2027-05-01', end_date_exclusive: '2027-08-01', placement_mode: 'onsite_full_time', modules: [] } },
+      scenarioEval: () => ({ internship: unknownExams() }),
+    });
+    renderScenario(s);
+    const time = await screen.findByRole('region', { name: 'Time away / course conflicts' }, wait);
+    expect(time).toHaveTextContent('exam overlap unknown');
+    expect(time).not.toHaveTextContent('including exams');
   });
 
   it('deleting a scenario sends its revision and returns to the scenario list', async () => {

@@ -16,7 +16,7 @@ import { ChangesEditor } from './ChangesEditor';
 import { CompareView } from './CompareView';
 import { InternshipEditor } from './InternshipEditor';
 import { InternshipPanels } from './InternshipPanels';
-import { describeChange, durationLabel, planItems, splitChanges, type PlanItem } from './model';
+import { describeChange, durationLabel, fitChanges, planItems, PLAN_OPS, splitChanges, type PlanItem, type RefusedChange } from './model';
 import { useScenarios } from './ScenariosPage';
 import './scenarios.css';
 
@@ -48,6 +48,8 @@ const draftOf = (s: Scenario): Draft => ({ label: s.label, changes: s.changes, i
 const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 
 type ApplyConflict = { rebase: boolean; message: string; currentRevision: number | null };
+/** Which request a 409 answered, so "Keep my version" repeats that request. */
+type ConflictFrom = 'save' | 'delete' | 'rebase';
 
 function Workspace({ initial }: { initial: Scenario }) {
   const session = useSession();
@@ -62,6 +64,8 @@ function Workspace({ initial }: { initial: Scenario }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [conflict, setConflict] = useState<number | null | false>(false);
+  const [conflictFrom, setConflictFrom] = useState<ConflictFrom>('save');
+  const [rebaseRefused, setRebaseRefused] = useState<{ fits: ScenarioChange[]; refused: RefusedChange[] } | null>(null);
   const [announce, setAnnounce] = useState('');
   const [extra, setExtra] = useState<string[]>([]);
   const [compare, setCompare] = useState<{ revision: number; ids: string[]; data: ScenarioCompareResult; issues: ScenarioCompareResult['comparisons'][number]['issues'] } | null>(null);
@@ -74,6 +78,12 @@ function Workspace({ initial }: { initial: Scenario }) {
   const [busy, setBusy] = useState(false);
 
   const items: PlanItem[] = useMemo(() => planItems(plan.data), [plan.data]);
+  // Every planned item seen so far, so a change on a course the plan has since dropped still has a name.
+  const known = useRef(new Map<string, PlanItem>());
+  const namedItems = useMemo(() => {
+    for (const i of items) known.current.set(i.id, i);
+    return [...known.current.values()];
+  }, [items]);
   const dirty = !same(draft, draftOf(saved));
   const allScenarios = siblings.data?.scenarios ?? [saved];
   const peers = allScenarios.filter((s) => s.plan_id === saved.plan_id && s.id !== saved.id);
@@ -116,6 +126,11 @@ function Workspace({ initial }: { initial: Scenario }) {
     setAnnounce(message);
   };
 
+  const conflicted = (error: ApiError, from: ConflictFrom) => {
+    setConflictFrom(from);
+    setConflict(error.currentRevision);
+  };
+
   const adopt = (fresh: Scenario) => {
     setSaved(fresh);
     cache.invalidate('scenarios:');
@@ -137,7 +152,7 @@ function Workspace({ initial }: { initial: Scenario }) {
       setAnnounce(`Scenario saved (revision ${result.data.revision}). Re-evaluating on the server.`);
     } catch (e) {
       const error = asError(e);
-      if (error.kind === 'conflict') setConflict(error.currentRevision);
+      if (error.kind === 'conflict') conflicted(error, 'save');
       else setSaveError(error);
     } finally {
       setSaving(false);
@@ -151,11 +166,35 @@ function Workspace({ initial }: { initial: Scenario }) {
     return fresh.data;
   };
 
-  const rebase = async () => {
+  /** Changes that still fit the current saved plan, and the ones the server would refuse on rebase. */
+  const fitCurrentPlan = async () => {
+    const current = await endpoints.plan(session.api, saved.plan_id);
+    // Edits an apply just wrote are in the plan now; keeping them would refuse the rebase or repeat them.
+    const pending = applied ? saved.changes.filter((c) => !PLAN_OPS.includes(c.op)) : saved.changes;
+    return fitChanges(pending, planItems(current.data));
+  };
+
+  /** PATCH with rebase: true. `confirmed` is the change list the student accepted after some no longer matched. */
+  const rebase = async (confirmed?: ScenarioChange[], over?: number) => {
     setBusy(true);
     setActionError(null);
     try {
-      const result = await scenarioEndpoints.patch(session.api, saved.id, { expected_revision: saved.revision, rebase: true });
+      let changes = confirmed;
+      if (!changes) {
+        const fit = await fitCurrentPlan();
+        if (fit.refused.length > 0) {
+          setRebaseRefused(fit);
+          return;
+        }
+        changes = fit.fits;
+      }
+      const result = await scenarioEndpoints.patch(session.api, saved.id, {
+        expected_revision: over ?? saved.revision,
+        rebase: true,
+        ...(JSON.stringify(changes) === JSON.stringify(saved.changes) ? {} : { changes }),
+      });
+      setRebaseRefused(null);
+      setConflict(false);
       setApplyConflict(null);
       setApplied(null);
       adopt(result.data);
@@ -164,8 +203,13 @@ function Workspace({ initial }: { initial: Scenario }) {
       setAnnounce('Scenario rebased on the current record and plan. Re-evaluating.');
     } catch (e) {
       const error = asError(e);
-      if (error.kind === 'conflict') setConflict(error.currentRevision);
-      else setActionError(error);
+      if (error.kind === 'conflict') conflicted(error, 'rebase');
+      else if (error.status === 400) {
+        // The plan moved again between the check and the PATCH: name what no longer matches.
+        const fit = await fitCurrentPlan().catch(() => null);
+        if (fit && fit.refused.length > 0) setRebaseRefused(fit);
+        else setActionError(error);
+      } else setActionError(error);
     } finally {
       setBusy(false);
     }
@@ -198,18 +242,18 @@ function Workspace({ initial }: { initial: Scenario }) {
     }
   };
 
-  const remove = async () => {
+  const remove = async (over?: number) => {
     setDialog(null);
     setBusy(true);
     setActionError(null);
     try {
-      await scenarioEndpoints.remove(session.api, saved.id, saved.revision);
+      await scenarioEndpoints.remove(session.api, saved.id, over ?? saved.revision);
       cache.invalidate('scenarios:');
       cache.invalidate(`scenario:${userId}:${saved.id}`);
       navigate('/scenarios', { state: { notice: `Scenario “${saved.label || 'Untitled scenario'}” deleted. Your baseline plan and accepted record are unchanged.` } });
     } catch (e) {
       const error = asError(e);
-      if (error.kind === 'conflict') setConflict(error.currentRevision);
+      if (error.kind === 'conflict') conflicted(error, 'delete');
       else setActionError(error);
       setBusy(false);
     }
@@ -262,24 +306,59 @@ function Workspace({ initial }: { initial: Scenario }) {
             <strong>The baseline changed.</strong> Your saved record, plan or rules changed after this scenario was created, so it cannot be compared or applied.
             Rebasing moves the baseline to the current record and plan and keeps your hypothetical changes.
           </p>
-          <button type="button" className="btn btn-primary" onClick={rebase} disabled={busy || saving}>
+          <button type="button" className="btn btn-primary" onClick={() => void rebase()} disabled={busy || saving || rebaseRefused !== null}>
             Rebase on current record and plan
           </button>
+        </div>
+      ) : null}
+
+      {rebaseRefused ? (
+        <div className="callout" data-tone="warning" role="alert" aria-label="Changes that no longer match the plan">
+          <p>
+            <strong>Some changes no longer match the current plan.</strong> The server refuses a rebase that keeps them:
+          </p>
+          <ul>
+            {rebaseRefused.refused.map((r) => (
+              <li key={r.index}>
+                {describeChange(r.change, namedItems)}: {r.reason}
+              </li>
+            ))}
+          </ul>
+          <p>Rebase without them, or cancel and edit the scenario first.</p>
+          <div className="panel-row">
+            <button type="button" className="btn btn-primary" onClick={() => void rebase(rebaseRefused.fits)} disabled={busy || saving}>
+              Rebase without these changes
+            </button>
+            <button type="button" className="btn" onClick={() => setRebaseRefused(null)} disabled={busy}>
+              Cancel
+            </button>
+          </div>
         </div>
       ) : null}
 
       {conflict !== false ? (
         <ConflictPanel
           conflictRevision={conflict}
-          draftSummary={<DraftSummary draft={draft} items={items} />}
+          draftSummary={
+            conflictFrom === 'delete' ? (
+              <p>Delete this scenario.</p>
+            ) : conflictFrom === 'rebase' ? (
+              <p>Rebase this scenario on the current record and plan.</p>
+            ) : (
+              <DraftSummary draft={draft} items={items} />
+            )
+          }
           onCompare={async () => <DraftSummary draft={draftOf(await reloadScenario(true))} items={items} />}
           onReload={async () => {
             await reloadScenario(false);
             setConflict(false);
           }}
           onKeepMine={async () => {
+            // Repeat the request that conflicted over the newer revision: a delete stays a delete.
             const fresh = await reloadScenario(true);
-            await save(fresh.revision);
+            if (conflictFrom === 'delete') await remove(fresh.revision);
+            else if (conflictFrom === 'rebase') await rebase(undefined, fresh.revision);
+            else await save(fresh.revision);
           }}
         />
       ) : null}
@@ -360,7 +439,7 @@ function Workspace({ initial }: { initial: Scenario }) {
         {applyConflict ? (
           <div className="callout" data-tone="danger" role="alert">
             <p>
-              <strong>Not applied.</strong> {applyConflict.message}
+              <strong>Not applied.</strong> {applyConflict.message.replace(/\.$/, '')}
               {applyConflict.currentRevision !== null ? ` (server revision ${applyConflict.currentRevision})` : ''}. Nothing was written and nothing is retried
               automatically.
             </p>
@@ -436,7 +515,7 @@ function Workspace({ initial }: { initial: Scenario }) {
           </ul>
         )}
       </ConfirmDialog>
-      <ConfirmDialog open={dialog === 'delete'} title="Delete scenario" confirmLabel="Delete scenario" danger onConfirm={remove} onCancel={() => setDialog(null)}>
+      <ConfirmDialog open={dialog === 'delete'} title="Delete scenario" confirmLabel="Delete scenario" danger onConfirm={() => remove()} onCancel={() => setDialog(null)}>
         <p>
           Delete “{saved.label || 'Untitled scenario'}”? Its hypothetical changes are discarded. Your baseline plan and accepted record are not changed.
         </p>

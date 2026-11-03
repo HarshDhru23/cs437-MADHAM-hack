@@ -3,7 +3,7 @@ import type { InternshipEvaluation, Issue } from '../../api/types';
 import { IssueList } from '../../components/IssueList';
 import { Badge } from '../../components/StatusBadge';
 import { formatCredits, formatTerm } from '../../lib/format';
-import { durationLabel, exclusiveToInclusive, formatDate, itemCode, moduleStateLabel, orUnavailable, PLACEMENT_LABEL, targetLabel, type PlanItem } from './model';
+import { durationLabel, examOverlapText, exclusiveToInclusive, formatDate, itemCode, moduleStateLabel, orUnavailable, PLACEMENT_LABEL, targetLabel, type PlanItem } from './model';
 
 const CONFLICT_CODES = /^(INTERNSHIP_ATTENDANCE|INTERNSHIP_DOWNSTREAM|INTERNSHIP_DATES|INTERNSHIP_DURATION|CALENDAR_MISSING)/;
 
@@ -77,7 +77,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
                 {evaluation.overlapping_terms.map((t) => (
                   <li key={t.term_id}>
                     {formatTerm(t.term_id)}: {orUnavailable(t.overlap_days, (v) => `${v} days`)} away
-                    {t.exam_overlap ? ', including exams' : ''}; courses: {codes(items, t.course_ids)}
+                    {examOverlapText(t.exam_overlap)}; courses: {codes(items, t.course_ids)}
                   </li>
                 ))}
               </ul>

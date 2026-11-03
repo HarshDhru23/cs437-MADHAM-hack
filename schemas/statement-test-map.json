@@ -617,7 +617,7 @@
       "academic_data": "draft_or_incomplete",
       "browser_tests": [
         "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > a scenario with a drop and a hypothetical grade is compared against the baseline (CP-28)",
-        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > apply writes only plan edits and leaves the accepted record unchanged (CP-28)"
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > apply writes only plan edits, leaves the accepted record unchanged and rebases afterwards (CP-28)"
       ],
       "frontend_tests": [
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenariosPage (A09, CP-28) > lists scenarios and creates a named clone of the chosen plan",
@@ -630,6 +630,11 @@
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > apply lists exactly the plan edits and the hypothetical changes, sends both revisions and states the record is unchanged",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale scenario revision offers reload and compare, never retrying",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale baseline offers rebase",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > offers only changes the server accepts after the earlier ones, and says why a loaded one would be refused",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a postpone offers only terms after where earlier changes left the course",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > rebase after \"Apply to plan\" leaves out the applied plan edits and keeps the hypothetical ones",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > rebase names the changes that no longer match the saved plan and leaves them out only when asked",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > \"Keep my version\" after a 409 on delete deletes over the newer revision and never PATCHes",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > deleting a scenario sends its revision and returns to the scenario list"
       ]
     },
@@ -709,7 +714,8 @@
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
         "e2e/tests/responsive.spec.ts::keyboard focus starts with the skip link and follows reading order",
-        "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone"
+        "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone",
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
       ],
       "frontend_tests": [],
       "release_evidence_note": "Automated keyboard/responsive checks only; the observed user session (M09/A10) is still required."
@@ -777,14 +783,14 @@
       },
       "academic_data": "draft_or_incomplete",
       "browser_tests": [
-        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)",
-        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)"
       ],
       "frontend_tests": [
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > converts the inclusive last day to an end-exclusive date once, and back for display",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > explains dates that differ from the chosen duration using the server values",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > asks for exact dates when the server supplies no calendar for a preset",
-        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0"
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows an unknown exam overlap as unknown, not as no overlap"
       ]
     },
     {
