@@ -303,8 +303,28 @@ def resolve_js(root: Path, test_id: str, prefix: str) -> str | None:
     if not path.exists():
         return "missing file"
     text = path.read_text(encoding="utf-8", errors="replace").replace("\\'", "'").replace('\\"', '"')
-    missing = [seg for seg in title.split(" > ") if f"'{seg}'" not in text and f'"{seg}"' not in text]
+    missing = [seg for seg in title.split(" > ") if not title_in_source(seg, text)]
     return f"title not found: {missing[0]}" if missing or not title else None
+
+
+JS_LITERAL = re.compile(r"'([^'\n]*)'|\"([^\"\n]*)\"|`([^`]*)`")
+JS_PLACEHOLDER = re.compile(r"%[sdifjo]|\$\{[^}]*\}")
+
+
+def title_in_source(segment: str, text: str) -> bool:
+    """A literal title, or a generated one (it.each `%s`, template `${...}`) whose filled-in values are in the file.
+    Mirrors tests/domain/test_statement_map.py."""
+    if f"'{segment}'" in text or f'"{segment}"' in text or f"`{segment}`" in text:
+        return True
+    for match in JS_LITERAL.finditer(text):
+        template = next(g for g in match.groups() if g is not None)
+        parts = JS_PLACEHOLDER.split(template)
+        if len(parts) < 2:
+            continue
+        filled = re.fullmatch("(.+?)".join(re.escape(p) for p in parts), segment)
+        if filled and all(re.search(rf"(?<![\w.]){re.escape(v)}(?![\w.])", text) for v in filled.groups()):
+            return True
+    return False
 
 
 def resolve_dotted(root: Path, dotted: str) -> str | None:

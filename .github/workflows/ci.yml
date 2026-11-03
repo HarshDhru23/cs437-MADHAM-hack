@@ -44,16 +44,10 @@ jobs:
       - name: Run all suites
         run: python scripts/test.py
 
-      # The 27 Oct gate: every first-release statement tests-green, and no mapped frontend or
+      # The 3 Nov gate: every statement in SPEC.md tests-green, and no mapped frontend or
       # browser test failing. Private-input checks are local_tests and never count here.
-      - name: Statement report (first-release targets)
-        run: python scripts/statement_report.py --frontend --browser
-
-      # Informational: all 34 statements, including November work not yet tested.
       - name: Statement report (all statements)
-        if: always()
-        continue-on-error: true
-        run: python scripts/statement_report.py --all
+        run: python scripts/statement_report.py --all --frontend --browser
 
       # Synthetic data only (no private inputs exist in CI).
       - name: Upload browser test report

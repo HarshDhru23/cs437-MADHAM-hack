@@ -294,7 +294,8 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     render(s);
     const p = await panel('2026–27 Semester I');
     const why = await within(p).findByRole('note', { name: 'Why 2026–27 Semester I is not checked' });
-    expect(why).toHaveTextContent('Several source variants exist');
+    // The note first says the plan is not validated yet; wait for the server's reasons.
+    await waitFor(() => expect(why).toHaveTextContent('Several source variants exist'));
     expect(why).toHaveTextContent('OFFERING_VARIANT_UNKNOWN');
     expect(why).toHaveTextContent('The chosen offering variant is not in this snapshot.');
     await userEvent.click(within(p).getByRole('button', { name: 'Choose sections for PH 202' }));
@@ -338,7 +339,8 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     render(s);
     const p = await panel('2026–27 Semester I');
     const button = await within(p).findByRole('button', { name: 'Choose sections for PH 202' });
-    expect(button).toHaveTextContent('Choose variant and sections');
+    // The label changes once the server's validation arrives.
+    await waitFor(() => expect(button).toHaveTextContent('Choose variant and sections'));
     expect(p).toHaveTextContent(`Saved variant ${stale} (not in snapshot)`);
     await userEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Sections for PH 202 in 2026–27 Semester I' });
@@ -371,7 +373,7 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     render(s);
     const p = await panel('2026–27 Semester I');
     const button = await within(p).findByRole('button', { name: 'Choose sections for ES 667' });
-    expect(button).toHaveTextContent('Clear saved variant');
+    await waitFor(() => expect(button).toHaveTextContent('Clear saved variant'));
     await userEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Sections for ES 667 in 2026–27 Semester I' });
     expect(dialog).toHaveTextContent("is not in this term's timetable snapshot");

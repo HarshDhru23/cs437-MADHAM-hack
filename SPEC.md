@@ -23,6 +23,8 @@ CoursePath will provide a requirements-first degree audit and a semester planner
 
 Initial scope: one IITGN B.Tech CSE curriculum/batch version, with manually entered academic history. The specific batch and official curriculum data still need to be confirmed. 
 
+**Frozen on 3 Nov 2026.** The 31 statements below (CP-01 to CP-24 and CP-28 to CP-34) are the promised behaviour, and every one is tests-green: `python scripts/statement_report.py --all --frontend --browser`, which CI runs as a required gate. After the freeze, statements are only added, for the 16 Nov acceptance run, with new IDs from CP-35; existing statements are not reworded or removed.
+
 ## October 16 checkable statements
 
 | ID | Checkable statement | Primary evidence/test |

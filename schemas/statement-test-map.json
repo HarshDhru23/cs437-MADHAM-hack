@@ -706,20 +706,26 @@
       "id": "CP-31",
       "oct27_target": false,
       "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "implementation_scope": "frontend",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
+        "e2e/tests/phone-keyboard.spec.ts::a student imports, inspects a requirement and plans on a phone with the keyboard alone (CP-31)",
+        "e2e/tests/responsive.spec.ts::requirements and import screens fit at phone 390",
         "e2e/tests/responsive.spec.ts::keyboard focus starts with the skip link and follows reading order",
         "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone",
+        "e2e/tests/student-flow.spec.ts::student flow > create a plan, add and move a course with the keyboard, see server totals (CP-04/05)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > the planner and timetable panel fit a 390px phone",
         "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
       ],
-      "frontend_tests": [],
-      "release_evidence_note": "Automated keyboard/responsive checks only; the observed user session (M09/A10) is still required."
+      "frontend_tests": [
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > moves a course with a keyboard-accessible select and button, and can undo"
+      ],
+      "release_evidence_note": "UI-only statement (implementation_scope frontend): tests-green comes from its browser tests on the real stack, all of which must run and pass. The observed user session (M09) is still required as release evidence."
     },
     {
       "id": "CP-32",
@@ -752,7 +758,8 @@
         "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > explains what is removed and quotes the documented retention",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > needs the typed phrase, then a wrong password is refused and nothing is claimed deleted",
-        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a %i %s refusal shows the server issue and claims nothing",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a 429 AUTH_THROTTLED refusal shows the server issue and claims nothing",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a 409 ACCOUNT_HAS_VERIFICATIONS refusal shows the server issue and claims nothing",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting data shows the server counts and retention, and reloads the empty record",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting the account clears personal state and goes to the public home page",
         "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > a plan that is missing or belongs to someone else shows not found, not data"
@@ -848,5 +855,5 @@
       ]
     }
   ],
-  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."
+  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."
 }

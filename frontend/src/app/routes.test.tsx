@@ -34,6 +34,15 @@ describe('routes and shell (A01)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
   });
 
+  it('says honours and the AI minor are withdrawn, never planned or evaluated (D-18)', async () => {
+    renderAt('/awards', false);
+    await screen.findByRole('heading', { level: 1, name: 'Awards' });
+    const main = screen.getByRole('main');
+    expect(main).toHaveTextContent(/not part of this release/i);
+    expect(main).toHaveTextContent('D-18');
+    expect(main).not.toHaveTextContent(/Planned for/i);
+  });
+
   it.each(['/record', '/performance', '/plan/plan-1', '/account', '/record/review/abc', '/report/plan-1'])('%s asks a signed-out visitor to sign in without leaking data', async (path) => {
     renderAt(path, false);
     expect(await screen.findByRole('heading', { level: 1, name: 'Sign in required' })).toBeInTheDocument();

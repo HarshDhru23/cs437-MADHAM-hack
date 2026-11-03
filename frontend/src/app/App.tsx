@@ -72,7 +72,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function NotYet({ title, task, detail, tabs }: { title: string; task: string; detail: string; tabs?: { to: string; label: string }[] }) {
+function NotInRelease({ title, detail, tabs }: { title: string; detail: string; tabs?: { to: string; label: string }[] }) {
   usePublishView({ dataMode: 'none' });
   return (
     <div>
@@ -80,9 +80,9 @@ function NotYet({ title, task, detail, tabs }: { title: string; task: string; de
       <h1>{title}</h1>
       <div className="callout">
         <p>
-          <strong>Not available in this release.</strong> {detail}
+          <strong>Not part of this release.</strong> {detail}
         </p>
-        <p className="muted">Planned for the 3 November full-feature release ({task}). No results are simulated here.</p>
+        <p className="muted">No results are simulated here.</p>
       </div>
     </div>
   );
@@ -135,11 +135,10 @@ export const routes: RouteObject[] = [
       {
         path: '/awards',
         element: (
-          <NotYet
+          <NotInRelease
             title="Awards"
-            task="A09/H10"
             tabs={RECORD_TABS}
-            detail="CSE honours and AI minor evaluation need the reviewed award definitions; the server currently reports these awards as unsupported."
+            detail="CSE honours and the AI minor were withdrawn on 3 November (decision D-18): no official honours list or AI minor document exists, and CoursePath does not invent award rules, so it does not evaluate them."
           />
         ),
       },
