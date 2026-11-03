@@ -34,5 +34,5 @@ Honours and the AI minor are not demonstrated: CP-25 to CP-27 were withdrawn on 
 | Lab/tutorial slots that list several options have unknown meaning (all required or one of them), so those clashes are "possible", not certain. | CP-24 (AMB-12) |
 | Only 2026-27 has timetables and calendar dates. Later I/II terms show a same-parity hint only, and their clashes and internship overlaps are "not checked". | CP-23, CP-24, CP-33 (D-23, D-24, GAP-03) |
 | Prerequisites are team recommendations shown as warnings, not institute rules. | CP-05, CP-22 (D-17) |
-| Honours and AI minor are out of this release; the Awards page says so. | none (CP-25 to CP-27 withdrawn) |
+| Honours and AI minor are out of this release; the Awards page says so (D-18). | none (CP-25 to CP-27 withdrawn) |
 | No observed user session yet. | CP-31 ([observations](qa/observations.md)) |

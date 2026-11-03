@@ -2,7 +2,9 @@
 
 Expected values come from docs/team/source-findings.md (documented timetable cells and
 the example plan) and hand arithmetic, never from running the code under test. The
-calendar below is synthetic test input: no institute calendar is committed (GAP-03)."""
+calendar below is deliberately synthetic test input, independent of the committed
+2026-27 calendar (data/calendars/2026-27.json, D-24), so these cases do not move when
+the institute calendar changes."""
 import json
 import tempfile
 import unittest

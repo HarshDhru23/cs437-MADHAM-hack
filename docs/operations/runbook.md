@@ -25,7 +25,8 @@ Nothing needs to be set for a local run. The git-ignored `server/.local/` holds 
 | `COURSEPATH_API_ORIGIN` | Where the Vite proxy sends `/api` (default `http://127.0.0.1:8000`); `run.py` sets it from `--api-port`. |
 | `COURSEPATH_DB_ENGINE=postgresql` with `COURSEPATH_DB_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | Run against a local PostgreSQL instead of SQLite. CI does this in its `postgres` job. |
 | `COURSEPATH_REAL_INPUT_DIR` | Folder of private inputs for the optional real-file tests (README, Test). |
-| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS and a secret key. |
+| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS and a secret key. |
+| `COURSEPATH_ALLOWED_HOSTS` | Not needed on localhost: the default is `localhost,127.0.0.1,testserver`. |
 
 Names only are in `.env.example`. Never put a real value in Git, CI logs or screenshots.
 
@@ -62,7 +63,7 @@ It uses whichever database the environment selects (§2), so it also works on Po
 - Included: accounts (password hashes), records, attempts, plans, scenarios, approval evidence, and rule and offering snapshots.
 - Left out on purpose: import previews (extracted transcript rows that expire), sessions, and login throttles.
 
-`tests/tooling/test_backup.py` has 8 tests for it. The CI `postgres` job also runs it against a synthetic account; that step has not yet run on GitHub.
+`tests/tooling/test_backup.py` has 8 tests for it. The CI `postgres` job also runs it against a synthetic account, restoring into a separate empty PostgreSQL database. It first passed on GitHub on 3 Nov (runs [41656256493](https://github.com/HarshDhru23/cs437-MADHAM-hack/actions/runs/41656256493) and [41657522345](https://github.com/HarshDhru23/cs437-MADHAM-hack/actions/runs/41657522345), commit `a7b0b41`: "restore verified: counts and revisions match the backup summary").
 
 ### 4.3 One student's data: the in-app JSON backup
 
@@ -110,9 +111,9 @@ The run used the current `main` plus this branch, on Windows, in a temporary fol
 
 The temporary folder was deleted afterwards. A separate rehearsal of §4.2 also passed on 3 Nov: `dump` from one SQLite database and `restore` into a separate empty one gave the same counts and revisions, sign-in worked, and a stale write still got 409. The browser tests `e2e/tests/student-flow.spec.ts` and `save-states.spec.ts` cover the two-browser case (CP-29) on one server.
 
-## 5. Backup rules for localhost (proposed; for review in this PR)
+## 5. Backup rules for localhost (agreed 3 Nov)
 
-These rules are proposed and not yet agreed. They apply to the team's local databases, not to a host.
+Proposed by Manashree and agreed by Harsh in the review of PR #36. They apply to the team's local databases, not to a host.
 
 1. Back up (§4.1 or §4.2) before every `migrate` and before a demo or user session. Keep the copy until the app has been checked after the change, and for no more than 7 days; then delete it.
 2. Use synthetic accounts for development, demos and user sessions. A database or backup that holds a real student's record stays on that student's own machine and account.
