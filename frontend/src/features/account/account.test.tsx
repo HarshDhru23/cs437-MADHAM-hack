@@ -31,12 +31,12 @@ describe('AccountPage (A04)', () => {
     expect(alert).not.toHaveTextContent('wrong-old');
   });
 
-  it('does not ship nonfunctional export, deletion, recovery or SSO buttons', async () => {
+  it('does not ship nonfunctional recovery or SSO buttons', async () => {
     const { fetchImpl } = fakeApi({ 'GET /record': () => ({ data: record }) });
     renderApp(<AccountPage />, { fetchImpl });
     await screen.findByLabelText('Current password');
-    expect(screen.queryByRole('button', { name: /export|delete|recover|reset|SSO/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/Export and deletion are not available yet/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /recover|reset|SSO/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Password recovery is not available/)).toBeInTheDocument();
     expect(screen.getByText('synthetic-student')).toBeInTheDocument();
   });
 });

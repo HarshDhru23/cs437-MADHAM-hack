@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
-import { endpoints, scenarioEndpoints } from '../../api/endpoints';
+import { accountEndpoints, endpoints, scenarioEndpoints } from '../../api/endpoints';
 import { useResource, useResourceCache } from '../../api/resources';
 import type { AcademicPlan, InternshipInput, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
 import { PLAN_TABS, SubNav } from '../../app/AppShell';
@@ -26,7 +26,7 @@ const asError = (e: unknown) => (e instanceof ApiError ? e : new ApiError('serve
 export function ScenarioPage() {
   const { scenario_id: scenarioId = '' } = useParams();
   const session = useSession();
-  const loaded = useResource(session.user ? `scenario:${session.user.id}:${scenarioId}` : null, (signal) => scenarioEndpoints.get(session.api, scenarioId, { signal }));
+  const loaded = useResource(session.user ? `scenario:${session.user.id}:${scenarioId}` : null, (signal) => accountEndpoints.scenario(session.api, scenarioId, { signal }));
   usePublishView({ ruleVersion: loaded.data?.rule_version ?? null, dataMode: 'scenario', recordRevision: loaded.data?.baseline_record_revision ?? null });
   if (loaded.loading) return <StatePanel kind="loading" title="Loading scenario…" />;
   if (loaded.error || !loaded.data)
@@ -145,7 +145,7 @@ function Workspace({ initial }: { initial: Scenario }) {
   };
 
   const reloadScenario = async (keepDraft: boolean) => {
-    const fresh = await scenarioEndpoints.get(session.api, saved.id);
+    const fresh = await accountEndpoints.scenario(session.api, saved.id);
     adopt(fresh.data);
     if (!keepDraft) setDraft(draftOf(fresh.data));
     return fresh.data;

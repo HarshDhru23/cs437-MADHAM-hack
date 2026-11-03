@@ -10,6 +10,7 @@ import { PerformancePage } from '../features/performance/PerformancePage';
 import { PlanIndexPage, PlanPage } from '../features/plan/PlanPage';
 import { RecordPage } from '../features/record/RecordPage';
 import { RequirementsPage } from '../features/requirements/RequirementsPage';
+import { ReportPage } from '../features/report/ReportPage';
 import { ScenarioPage } from '../features/scenarios/ScenarioPage';
 import { ScenariosPage } from '../features/scenarios/ScenariosPage';
 import { StatePanel } from '../components/StatePanel';
@@ -173,7 +174,11 @@ export const routes: RouteObject[] = [
       },
       {
         path: '/report/:plan_id',
-        element: <NotYet title="Printable report" task="A11/H14" detail="The print/export view will be built on the analysis and export APIs." />,
+        element: (
+          <RequireAuth>
+            <ReportPage />
+          </RequireAuth>
+        ),
       },
       {
         path: '/account',

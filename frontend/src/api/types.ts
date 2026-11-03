@@ -186,11 +186,18 @@ export interface RequirementDefinition {
   course_id?: string;
   course_ids?: string[] | null;
   source_refs: string[];
+  /** Where in the source the rule sits, e.g. "p. 14; codes from p. 23". */
+  source_locator?: string;
+  /** A TEAM decision in docs/academic-decisions.md, e.g. "D-03". */
+  decision?: string;
   children?: RequirementDefinition[];
 }
 
 export interface NoncreditObligation {
   id: string;
+  label?: string;
+  decision?: string;
+  source_locator?: string;
   required_semesters?: number;
   required_each_active_semester?: boolean;
   recorded_grades?: string[];
@@ -238,6 +245,10 @@ export interface RequirementResult {
   required_credits?: DecimalString | null;
   counted_credits?: DecimalString | null;
   remaining_credits?: DecimalString | null;
+  /** Credits counted beyond the requirement (D-07); never reused elsewhere. */
+  surplus_credits?: DecimalString | null;
+  /** Viva: active semesters still without a recorded P (D-16). */
+  missing_terms?: string[];
   counted_courses?: number | null;
   required_courses?: number | null;
   allocation_ids: string[];
@@ -427,6 +438,66 @@ export interface InternshipInput {
   notes?: string;
 }
 
+// A11: backup export/restore, account-data deletion and the report's scenario
+// lookup. Shapes follow server/api/views.py (export, backup_preview,
+// _restore_backup, account_data, scenario_detail) and server/README.md.
+
+/** `GET /export?kind=json` data. Saved to disk inside its envelope, exactly as served. */
+export interface BackupData {
+  kind: string;
+  backup_version: string;
+  exported_at: string;
+  account: { username: string };
+  rule_version: string;
+  rule_review_status: string;
+  sources: SourceReference[];
+  missing_sources: string[];
+  grading_policy: { id: string; review_status: string };
+  record: AcademicRecord;
+  plans: AcademicPlan[];
+  scenarios: Scenario[];
+}
+
+/** Restore diff as the server computes it. Extra keys the server adds are shown as reported. */
+export interface BackupDiff {
+  attempts_added: string[];
+  attempts_removed: string[];
+  attempts_changed: string[];
+  attempts_unchanged: number;
+  current_enrolment_changed: boolean;
+  plans_to_create: number;
+  scenarios_not_restored: number;
+  [key: string]: unknown;
+}
+
+export interface BackupPreview {
+  id: string;
+  kind: 'backup';
+  base_record_revision: number;
+  expires_at: string;
+  diff: BackupDiff;
+}
+
+export interface BackupCommitPayload {
+  expected_revision: number;
+  confirm: true;
+}
+
+export interface DeleteDataPayload {
+  expected_revision: number;
+  password: string;
+  /** The typed phrase; the server accepts only "delete my data". */
+  confirm: string;
+  delete_account: boolean;
+}
+
+export interface DeleteDataResult {
+  deleted: Record<string, number>;
+  account_deleted: boolean;
+  record_revision: number | null;
+  retention: string;
+}
+
 export interface Scenario {
   id: string;
   revision: number;
@@ -564,8 +635,17 @@ export interface ScenarioApplyRequest {
   expected_scenario_revision: number;
 }
 
-/** 409 body: `reload_compare` for a stale scenario revision, `rebase` for a stale baseline. */
-export interface ScenarioConflictData {
-  current_revision?: number;
-  action?: string;
+/** 409 body for a stale baseline on apply: the schema's `scenario_stale` (examples/scenario-stale.json). */
+export interface ScenarioStaleData {
+  action: 'rebase';
+  scenario_revision: number;
+  current_record_revision: number;
+  current_plan_revision: number;
+  current_rule_version: string;
+  baseline_record_revision: number;
+  baseline_plan_revision: number;
+  rule_version: string;
 }
+
+/** 409 body: `reload_compare` for a stale scenario or plan revision, `rebase` for a stale baseline. */
+export type ScenarioConflictData = RevisionConflictData | ScenarioStaleData;

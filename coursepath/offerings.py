@@ -32,7 +32,8 @@ def offering_availability(snapshot, term_id, code):
                     'issues': [issue('OFFERING_NOT_IN_SNAPSHOT', f'{code} is not in the complete reviewed {term_id} snapshot.', 'warning', [code])]}
         return {**result, 'status': 'unknown',
                 'issues': [issue('OFFERING_UNKNOWN', f'{code} is absent from a partial or unreviewed {term_id} list; that does not prove it is unavailable.', entities=[code])]}
-    if any(o.get('availability_status') == 'historical' for o in matches):
+    # A current variant outranks a historical pattern; only all-historical matches stay a hint.
+    if all(o.get('availability_status') == 'historical' for o in matches):
         return {**result, 'status': 'historical',
                 'issues': [issue('OFFERING_HISTORICAL_ONLY', 'A historical pattern is a planning hint, not a confirmed offering.', entities=[code])]}
     if not reviewed:

@@ -56,14 +56,14 @@ export const endpoints = {
 };
 
 // A09 — scenarios (server/README.md: /scenarios, /scenarios/{id}, /scenarios/compare, /scenarios/{id}/apply-plan).
-import type { Scenario, ScenarioApplyRequest, ScenarioApplyResult, ScenarioCompareResult, ScenarioCreate, ScenarioPatch } from './types';
+// GET /scenarios/{id} is accountEndpoints.scenario below.
+import type { ScenarioApplyRequest, ScenarioApplyResult, ScenarioCompareResult, ScenarioCreate, ScenarioPatch } from './types';
 
 const scenarioPath = (id: string) => `/scenarios/${encodeURIComponent(id)}`;
 
 export const scenarioEndpoints = {
   list: (api: ApiClient, o?: RequestOptions) => api.get<{ scenarios: Scenario[] }>('/scenarios', o),
   create: (api: ApiClient, body: ScenarioCreate, o?: RequestOptions) => api.send<Scenario>('POST', '/scenarios', body, o),
-  get: (api: ApiClient, id: string, o?: RequestOptions) => api.get<Scenario>(scenarioPath(id), o),
   patch: (api: ApiClient, id: string, body: ScenarioPatch, o?: RequestOptions) => api.send<Scenario>('PATCH', scenarioPath(id), body, o),
   remove: (api: ApiClient, id: string, expectedRevision: number, o?: RequestOptions) =>
     api.send<null>('DELETE', scenarioPath(id), { expected_revision: expectedRevision }, o),
@@ -72,4 +72,17 @@ export const scenarioEndpoints = {
   /** Always sends both revisions; the server must refuse a stale scenario or baseline (409). */
   applyPlan: (api: ApiClient, id: string, body: ScenarioApplyRequest, o?: RequestOptions) =>
     api.send<ScenarioApplyResult>('POST', `${scenarioPath(id)}/apply-plan`, body, o),
+};
+
+// A11: backup, restore, data deletion and the report's scenario lookup.
+import type { BackupCommitPayload, BackupData, BackupPreview, DeleteDataPayload, DeleteDataResult, Scenario } from './types';
+
+export const accountEndpoints = {
+  exportBackup: (api: ApiClient, o?: RequestOptions) => api.get<BackupData>('/export?kind=json', o),
+  previewBackup: (api: ApiClient, body: { expected_revision: number; backup: unknown }, o?: RequestOptions) =>
+    api.send<BackupPreview>('POST', '/imports/backup-preview', body, o),
+  commitBackup: (api: ApiClient, previewId: string, body: BackupCommitPayload, o?: RequestOptions) =>
+    api.send<AcademicRecord>('POST', `/imports/${encodeURIComponent(previewId)}/commit`, body, o),
+  deleteData: (api: ApiClient, body: DeleteDataPayload, o?: RequestOptions) => api.send<DeleteDataResult>('DELETE', '/account/data', body, o),
+  scenario: (api: ApiClient, id: string, o?: RequestOptions) => api.get<Scenario>(`/scenarios/${encodeURIComponent(id)}`, o),
 };

@@ -261,6 +261,8 @@ function AttemptDialog({
   const [grade, setGrade] = useState(initial?.grade ?? '');
   const [term, setTerm] = useState(initial?.term_id ?? defaultTerm ?? '');
   const [status, setStatus] = useState<CompletionStatus>(initial?.completion_status ?? 'completed');
+  // D-21 gives imported, current and planned rows a default; a row added by hand asks the student instead.
+  const [designation, setDesignation] = useState<'' | 'degree' | 'additional'>('');
   const [justification, setJustification] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -272,6 +274,7 @@ function AttemptDialog({
     if (!isDecimalString(credits.trim())) return setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
     if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setError('Enter the term as, for example, 2025-26-II.');
     if (requireJustification && !justification.trim()) return setError('Explain what you checked before correcting a record.');
+    if (!initial && !designation) return setError('Choose whether this course counts toward your degree or is additional learning (honours or minor).');
     setError(null);
     const next: CourseAttempt = initial
       ? { ...initial, normalized_code: normalizeCode(code), title: titleText.trim(), credits: credits.trim(), grade: grade.trim(), term_id: term, completion_status: status }
@@ -284,7 +287,7 @@ function AttemptDialog({
           grade: grade.trim().toUpperCase(),
           term_id: term,
           completion_status: status,
-          learning_designation: 'unknown',
+          learning_designation: designation || 'unknown',
           course_version_id: null,
           instance_id: null,
           source_refs: [],
@@ -345,6 +348,16 @@ function AttemptDialog({
             <input id={`${id}-grade`} type="text" value={grade} onChange={(e) => setGrade(e.target.value)} />
           </div>
         </div>
+        {!initial ? (
+          <div className="field">
+            <label htmlFor={`${id}-designation`}>Counts toward</label>
+            <select id={`${id}-designation`} value={designation} onChange={(e) => setDesignation(e.target.value as '' | 'degree' | 'additional')}>
+              <option value="">Choose…</option>
+              <option value="degree">My degree requirements</option>
+              <option value="additional">Additional learning (honours or minor)</option>
+            </select>
+          </div>
+        ) : null}
         {requireJustification ? (
           <div className="field">
             <label htmlFor={`${id}-why`}>Justification (what did you check?)</label>

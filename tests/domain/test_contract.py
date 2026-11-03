@@ -54,6 +54,29 @@ class ContractTests(unittest.TestCase):
         del leaf['data']['actual'][0]['children']
         self.assertTrue(list(validator.iter_errors(leaf)), 'requirement results always include children')
 
+    def test_scenario_comparison_and_apply_shapes_match_the_server(self):
+        schema = json.loads((ROOT / 'schemas/coursepath-v1.schema.json').read_text())
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        # compare_scenario returns full evaluations and typed deltas (coursepath.scenarios); clients read them without guards.
+        for path, value in [(['baseline'], 123), (['scenario', 'performance'], {}), (['deltas', 'cpi', 'hypothetical'], 'yes'),
+                            (['deltas', 'workload', '2026-27-I', 'scenario'], 4), (['deltas', 'downstream_affected'], [1]), (['deltas', 'new_issues'], [{}])]:
+            with self.subTest(path=path):
+                compared = json.loads((ROOT / 'examples/scenario-comparison.json').read_text())
+                target = compared['data']['comparisons'][0]
+                for key in path[:-1]:
+                    target = target[key]
+                target[path[-1]] = value
+                self.assertTrue(list(validator.iter_errors(compared)), path)
+        # A stale baseline asks for a rebase and names the current record revision; it is not a reload conflict.
+        for field, value in [('action', 'reload_compare'), ('current_record_revision', None)]:
+            with self.subTest(field=field):
+                stale = json.loads((ROOT / 'examples/scenario-stale.json').read_text())
+                stale['data'][field] = value
+                self.assertTrue(list(validator.iter_errors(stale)), field)
+        applied = json.loads((ROOT / 'examples/plan-apply.json').read_text())
+        del applied['data']['not_applied']
+        self.assertTrue(list(validator.iter_errors(applied)))
+
     def test_all_34_statements_published(self):
         spec = (ROOT / 'SPEC.md').read_text(encoding='utf-8-sig')
         for number in range(1, 35):

@@ -1,11 +1,14 @@
 """Required-meeting clash checks for one term's selected courses.
 
-A clash needs the same weekday, overlapping end-exclusive minutes and an
-overlapping active date range. Undated meetings or unresolved alternatives can
-only produce a possible clash; missing meeting data is `not_checked`, never clear.
+A clash needs the same weekday, overlapping end-exclusive minutes and, when both
+meetings are dated, a shared end-exclusive date range holding that weekday
+(weekday 0 is Monday). Undated meetings or unresolved alternatives can only
+produce a possible clash; missing meeting data is `not_checked`, never clear.
+A term with no snapshot, or with no selected courses, is `not_checked`: nothing
+was compared, so it never reads as clear.
 `section_ids` on a planned course are snapshot meeting IDs the student chose.
 """
-from datetime import date
+from datetime import date, timedelta
 from coursepath.issues import issue
 from coursepath.offerings import matching_offerings
 
@@ -13,6 +16,12 @@ from coursepath.offerings import matching_offerings
 def _dates(meeting):
     start, end = meeting.get('active_start_date'), meeting.get('active_end_date')
     return (date.fromisoformat(start), date.fromisoformat(end)) if start and end else None
+
+
+def _meets_in_shared_range(span_a, span_b, weekday):
+    """True when the shared end-exclusive range holds at least one date on `weekday`."""
+    start, end = max(span_a[0], span_b[0]), min(span_a[1], span_b[1])
+    return start + timedelta(days=(weekday - start.weekday()) % 7) < end
 
 
 def _unique(meetings):
@@ -32,6 +41,10 @@ def _resolve(item, snapshot, issues):
     offerings = matching_offerings(snapshot, item['normalized_code'])
     if item.get('offering_id'):
         offerings = [o for o in offerings if o['id'] == item['offering_id']]
+        if not offerings:
+            issues.append(issue('OFFERING_VARIANT_UNKNOWN', f"The selected offering variant is not in this term's snapshot for {item['normalized_code']}.",
+                                'error', [entity, item['offering_id']], action='Select an offering variant from the current snapshot.'))
+            return [], False
     if not offerings:
         issues.append(issue('MEETINGS_UNKNOWN', f"No meetings for {item['normalized_code']} in this term's snapshot.", entities=[entity]))
         return [], False
@@ -82,14 +95,14 @@ def check_meetings(items, snapshot):
                     if a['weekday'] != b['weekday'] or not (a['start_minute'] < b['end_minute'] and b['start_minute'] < a['end_minute']):
                         continue
                     span_a, span_b = _dates(a), _dates(b)
-                    if span_a and span_b and not (span_a[0] < span_b[1] and span_b[0] < span_a[1]):
+                    if span_a and span_b and not _meets_in_shared_range(span_a, span_b, a['weekday']):
                         continue
                     assumptions = []
                     if not (span_a and span_b):
                         assumptions.append('Active dates are not stated; both meetings are assumed to run all term.')
                     if not (certain_a and certain_b):
                         assumptions.append('A meeting belongs to alternatives or a group whose required meetings are not stated.')
-                    conflicts.append({'id': f"clash:{a['id']}|{b['id']}", 'item_ids': [first, second], 'meeting_ids': [a['id'], b['id']],
+                    conflicts.append({'id': f"clash:{first}|{second}|{a['id']}|{b['id']}", 'item_ids': [first, second], 'meeting_ids': [a['id'], b['id']],
                                       'kinds': [kind_a, kind_b], 'weekday': a['weekday'],
                                       'start_minute': max(a['start_minute'], b['start_minute']), 'end_minute': min(a['end_minute'], b['end_minute']),
                                       'certain': not assumptions, 'assumptions': assumptions,
@@ -100,5 +113,5 @@ def check_meetings(items, snapshot):
         issues.append(issue('TIMETABLE_CONFLICT', ('Required meetings overlap.' if conflict['certain'] else 'Meetings may overlap. ' + ' '.join(conflict['assumptions'])),
                             'error' if conflict['certain'] else 'warning', conflict['item_ids'] + conflict['meeting_ids'],
                             [r.get('locator', r.get('id')) for r in conflict['source_refs']], 'Choose a compatible section or edit the plan.'))
-    status = 'conflicts' if conflicts else 'not_checked' if 'not_checked' in per_item.values() else 'clear'
+    status = 'conflicts' if conflicts else 'not_checked' if snapshot is None or not per_item or 'not_checked' in per_item.values() else 'clear'
     return {'status': status, 'conflicts': conflicts, 'per_item': per_item, 'issues': issues}
