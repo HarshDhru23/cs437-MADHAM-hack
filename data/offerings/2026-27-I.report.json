@@ -1,0 +1,1317 @@
+{
+  "file_sha256": "43df3926ecfca8f2649ac56f79d7766c09cb3fdb5ba36215da037666208dc1e6",
+  "issues": [
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 101 (E) lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M4"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 112 (E) lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M8"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 115 (E) lab lists 10 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M10"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "HS 191 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L12"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "BS 192 lab lists 8 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M13"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 202 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L24"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 203 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L25"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 204 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L26"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CS 202 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M27"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CS 203 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M28"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CE 201 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M46"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CE 203 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M51"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 223 lab lists 4 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M52"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 322 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M55"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 339 lab lists 4 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M56"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 59 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A59"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 67 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A67"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 68 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A68"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 72 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A72"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 73 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A73"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 74 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A74"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 313 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L79"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 314 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L80"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 315 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L81"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CL 326 lab lists 3 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M82"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 83 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A83"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 84 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A84"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 88 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A88"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 89 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A89"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 90 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A90"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CE 301 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M95"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 99 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A99"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 103 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A103"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 104 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A104"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 105 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A105"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CS 202 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M110"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 114 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A114"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 115 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A115"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 119 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A119"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 120 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A120"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 121 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A121"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 322 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M127"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 333 lab lists 4 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M129"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 130 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A130"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 134 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A134"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 135 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A135"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 136 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A136"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 137 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A137"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "MSE 352 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M142"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 339 lab lists 4 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M143"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 144 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A144"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 145 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A145"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 146 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A146"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 154 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A154"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 158 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A158"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 159 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A159"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 160 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A160"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 161 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A161"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 169 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A169"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 173 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A173"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 174 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A174"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 175 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A175"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "ROW_UNRECOGNIZED",
+      "entity_refs": [],
+      "message": "Row 176 is not a recognizable course row.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A176"
+        }
+      ],
+      "suggested_action": "Review manually; retained in unresolved_rows."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "IN 501 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M189"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "IN 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M190"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "BE 614 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M195"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "BE 618 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M197"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "BE 621 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M198"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "BE 623 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M200"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CE 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M209"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 248 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M240"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CS 437 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M242"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_TEXT_UNPARSED",
+      "entity_refs": [],
+      "message": "Meeting text 'Saturday (2:00 PM–3:30 PM) (7/207)' has no slot token.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!K254"
+        }
+      ],
+      "suggested_action": null
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 304 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M257"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 420 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M263"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 421 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M265"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "ES 679 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M266"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 434 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M270"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EE 671 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M271"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "MSE 352 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M302"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "MSE 632 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M305"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "MA 605 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!L335"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 618 lab lists 4 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M371"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 620 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M373"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 634 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M378"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 639 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M380"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "EH 692-I lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M383"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "CG 691-VIII lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M397"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "FP 602 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M400"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "FP 602 (MA) lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M401"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "FP 602 (CG) lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M402"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "FP 602 (CH) lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M403"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "MEETING_TEXT_UNPARSED",
+      "entity_refs": [],
+      "message": "Meeting text 'Monday (6:30 PM–8:00 PM) (10/102)' has no slot token.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!K412"
+        }
+      ],
+      "suggested_action": null
+    },
+    {
+      "code": "MEETING_TEXT_UNPARSED",
+      "entity_refs": [],
+      "message": "Meeting text 'Wednesday (6:30 PM–8:00 PM) (10/102)' has no slot token.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!K412"
+        }
+      ],
+      "suggested_action": null
+    },
+    {
+      "code": "MEETING_TEXT_UNPARSED",
+      "entity_refs": [],
+      "message": "Meeting text 'Saturday (10:30 AM–12:30 PM) (11/102)' has no slot token.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!K415"
+        }
+      ],
+      "suggested_action": null
+    },
+    {
+      "code": "MEETING_SEMANTICS_UNKNOWN",
+      "entity_refs": [],
+      "message": "DES 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
+      "severity": "unknown",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!M437"
+        }
+      ],
+      "suggested_action": "Confirm section/group meaning with the timetable owner."
+    },
+    {
+      "code": "DUPLICATE_CODE_CONFLICT",
+      "entity_refs": [
+        "2026-27-I:IN101#v1",
+        "2026-27-I:IN101#v2"
+      ],
+      "message": "IN 101 appears 2 times with different credits, title, sections or meetings; all retained.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A15"
+        }
+      ],
+      "suggested_action": "Decide which variant is authoritative or whether they are separate sections."
+    },
+    {
+      "code": "DUPLICATE_CODE_CONFLICT",
+      "entity_refs": [
+        "2026-27-I:MSE317#v1",
+        "2026-27-I:MSE317#v2"
+      ],
+      "message": "MSE 317 appears 2 times with different credits, title, sections or meetings; all retained.",
+      "severity": "warning",
+      "source_refs": [
+        {
+          "id": "SRC-TIMETABLE",
+          "locator": "Time table!A40"
+        }
+      ],
+      "suggested_action": "Decide which variant is authoritative or whether they are separate sections."
+    },
+    {
+      "code": "SOURCE_COLUMN_EMPTY",
+      "entity_refs": [],
+      "message": "Column O (preferred knowledge) is empty for 303 of 303 offerings. An empty cell says nothing about prerequisites or minor eligibility; prerequisites stay unknown.",
+      "severity": "unknown",
+      "source_refs": [],
+      "suggested_action": "Obtain the approved prerequisite and minor lists; do not read an empty cell as 'none'."
+    },
+    {
+      "code": "SOURCE_COLUMN_EMPTY",
+      "entity_refs": [],
+      "message": "Column Q (minor hints) is empty for 303 of 303 offerings. An empty cell says nothing about prerequisites or minor eligibility; prerequisites stay unknown.",
+      "severity": "unknown",
+      "source_refs": [],
+      "suggested_action": "Obtain the approved prerequisite and minor lists; do not read an empty cell as 'none'."
+    }
+  ],
+  "reader_warnings": [],
+  "sheets": [
+    "Time table",
+    "Time Slots",
+    "Availability"
+  ],
+  "source_id": "SRC-TIMETABLE",
+  "stats": {
+    "course_pattern_rows": 330,
+    "distinct_labels": 301,
+    "duplicate_labels": 13,
+    "merged_duplicate_rows": 27,
+    "section_rows": 35,
+    "unrecognized_rows": 38
+  },
+  "term_id": "2026-27-I"
+}

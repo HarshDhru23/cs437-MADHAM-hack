@@ -159,6 +159,8 @@ SPI is term-specific weighted performance; CPI is cumulative under the official 
 
 ### CSE honours and AI minor
 
+**Withdrawn from this release on 3 Nov** (`docs/academic-decisions.md` D-18): CP-25 to CP-27 are no longer SPEC statements. The text below is kept as background for a later release.
+
 For the selected cohort, p. 6 provides a general 20-additional-credit framework and a parent-discipline project requirement for honours, with qualifying open-elective sharing. It is not a complete approved course list. Encode CSE honours and AI minor as separate versioned award definitions using the common engine, including mandatory courses, approved electives, project limits, eligibility restrictions and permitted overlap.
 
 Show eligibility to pursue, progress toward requirements and projected completion as separate outcomes. A CSE student's completed base core cannot be reused for an AI-minor requirement that explicitly excludes base-programme requirements. Do not assume a listed CSE minor is a valid additional minor for a CSE student. Support only the AI minor at release; add future minors through the same schema, validation and source-review process.
@@ -270,9 +272,9 @@ Expand `SPEC.md` **before feature code**, with at least one independently meanin
 | CP-22 | A student receives duplicate and nested AND/OR/co-requisite/exposure explanations in plan validation. | Ordering truth tables, duplicate/repeat policy and unknown prerequisite. |
 | CP-23 | A student can inspect confirmed/tentative/unknown availability for the selected planning term. | Complete vs partial offering snapshot; historical pattern never confirmed. |
 | CP-24 | A student can choose sections and see overlapping required meetings, or that clashes could not be checked. | Lecture/lab, alternatives, touching endpoints, quads, missing meetings. |
-| CP-25 | A student can inspect CSE honours eligibility, progress and remaining approved requirements. | Reviewed honours dataset, required project and overlap constraints. |
-| CP-26 | A student can inspect AI minor eligibility, progress and remaining approved requirements. | Reviewed AI minor dataset; base-core exclusions and project limits. |
-| CP-27 | A student can inspect a joint base/honours/AI-minor allocation without exceeding allowed sharing. | Joint adversarial allocation; two-open-elective sharing limits. |
+| CP-25 | ~~A student can inspect CSE honours eligibility, progress and remaining approved requirements.~~ Withdrawn 3 Nov (D-18). | Reviewed honours dataset, required project and overlap constraints. |
+| CP-26 | ~~A student can inspect AI minor eligibility, progress and remaining approved requirements.~~ Withdrawn 3 Nov (D-18). | Reviewed AI minor dataset; base-core exclusions and project limits. |
+| CP-27 | ~~A student can inspect a joint base/honours/AI-minor allocation without exceeding allowed sharing.~~ Withdrawn 3 Nov (D-18). | Joint adversarial allocation; two-open-elective sharing limits. |
 | CP-28 | A student can compare isolated drop/fail/postpone/replace/credit-cap scenarios against a baseline. | Immutable-history check, downstream issues, hypothetical metric labels. |
 | CP-29 | A student can sign in on another device, retrieve saved records/plans, and resolve conflicting saves. | Signup/login/logout, two-browser test, stale-revision conflict and persistence. |
 | CP-30 | A student can export a readable audit/plan and a versioned backup of their own record. | Printed report + JSON round-trip, sources, unknowns and revision. |

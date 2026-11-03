@@ -505,7 +505,12 @@
         "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_a_current_variant_outranks_a_historical_one",
         "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded",
         "server.records.test_offerings.OfferingAPITests.test_cp23_a_corrected_snapshot_from_the_same_workbook_is_stored_as_a_new_version",
-        "server.records.test_offerings.OfferingAPITests.test_cp23_load_offerings_rejects_a_malformed_term"
+        "server.records.test_offerings.OfferingAPITests.test_cp23_load_offerings_rejects_a_malformed_term",
+        "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp23_committed_snapshots_are_the_reviewed_complete_build_of_the_committed_sources",
+        "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp23_a_course_missing_from_a_complete_official_list_is_not_offered",
+        "tests.domain.test_official_timetables.SameParityHintTests.test_cp23_later_terms_get_a_historical_hint_never_a_confirmation",
+        "server.records.test_official_data.OfficialTimetableAPITests.test_cp23_committed_official_timetables_are_served_until_staff_load_a_reviewed_one",
+        "server.records.test_official_data.OfficialTimetableAPITests.test_cp23_switching_the_committed_data_off_leaves_availability_unknown"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -536,51 +541,13 @@
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_without_snapshot_never_reports_clear",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_empty_term_is_not_checked_with_or_without_a_snapshot",
         "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot",
-        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema"
+        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema",
+        "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp24_slots_and_half_semester_dates_come_from_the_sources",
+        "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp24_real_clashes_respect_half_semester_dates",
+        "tests.domain.test_official_timetables.SameParityHintTests.test_cp24_hints_never_supply_meetings",
+        "server.records.test_official_data.OfficialTimetableAPITests.test_cp24_plan_validation_uses_the_official_timetable_and_the_same_parity_hint"
       ],
       "implementation_scope": "backend_evidence",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
-      "id": "CP-25",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
-      "id": "CP-26",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
-      "release_evidence": {
-        "browser": false,
-        "human_review": false,
-        "merged_pr": false
-      },
-      "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
-    },
-    {
-      "id": "CP-27",
-      "oct27_target": false,
-      "tests": [],
-      "implementation_scope": "november_not_implemented",
       "release_evidence": {
         "browser": false,
         "human_review": false,
@@ -610,13 +577,33 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > a scenario with a drop and a hypothetical grade is compared against the baseline (CP-28)",
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > apply writes only plan edits, leaves the accepted record unchanged and rebases afterwards (CP-28)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenariosPage (A09, CP-28) > lists scenarios and creates a named clone of the chosen plan",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows the hypothetical banner with baseline revisions and a return-to-baseline action",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > adds typed changes, lists them exactly and saves them with the expected revision",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows the conflict panel on a 409 save and never retries automatically",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > marks a stale baseline and rebases only when asked, with rebase: true",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows a re-evaluating state while the comparison is out of date",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > apply lists exactly the plan edits and the hypothetical changes, sends both revisions and states the record is unchanged",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale scenario revision offers reload and compare, never retrying",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a 409 on apply for a stale baseline offers rebase",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > offers only changes the server accepts after the earlier ones, and says why a loaded one would be refused",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > a postpone offers only terms after where earlier changes left the course",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > rebase after \"Apply to plan\" leaves out the applied plan edits and keeps the hypothetical ones",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > rebase names the changes that no longer match the saved plan and leaves them out only when asked",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > \"Keep my version\" after a 409 on delete deletes over the newer revision and never PATCHes",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > deleting a scenario sends its revision and returns to the scenario list"
+      ]
     },
     {
       "id": "CP-29",
@@ -694,7 +681,8 @@
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
         "e2e/tests/responsive.spec.ts::keyboard focus starts with the skip link and follows reading order",
-        "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone"
+        "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone",
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
       ],
       "frontend_tests": [],
       "release_evidence_note": "Automated keyboard/responsive checks only; the observed user session (M09/A10) is still required."
@@ -742,7 +730,6 @@
       "oct27_target": false,
       "tests": [
         "tests.domain.test_internships.CalendarArithmeticTests.test_cp33_calendar_months_clamp_month_end_and_leap_day",
-        "tests.domain.test_internships.CalendarArithmeticTests.test_cp33_presets_need_the_calendar_and_never_invent_a_summer",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_none_leaves_baseline_unchanged_and_rejects_stale_modules",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_summer_three_months_blocks_only_overlapping_dates",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_six_months_spanning_semester_reveals_exams_and_downstream",
@@ -752,17 +739,33 @@
         "tests.domain.test_scenarios.ScenarioTests.test_cp33_scenario_internship_runs_through_the_same_comparison",
         "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
         "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_exam_window_without_dates_is_unknown_not_clear",
-        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe"
+        "tests.domain.test_internships.InternshipAvailabilityTests.test_cp33_downstream_courses_are_transitive_and_cycle_safe",
+        "tests.domain.test_official_calendar.OfficialCalendarTests.test_cp33_terms_exams_and_quads_match_the_published_calendar",
+        "tests.domain.test_official_calendar.OfficialCalendarTests.test_cp33_the_loader_validates_and_merges_committed_years",
+        "tests.domain.test_official_calendar.OfficialCalendarTests.test_cp33_presets_follow_the_may_and_july_starts",
+        "tests.domain.test_official_calendar.OfficialCalendarTests.test_cp33_the_published_summer_offers_three_presets",
+        "tests.domain.test_official_calendar.InternshipAgainstTheCalendarTests.test_cp33_a_may_internship_overlaps_the_summer_term_but_not_the_spring_exams",
+        "server.records.test_official_data.CalendarAPITests.test_cp33_the_calendar_and_internship_presets_are_public",
+        "server.records.test_official_data.CalendarAPITests.test_cp33_without_a_calendar_there_are_no_presets",
+        "server.records.test_official_data.CalendarAPITests.test_cp33_internship_comparison_checks_published_terms_and_flags_later_ones"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > converts the inclusive last day to an end-exclusive date once, and back for display",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > explains dates that differ from the chosen duration using the server values",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > asks for exact dates when the server supplies no calendar for a preset",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows Unavailable for missing server values and keeps a real 0 as 0",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > shows an unknown exam overlap as unknown, not as no overlap"
+      ]
     },
     {
       "id": "CP-34",
@@ -785,13 +788,19 @@
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "draft_or_incomplete",
-      "browser_tests": [],
-      "frontend_tests": []
+      "browser_tests": [
+        "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > none / 3 / 6 month internships with exact dates and a proposed module award no automatic credit (CP-33/34)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > awards no credit for choosing a duration: zero from the server and an explicit statement",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > labels proposed modules \"proposed, pending approval\", never earned",
+        "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > renders an unrecognised module state and issue code generically"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."
