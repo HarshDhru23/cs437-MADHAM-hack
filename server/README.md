@@ -150,7 +150,10 @@ changes. Internship:
 `{duration_choice,start_date,end_date_exclusive,placement_mode,preset?,modules?}`;
 modules are `{id,credits,intended_allocation,status,grade?,quad_id?,approval_ref?,registration_id?}`.
 A module cannot carry an approval status: only staff-verified `ApprovalEvidence`
-covering it approves it. No academic calendar is loaded, so internship cases
+covering it approves it. A completed module without `registration_id` may be an
+IN 498 attempt already on the record, so (up to the number of unmatched record
+attempts) it is not counted toward the 16-credit cap again and raises
+`INTERNSHIP_RECORD_MATCH_UNKNOWN`. No academic calendar is loaded, so internship cases
 report `CALENDAR_MISSING` and leave affected courses unchecked.
 
 ## Rules and deployment configuration
