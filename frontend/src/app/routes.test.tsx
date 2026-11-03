@@ -62,11 +62,12 @@ describe('routes and shell (A01)', () => {
     await screen.findByRole('region', { name: '2026–27 Semester I' });
     const context = screen.getByRole('region', { name: 'Data context' });
     await waitFor(() => expect(context).toHaveTextContent('Projected plan (not completed)'));
-    expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)');
+    // The rule version arrives with the curriculum, which can load after the plan ("Rules: Not loaded" until then).
+    await waitFor(() => expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)'));
     await userEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'My record' }));
     await screen.findByRole('heading', { level: 1, name: 'My record' });
     await waitFor(() => expect(context).toHaveTextContent('Actual completed history'));
-    expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)');
+    await waitFor(() => expect(context).toHaveTextContent('cse-2024-draft-v1 (draft)'));
   });
 
   it('keeps the page\'s data context when navigating from a public page to a protected one', async () => {
