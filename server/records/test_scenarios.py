@@ -19,6 +19,61 @@ class ScenarioAPITests(AccountAPIMixin, TestCase):
         self.assertFalse(list(VALIDATOR.iter_errors(response.json())))
         return response.json()['data']
 
+    def apply(self, scenario_id, scenario_revision, plan_revision, client=None):
+        response = self.request(client or self.client, 'post', f'/scenarios/{scenario_id}/apply-plan',
+                                {'expected_scenario_revision': scenario_revision, 'expected_plan_revision': plan_revision})
+        self.assertFalse(list(VALIDATOR.iter_errors(response.json())))
+        return response
+
+    def saved_plan(self):
+        return self.client.get('/api/v1/plans/' + self.plan['id']).json()['data']
+
+    @property
+    def original(self):
+        return {k: v for k, v in self.plan.items() if k != 'validation'}
+
+    def test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision(self):
+        scenario = self.create(changes=[{'op': 'drop', 'item_id': 'net'}])
+        path = f"/scenarios/{scenario['id']}/apply-plan"
+        for payload in [{'expected_plan_revision': 0}, {'expected_scenario_revision': 0}, {'expected_scenario_revision': '0', 'expected_plan_revision': 0}]:
+            refused = self.request(self.client, 'post', path, payload)
+            self.assertEqual((refused.status_code, [i['code'] for i in refused.json()['issues']]), (400, ['INVALID_INPUT']), payload)
+        # Another tab edits the scenario after this one compared revision 0.
+        edited = self.request(self.client, 'patch', '/scenarios/' + scenario['id'], {'expected_revision': 0, 'changes': [{'op': 'drop', 'item_id': 'os'}]})
+        self.assertEqual(edited.status_code, 200, edited.content)
+        conflict = self.apply(scenario['id'], 0, 0)
+        self.assertEqual((conflict.status_code, [i['code'] for i in conflict.json()['issues']]), (409, ['REVISION_CONFLICT']))
+        self.assertEqual(conflict.json()['data'], {'current_revision': 1, 'action': 'reload_compare'})
+        stale_plan = self.apply(scenario['id'], 1, 7)
+        self.assertEqual((stale_plan.status_code, stale_plan.json()['data']), (409, {'current_revision': 0, 'action': 'reload_compare'}))
+        self.assertEqual(self.saved_plan(), self.original)
+        applied = self.apply(scenario['id'], 1, 0)
+        self.assertEqual(applied.status_code, 200, applied.content)
+        self.assertEqual([c['id'] for c in applied.json()['data']['plan']['semesters'][0]['courses']], ['net'])
+
+    def test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload(self):
+        scenario = self.create(changes=[{'op': 'drop', 'item_id': 'net'}])
+        moved = self.request(self.client, 'patch', '/record', {'expected_revision': 0, 'attempts': []})
+        self.assertEqual((moved.status_code, moved.json()['data']['revision']), (200, 1))
+        stale = self.apply(scenario['id'], 0, 0)
+        self.assertEqual((stale.status_code, [i['code'] for i in stale.json()['issues']]), (409, ['SCENARIO_STALE']))
+        self.assertEqual(stale.json()['data'], {'action': 'rebase', 'scenario_revision': 0, 'current_record_revision': 1, 'current_plan_revision': 0,
+                                                'current_rule_version': scenario['rule_version'], 'baseline_record_revision': 0,
+                                                'baseline_plan_revision': 0, 'rule_version': scenario['rule_version']})
+        self.assertEqual(self.saved_plan()['revision'], 0)
+        self.assertEqual(self.request(self.client, 'patch', '/scenarios/' + scenario['id'], {'expected_revision': 0, 'rebase': True}).status_code, 200)
+        self.assertEqual(self.apply(scenario['id'], 1, 0).status_code, 200)
+
+    def test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing(self):
+        scenario = self.create(changes=[{'op': 'drop', 'item_id': 'net'}])
+        foreign = Client()
+        self.signup(foreign, 'scenario-intruder')  # same record and plan revisions (0) as the owner's baseline
+        self.assertEqual(self.apply(scenario['id'], 0, 0, foreign).status_code, 404)
+        self.assertEqual(self.request(foreign, 'patch', '/scenarios/' + scenario['id'], {'expected_revision': 0, 'label': 'taken'}).status_code, 404)
+        self.assertEqual(self.request(foreign, 'delete', '/scenarios/' + scenario['id'], {'expected_revision': 0}).status_code, 404)
+        self.assertEqual(self.client.get('/api/v1/scenarios/' + scenario['id']).json()['data'], scenario)
+        self.assertEqual(self.saved_plan(), self.original)
+
     def test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record(self):
         scenario = self.create(label='Fail OS', changes=[{'op': 'fail', 'item_id': 'os'}, {'op': 'drop', 'item_id': 'net'}])
         self.assertEqual((scenario['baseline_record_revision'], scenario['baseline_plan_revision']), (0, self.plan['revision']))
@@ -45,11 +100,12 @@ class ScenarioAPITests(AccountAPIMixin, TestCase):
         stale = self.request(self.client, 'post', '/scenarios/compare', {'scenario_ids': [scenario['id']]}).json()
         self.assertTrue(stale['data']['comparisons'][0]['stale'])
         self.assertIn('SCENARIO_STALE', [i['code'] for i in stale['issues']])
-        self.assertEqual(self.request(self.client, 'post', f"/scenarios/{scenario['id']}/apply-plan", {'expected_plan_revision': 1}).status_code, 409)
+        refused = self.apply(scenario['id'], 0, 1)
+        self.assertEqual((refused.status_code, [i['code'] for i in refused.json()['issues']]), (409, ['SCENARIO_STALE']))
         rebased = self.request(self.client, 'patch', '/scenarios/' + scenario['id'], {'expected_revision': 0, 'rebase': True})
         self.assertEqual((rebased.status_code, rebased.json()['data']['baseline_plan_revision']), (200, 1))
         self.assertEqual(self.request(self.client, 'patch', '/scenarios/' + scenario['id'], {'expected_revision': 0, 'label': 'x'}).status_code, 409)
-        applied = self.request(self.client, 'post', f"/scenarios/{scenario['id']}/apply-plan", {'expected_plan_revision': 1})
+        applied = self.apply(scenario['id'], 1, 1)
         self.assertEqual(applied.status_code, 200, applied.content)
         self.assertFalse(list(VALIDATOR.iter_errors(applied.json())))
         data = applied.json()['data']

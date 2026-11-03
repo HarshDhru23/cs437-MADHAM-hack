@@ -1,7 +1,9 @@
+import hashlib
 import json
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from coursepath.data_sources.timetable_xlsx import validate_snapshot
+from coursepath.models import validate_term_id
 from server.records.models import OfferingSnapshot
 
 
@@ -23,10 +25,13 @@ class Command(BaseCommand):
                 raise ValueError('Snapshot failed validation: ' + '; '.join(problems[:5]))
             if not options['reviewed'] and not options['draft']:
                 raise ValueError('Pass --reviewed after staff review, or --draft to keep offerings tentative')
+            validate_term_id(data['term_id'])
             data['review_status'] = 'reviewed' if options['reviewed'] else 'draft'
             if options['coverage']:
                 data['coverage'] = options['coverage']
-            digest = next((r.get('file_sha256') for r in data['source_refs'] if r.get('file_sha256')), None) or 'unhashed'
+            # The version names the stored content, so a corrected snapshot of the same workbook is a new version.
+            canonical = json.dumps(data, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+            digest = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
             version = f"{data['id']}@{digest[:12]}:{data['review_status']}"
             if OfferingSnapshot.objects.filter(pk=version).exists():
                 raise ValueError('This snapshot version is already stored; publish a new version instead of overwriting')
