@@ -10,8 +10,10 @@ These decisions are the approved interpretation for building CoursePath. Where a
 | --- | --- | --- |
 | ADV13 | Academic Affairs Advisory No. 13, *Norms for BTech Programme* (January 2026). Local, git-ignored copy `Adv13_Norms for BTech Programme_28 Jan 2026.pdf`, SHA-256 `80d59bd2fb5b0096a57acd8192ba11387514cd8c08119e177cfd445c87c0861e`. Authorized by Harsh on 31 Oct 2026 as the curriculum source; cite by page, never commit the file. | pp. 1-4 institute curriculum (A.16 institute core, A.15 materials, A.2 HSS, A.5-A.6 science and maths), project, exposure and viva; p. 6 honours/minors; p. 7 load, project cap, short courses; p. 10 Annexure I science and maths baskets; pp. 14-15 CSE core and electives; p. 23 CSE 2024 sample path |
 | CSE-CAT | CSE course catalogue, <https://cse.iitgn.ac.in/academics/courses/>, retrieved 29 Oct 2026 | Current codes, titles and credits |
-| TT-2026-I | Supplied timetable workbook, Semester I 2026-27. Local, git-ignored copy. | Codes and titles offered this term |
-| TEAM | Team decision, Harsh, 29 Oct 2026 | Where the advisory is silent or needs interpreting |
+| TT-2026-I | Official timetable workbook, Semester I 2026-27, committed as `Timetable, Sem-I, 2026-27.xlsx` on 3 Nov 2026 (D-22). | Codes, titles, slots and the slot legend for this term |
+| TT-2026-II | Official timetable, Semester II 2026-27: a CSV export of the `Time table` sheet, committed as `Timetable, Sem-II, 2026-27 - Time table.csv` on 3 Nov 2026 (D-22). | Codes, titles and slots for this term |
+| CAL-2026-27 | IITGN Academic Calendar 2026-27, <https://iitgn.ac.in/academics/calendar/acadcal-2026-27>, retrieved 3 Nov 2026. The table text is committed as `data/calendars/acadcal-2026-27.txt` (D-24). | Term, quad, exam, recess and vacation dates |
+| TEAM | Team decision, Harsh, 29 Oct 2026 (later decisions give their own date) | Where the advisory is silent or needs interpreting |
 
 The correct department site is **cse.iitgn.ac.in**. Links to `cs.iitgn.ac.in` in older notes are wrong.
 
@@ -171,6 +173,33 @@ Recorded 31 Oct 2026 by Harsh. ADV13 names these buckets for the 2024 cohort wit
 
 **D-21. Imported, current and planned courses are degree learning by default** (TEAM; scope confirmed 2 Nov after the #18 review). Rows from a transcript or IMS paste, confirmed current enrolment, planned courses and hypothetical scenario attempts made from them count as degree learning unless the student marks one as additional (honours or minor) in review. Without this default the current and projected views could not show completion until the student tagged every row.
 
+## 9. Timetables, calendar and internship timing
+
+Recorded 3 Nov 2026 by Harsh, when the official timetables and the calendar link were supplied.
+
+**D-22. The 2026-27 timetables are official and complete** (TT-2026-I, TT-2026-II + TEAM).
+- Both files are the institute's own timetables and need no further review. Each is stored as a `reviewed` snapshot with `complete` coverage for its term. A course that is missing from a term's list is not offered that term.
+- The Semester II file is the `Time table` sheet only. It uses the same slot tokens (A1 to P2) as Semester I, so its slots are read with the Semester I `Time Slots` legend. **Team decision:** the institute keeps one slot grid across both semesters.
+- A course whose title ends in "(first half)" meets in quads Q1 and Q2 of its term, and one ending in "(second half)" meets in Q3 and Q4 (CAL-2026-27). Every other course meets from the first to the last day of classes for continuing students.
+- Unchanged by this decision: whether a lab or tutorial listing several slots needs all of them or one of them (AMB-12) is still unknown, so clashes between such meetings stay possible, never certain.
+
+**D-23. Later terms reuse the same-parity timetable as a hint** (TEAM). Courses offered in an odd semester are usually offered again in the next odd semester, and likewise for even semesters.
+- For a I or II term with no timetable of its own, a course listed in the latest earlier timetable of the same parity is shown as `historical`: a planning hint, never a confirmed offering. A course missing from that list stays `unknown`, not "not offered".
+- Hints never supply meetings, so clashes in those terms stay `not_checked`. Summer terms get no hint.
+
+**D-24. Academic calendar 2026-27** (CAL-2026-27).
+- A term runs from the first day of classes for continuing students to the last day of Examination II.
+- Its exam windows are Examination I and II. Make-up examinations are recorded separately, because only some students sit them.
+- Quads, the mid-semester recess and the vacations are kept as published. Terms of later years have no dates until the institute publishes them (GAP-03 stays open for 2027-28).
+
+**D-25. Internship timing presets** (TEAM).
+- Industrial internships of two or three months start in May. A six-month internship starts in May or in July.
+- The presets therefore seed:
+  - a summer start on 1 May for three or six months;
+  - a July start on 1 July for six months, before the odd semester it overlaps.
+- A two-month internship, or any other date, is entered as custom dates.
+- Presets only seed dates. The student's exact dates decide every overlap, and length never grants credit (D-14).
+
 ## Still open
 
 | Question | Affects | Current behavior |
@@ -196,6 +225,8 @@ Each item goes through the normal reviewed PR. Owners are from `docs/team/README
 | Mark AMB-01 to 05, 08, 09, 15 and GAP-04, 05, 09, 10 resolved by these decisions; GAP-06 partly (D-15); AMB-07 and GAP-07 deferred (D-18) | all | Manashree (`docs/data/`) | none |
 | Done 31 Oct: report surplus credits per requirement in the audit result, and add a test that a course is never split. `coursepath/rules/allocation.py` already places each attempt whole | D-06, D-07 | Harsh | CP-17 |
 | UI: label TEAM decisions, surplus credits, the online pool, inferred P/F conversions and recommended prerequisites | D-07, D-11, D-12, D-17 | Aaryan | CP-14, 17, 18, 22 |
+| Done 3 Nov: commit the official 2026-27 timetables and calendar, build reviewed snapshots with half-semester dates, serve them without a load step, add the same-parity hint and `GET /calendar` with presets | D-22 to D-25 | Harsh | CP-23, 24, 33 |
+| UI: fill internship presets from `GET /calendar`; show `historical` offerings as hints | D-23, D-25 | Aaryan | CP-23, 33 |
 
 ## Superseded text
 

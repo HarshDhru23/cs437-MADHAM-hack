@@ -92,7 +92,7 @@ Unknown future snapshots do not inherit current-term meeting times. Future cours
 Evaluation sequence:
 
 1. `none`: no interval, no internship modules/credits. Reject stale nonempty modules when switching to none unless explicitly detached/removed in the scenario. The saved actual record is unchanged.
-2. Validate dates. Presets require the term/quad calendar; do not fabricate an unprovided summer interval. Show actual days and overlapping terms/quads. A label of 3/6 months is not a credit formula.
+2. Validate dates. Presets follow D-25 (summer from 1 May for three or six months; six months from 1 July before the odd semester) and are served by `GET /calendar`; any other start is custom dates. Overlaps use only published calendar terms (D-24); later terms are reported unchecked, never invented. Show actual days and overlapping terms/quads. A label of 3/6 months is not a credit formula.
 3. Onsite full-time means unavailable for overlapping required on-campus meetings; term/exam overlap without resolved section data is a warning/unknown, not silently clear. Remote/part-time still requires explicit availability and any needed permission; it does not bypass attendance requirements automatically.
 4. Identify affected planned/current courses and downstream prerequisites. Report changes; do not auto-drop or auto-move courses. Let the student edit the scenario and re-run validation.
 5. Validate each proposed module against an applicable policy and evidence: 4 credits/module; at most 4 credits per quad; 16 overall external-exposure credits; eligible allocation targets only; HSS max 8 and open-project max 4 under the supplied advisory; combined project/degree/award caps also apply where the reviewed policy requires.
@@ -118,7 +118,8 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 | POST `/imports/{id}/commit` | `{expected_revision, resolutions, accepted_candidate_ids}`; recompute/validate proposed record and commit transactionally; return new revision. Server rejects foreign/expired previews and unresolved blocking fields. |
 | POST `/analysis` | `{record_revision, plan_id?, plan_revision?, award_ids}`; server loads owned state and reviewed rules. Return audit, performance and validations. No client-supplied calculated totals are trusted. |
 | GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. |
-| GET `/offerings?term_id=...` | Snapshot coverage/evidence, offerings, section/meeting groups and unknown state when absent. |
+| GET `/offerings?term_id=...` | Snapshot coverage/evidence, offerings, section/meeting groups and unknown state when absent. Committed official snapshots are served without a load step (D-22). |
+| GET `/calendar` | Published academic calendar terms (classes, quads, exams, recess, events; end-exclusive) and D-25 internship presets; `CALENDAR_MISSING` for unpublished years. |
 | POST `/plans/{id}/validate` | Evaluate persisted plan at supplied revisions, with no state change. |
 | GET/POST `/scenarios`; GET/PATCH/DELETE `/scenarios/{id}` | Owned isolated scenario operations, including internship choice/date/module data and baseline revisions. |
 | POST `/scenarios/compare` | Compare selected owned scenarios to the exact common baseline; return table/deltas. |
