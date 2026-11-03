@@ -1,0 +1,96 @@
+{
+  "schema_version": "1",
+  "id": "iitgn-academic-calendar-2026-27",
+  "academic_year": "2026-27",
+  "review_status": "reviewed",
+  "decision": "D-24",
+  "source_refs": [
+    {
+      "id": "SRC-CALENDAR",
+      "url": "https://iitgn.ac.in/academics/calendar/acadcal-2026-27",
+      "retrieved_at": "2026-11-03",
+      "locator": "data/calendars/acadcal-2026-27.txt"
+    }
+  ],
+  "notes": "All end dates are exclusive (the day after the published last day). A term runs from the first day of classes for continuing students to the last day of Examination II (D-24). Make-up examinations are kept apart from the exam windows.",
+  "terms": [
+    {
+      "id": "2026-27-I",
+      "start_date": "2026-08-04",
+      "end_date_exclusive": "2026-11-29",
+      "classes_start_date": "2026-08-04",
+      "classes_end_date_exclusive": "2026-11-20",
+      "quads": [
+        {"id": "Q1", "start_date": "2026-08-04", "end_date_exclusive": "2026-08-26"},
+        {"id": "Q2", "start_date": "2026-08-27", "end_date_exclusive": "2026-09-18"},
+        {"id": "Q3", "start_date": "2026-09-24", "end_date_exclusive": "2026-10-17"},
+        {"id": "Q4", "start_date": "2026-10-26", "end_date_exclusive": "2026-11-20"}
+      ],
+      "exams": [
+        {"id": "examination-1", "start_date": "2026-09-18", "end_date_exclusive": "2026-09-24"},
+        {"id": "examination-2", "start_date": "2026-11-20", "end_date_exclusive": "2026-11-29"}
+      ],
+      "make_up_exams": {"start_date": "2026-11-30", "end_date_exclusive": "2026-12-02"},
+      "recess": {"start_date": "2026-10-17", "end_date_exclusive": "2026-10-26"},
+      "events": [
+        {"name": "Course adjustment (add/drop)", "start_date": "2026-08-04", "end_date_exclusive": "2026-08-18"},
+        {"name": "Academic pre-registration", "start_date": "2026-11-02", "end_date_exclusive": "2026-11-07"},
+        {"name": "Last date for course drop", "start_date": "2026-11-11", "end_date_exclusive": "2026-11-12"},
+        {"name": "Disclosure of grades", "start_date": "2026-12-05", "end_date_exclusive": "2026-12-06"}
+      ],
+      "source_locator": "column 'Semester- I 2026-27'"
+    },
+    {
+      "id": "2026-27-II",
+      "start_date": "2027-01-04",
+      "end_date_exclusive": "2027-05-01",
+      "classes_start_date": "2027-01-04",
+      "classes_end_date_exclusive": "2027-04-23",
+      "quads": [
+        {"id": "Q1", "start_date": "2027-01-04", "end_date_exclusive": "2027-01-28"},
+        {"id": "Q2", "start_date": "2027-01-28", "end_date_exclusive": "2027-02-19"},
+        {"id": "Q3", "start_date": "2027-02-25", "end_date_exclusive": "2027-03-20"},
+        {"id": "Q4", "start_date": "2027-03-29", "end_date_exclusive": "2027-04-23"}
+      ],
+      "exams": [
+        {"id": "examination-1", "start_date": "2027-02-19", "end_date_exclusive": "2027-02-25"},
+        {"id": "examination-2", "start_date": "2027-04-23", "end_date_exclusive": "2027-05-01"}
+      ],
+      "make_up_exams": {"start_date": "2027-05-01", "end_date_exclusive": "2027-05-04"},
+      "recess": {"start_date": "2027-03-20", "end_date_exclusive": "2027-03-29"},
+      "events": [
+        {"name": "Course adjustment (add/drop)", "start_date": "2027-01-04", "end_date_exclusive": "2027-01-19"},
+        {"name": "Academic pre-registration", "start_date": "2027-04-05", "end_date_exclusive": "2027-04-10"},
+        {"name": "Last date for course drop", "start_date": "2027-04-15", "end_date_exclusive": "2027-04-16"},
+        {"name": "Disclosure of grades", "start_date": "2027-05-06", "end_date_exclusive": "2027-05-07"}
+      ],
+      "source_locator": "column 'Semester- II 2026-27'"
+    },
+    {
+      "id": "2026-27-SUMMER",
+      "start_date": "2027-05-07",
+      "end_date_exclusive": "2027-07-03",
+      "classes_start_date": "2027-05-07",
+      "classes_end_date_exclusive": "2027-06-30",
+      "quads": [
+        {"id": "Q1", "start_date": "2027-05-07", "end_date_exclusive": "2027-06-02"},
+        {"id": "Q2", "start_date": "2027-06-07", "end_date_exclusive": "2027-06-30"}
+      ],
+      "exams": [
+        {"id": "examination-1", "start_date": "2027-06-02", "end_date_exclusive": "2027-06-05"},
+        {"id": "examination-2", "start_date": "2027-06-30", "end_date_exclusive": "2027-07-03"}
+      ],
+      "make_up_exams": null,
+      "recess": null,
+      "events": [
+        {"name": "Convocation", "start_date": "2027-06-26", "end_date_exclusive": "2027-06-27"},
+        {"name": "Disclosure of grades", "start_date": "2027-07-07", "end_date_exclusive": "2027-07-08"}
+      ],
+      "source_locator": "column 'Summer Term 2026-27'"
+    }
+  ],
+  "vacations": [
+    {"after_term": "2026-27-I", "start_date": "2026-11-29", "end_date_exclusive": "2027-01-02"},
+    {"after_term": "2026-27-II", "start_date": "2027-05-01", "end_date_exclusive": "2027-08-01"}
+  ]
+}

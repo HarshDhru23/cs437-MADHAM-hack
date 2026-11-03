@@ -3,12 +3,13 @@
 Rules come from contracts section 6 and docs/academic-decisions.md D-14:
 4-credit modules, at most 16 credits, open electives / HSS (max 8) / open
 project (max 4) only, no per-quad limit, and duration never grants credit.
-The calendar below is synthetic; no 2026-28 calendar is committed (GAP-03).
+The calendar below is synthetic; the committed 2026-27 calendar and the D-25
+presets are tested in test_official_calendar.py.
 """
 from copy import deepcopy
 from datetime import date
 import unittest
-from coursepath.calendar import add_calendar_months, from_inclusive, to_inclusive, preset_dates
+from coursepath.calendar import add_calendar_months, from_inclusive, to_inclusive
 from coursepath.internships import evaluate_internship, compare_internships, propose_split
 
 CALENDAR = {'id': 'synthetic-calendar', 'review_status': 'reviewed', 'terms': [
@@ -48,15 +49,6 @@ class CalendarArithmeticTests(unittest.TestCase):
         self.assertEqual(from_inclusive('2027-05-01', '2027-07-31'), (date(2027, 5, 1), date(2027, 8, 1)))
         self.assertEqual(to_inclusive(date(2027, 8, 1)), date(2027, 7, 31))
         self.assertEqual(from_inclusive('2028-02-01', '2028-02-29')[1], date(2028, 3, 1))
-
-    def test_cp33_presets_need_the_calendar_and_never_invent_a_summer(self):
-        self.assertEqual(preset_dates('three_months', 'summer', CALENDAR, '2026-27-SUMMER'), (date(2027, 5, 10), date(2027, 8, 10)))
-        self.assertEqual(preset_dates('six_months', 'semester', CALENDAR, '2027-28-I'), (date(2027, 8, 1), date(2028, 2, 1)))
-        for calendar, term in [(None, '2026-27-SUMMER'), (CALENDAR, '2028-29-SUMMER'), ({'terms': [{'id': '2026-27-SUMMER', 'start_date': None, 'end_date_exclusive': None}]}, '2026-27-SUMMER')]:
-            with self.assertRaisesRegex(ValueError, 'CALENDAR_MISSING'):
-                preset_dates('three_months', 'summer', calendar, term)
-        with self.assertRaises(ValueError):
-            preset_dates('none', 'summer', CALENDAR, '2026-27-SUMMER')
 
 
 class InternshipAvailabilityTests(unittest.TestCase):

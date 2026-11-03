@@ -1,3 +1,33 @@
+# Harsh — official timetables and calendar (3 Nov)
+
+Branch `feature/harsh-h11-official-timetables-calendar`; decisions D-22 to D-25.
+The official 2026-27 Semester I workbook and Semester II CSV are committed and
+built into reviewed, complete snapshots in `data/offerings/` with Manashree's
+adapter unchanged; the 2026-27 calendar is in `data/calendars/`. The server
+serves both without a load step; `GET /calendar` is new.
+
+```markdown
+To: Aaryan · From: Harsh · Task: H11/H12 · Blocks: CP-23, CP-24, CP-33
+Need: A09 (#28) InternshipEditor: fill presets from GET /calendar
+`internship_presets` (examples/calendar.json) instead of the GAP-03 notice; keep
+dates editable, show `CALENDAR_MISSING` for unpublished terms. A08 (#29): real
+2026-27-I/II offerings are now served, so the section picker and clash panel
+can be tried against real data (multi-slot labs stay `unknown`, AMB-12).
+Later I/II terms return `offering_status: historical` (D-23).
+Until then I will: keep the endpoint stable; nothing else changed in the API.
+```
+
+```markdown
+To: Manashree · From: Harsh · Task: M02/M04 · Blocks: CP-23, CP-24, CP-33
+Need: review, in this PR, the edits to your files: data/source-manifest.json
+(SRC-TIMETABLE, new SRC-TIMETABLE-II, SRC-CALENDAR now committed and reviewed),
+docs/data/source-register.md, data-gaps.md (GAP-02, GAP-11 closed, GAP-03 closed
+for 2026-27) and ambiguities.md (AMB-10, 11, 13 resolved). Your adapter is
+called unchanged; the Semester II CSV goes through it via a temporary workbook
+with the Semester I slot legend (D-22).
+Until then I will: change any wording you disagree with.
+```
+
 # Harsh — November 3 block handoff
 
 Prepared 31 October 2026 (IST) as stacked branches from `origin/main`

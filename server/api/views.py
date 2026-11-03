@@ -2,7 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 from datetime import timedelta
-from functools import wraps
+from functools import lru_cache, wraps
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -241,14 +242,37 @@ def _curriculum_for(record=None):
     return validate_curriculum(stored.payload) if stored else load_curriculum()
 
 
+@lru_cache(maxsize=4)
+def _committed_snapshots(directory):
+    from coursepath.data_sources.official_timetables import load_committed_snapshots
+    return {s['term_id']: s for s in load_committed_snapshots(directory)}
+
+
+@lru_cache(maxsize=4)
+def _committed_calendar(directory):
+    from coursepath.calendar import load_calendar
+    return load_calendar(directory)
+
+
+def _calendar():
+    """The committed academic calendar (D-24), or None when it is switched off."""
+    return _committed_calendar(str(settings.COURSEPATH_CALENDAR_DIR)) if settings.COURSEPATH_CALENDAR_DIR else None
+
+
 def _offering_snapshots():
-    """Latest reviewed snapshot per term, else the latest draft. Payloads are loaded only for those versions."""
+    """Per term: the latest staff-loaded reviewed snapshot, else the committed official one (D-22), else the latest draft.
+    Payloads are loaded only for those versions."""
     from server.records.models import OfferingSnapshot
     latest = {}
     for term, version in OfferingSnapshot.objects.order_by('term_id', '-reviewed', '-loaded_at').values_list('term_id', 'version'):
         latest.setdefault(term, version)
-    payloads = dict(OfferingSnapshot.objects.filter(pk__in=latest.values()).values_list('version', 'payload'))
-    return {term: payloads[version] for term, version in latest.items()}
+    stored = dict(OfferingSnapshot.objects.filter(pk__in=latest.values()).values_list('version', 'payload'))
+    result = {term: stored[version] for term, version in latest.items()}
+    committed = _committed_snapshots(str(settings.COURSEPATH_OFFERINGS_DIR)) if settings.COURSEPATH_OFFERINGS_DIR else {}
+    for term, snapshot in committed.items():
+        if result.get(term, {}).get('review_status') != 'reviewed':
+            result[term] = snapshot
+    return result
 
 
 def _validate_owned_plan(owner, plan):
@@ -274,6 +298,19 @@ def offerings(request):
     if snapshot['coverage'] != 'complete':
         gaps.append(issue('OFFERING_COVERAGE_PARTIAL', 'Coverage is not complete: a course missing here may still be offered.'))
     return response(snapshot, gaps)
+
+
+@endpoint({'GET'}, public=True)
+def calendar(request):
+    from coursepath.calendar import internship_presets
+    data = _calendar() or {'terms': []}
+    if not data['terms']:
+        return response({'id': None, 'review_status': None, 'source_refs': [], 'terms': [], 'internship_presets': []},
+                        [issue('CALENDAR_MISSING', 'No academic calendar is published in CoursePath.', action='Enter exact internship dates.')])
+    last = data['terms'][-1]['id']
+    return response({**data, 'internship_presets': internship_presets(data)},
+                    [issue('CALENDAR_MISSING', f'Terms after {last} have no published dates, so overlaps with them are not checked.', sources=['SRC-CALENDAR'],
+                           action='Courses planned in those terms are listed as unchecked until the institute publishes the dates.')])
 
 
 @endpoint({'GET'}, public=True)
@@ -336,12 +373,12 @@ def _grading_policy():
 
 
 def _engine_context(user, stored):
-    """Server-side inputs for scenario evaluation. Approvals are staff-verified evidence only; no calendar is committed (GAP-03)."""
+    """Server-side inputs for scenario evaluation. Approvals are staff-verified evidence only; the calendar is the committed one (D-24)."""
     approvals = [{'id': str(a.pk), 'status': a.status, 'covered_entities': a.covered_entities}
                  for a in ApprovalEvidence.objects.filter(owner=user, status='verified')]
     return {'curriculum': _curriculum_for(stored), 'catalogue': _recommendations(), 'grading_policy': _grading_policy(), 'approvals': approvals,
             'standing': stored.profile.get('standing', 'unknown'), 'advisor_cap': stored.profile.get('advisor_cap'),
-            'offering_snapshots': list(_offering_snapshots().values()), 'calendar': None}
+            'offering_snapshots': list(_offering_snapshots().values()), 'calendar': _calendar()}
 
 
 def _baseline(stored, plan):
