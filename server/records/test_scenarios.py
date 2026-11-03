@@ -1,4 +1,4 @@
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from jsonschema import Draft202012Validator, FormatChecker
 from server.records.services import SCHEMA
 from server.records.testing import AccountAPIMixin
@@ -115,6 +115,7 @@ class ScenarioAPITests(AccountAPIMixin, TestCase):
         self.assertEqual(self.request(self.client, 'delete', '/scenarios/' + scenario['id'], {'expected_revision': 1}).status_code, 200)
         self.assertEqual(self.client.get('/api/v1/scenarios/' + scenario['id']).status_code, 404)
 
+    @override_settings(COURSEPATH_CALENDAR_DIR=None)  # the committed calendar is exercised in test_official_data
     def test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar(self):
         cases = [self.create(internship={'duration_choice': 'none'}),
                  self.create(internship={'duration_choice': 'three_months', 'start_date': '2027-05-01', 'end_date_exclusive': '2027-08-01', 'placement_mode': 'onsite_full_time'}),
