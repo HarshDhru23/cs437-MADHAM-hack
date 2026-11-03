@@ -6,7 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from django.core.management import call_command, CommandError
 from django.db.models import F
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from jsonschema import Draft202012Validator, FormatChecker
 from server.records.models import OfferingSnapshot
 from server.records.services import SCHEMA
@@ -14,6 +14,7 @@ from server.records.testing import AccountAPIMixin
 from tests.domain.test_offerings import adapter_snapshot, TERM
 
 
+@override_settings(COURSEPATH_OFFERINGS_DIR=None)  # staff-loaded snapshots only; committed official ones are in test_official_data
 class OfferingAPITests(AccountAPIMixin, TestCase):
     def load(self, snapshot, *flags):
         with tempfile.TemporaryDirectory() as folder:

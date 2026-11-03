@@ -3,6 +3,9 @@ from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+# Committed reference data (D-22, D-24). A staff-loaded reviewed snapshot in the database wins for its term; None turns a source off.
+COURSEPATH_OFFERINGS_DIR = BASE_DIR / 'data' / 'offerings'
+COURSEPATH_CALENDAR_DIR = BASE_DIR / 'data' / 'calendars'
 LOCAL_DIR = BASE_DIR / 'server' / '.local'
 LOCAL_DIR.mkdir(exist_ok=True)
 DEBUG = os.getenv('COURSEPATH_ENV', 'development') != 'production'

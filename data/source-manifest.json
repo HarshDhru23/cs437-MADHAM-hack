@@ -62,16 +62,36 @@
       "kind": "timetable",
       "title": "Timetable, Sem-I, 2026-27 (workbook)",
       "version": null,
-      "applicable_cohorts": [],
+      "applicable_cohorts": [
+        "all programmes, 2026-27"
+      ],
       "effective_date": null,
-      "file_sha256": null,
+      "file_sha256": "43df3926ecfca8f2649ac56f79d7766c09cb3fdb5ba36215da037666208dc1e6",
       "url": null,
-      "in_repository": false,
-      "locator": "sheets 'Time table', 'Time Slots' (A1:F8), 'Availability'",
-      "review_status": "draft",
-      "authority": null,
-      "retrieved_at": null,
-      "notes": "Supplied term snapshot for 2026-27-I only. Publication, revision and finality not established; file name is not an effective date. scripts/build_timetable.py records the hash at ingestion."
+      "in_repository": true,
+      "locator": "Timetable, Sem-I, 2026-27.xlsx",
+      "review_status": "reviewed",
+      "authority": "institutional",
+      "retrieved_at": "2026-11-03",
+      "notes": "Official institute timetable for 2026-27-I, confirmed by Harsh on 3 Nov 2026 as needing no further review (D-22). Sheets 'Time table', 'Time Slots' (A1:F8), 'Availability'. Built into data/offerings/2026-27-I.json by coursepath/data_sources/official_timetables.py."
+    },
+    {
+      "id": "SRC-TIMETABLE-II",
+      "kind": "timetable",
+      "title": "Timetable, Sem-II, 2026-27 (CSV export of the Time table sheet)",
+      "version": null,
+      "applicable_cohorts": [
+        "all programmes, 2026-27"
+      ],
+      "effective_date": null,
+      "file_sha256": "f0b7617151b089fdccb50c0c89d921a1ad08d4ae594f246d47f03f65d0f524bb",
+      "url": null,
+      "in_repository": true,
+      "locator": "Timetable, Sem-II, 2026-27 - Time table.csv",
+      "review_status": "reviewed",
+      "authority": "institutional",
+      "retrieved_at": "2026-11-03",
+      "notes": "Official institute timetable for 2026-27-II (D-22). Only the 'Time table' sheet was exported, so its slots are read with the SRC-TIMETABLE 'Time Slots' legend. Built into data/offerings/2026-27-II.json."
     },
     {
       "id": "SRC-GRADPLAN",
@@ -114,14 +134,14 @@
       "version": null,
       "applicable_cohorts": [],
       "effective_date": null,
-      "file_sha256": null,
+      "file_sha256": "7c6c775e8d1d8bf6e90362842b9f58588d1f8b466dab486b2167b0d9722f7fa5",
       "url": "https://iitgn.ac.in/academics/calendar/acadcal-2026-27",
-      "in_repository": false,
-      "locator": "term and quad boundaries",
-      "review_status": "draft",
+      "in_repository": true,
+      "locator": "data/calendars/acadcal-2026-27.txt",
+      "review_status": "reviewed",
       "authority": "institutional",
-      "retrieved_at": null,
-      "notes": "Not fetched by this task. The roadmap reports pre-registration on 2-6 November; no other date is recorded here. Needs a current dated snapshot."
+      "retrieved_at": "2026-11-03",
+      "notes": "Table text of the published IITGN Academic Calendar 2026-27 page, retrieved 3 Nov 2026 (page markup removed). Encoded as data/calendars/2026-27.json (D-24). Later years are not published yet."
     },
     {
       "id": "SRC-CSE-WEB",
