@@ -475,6 +475,10 @@
         "tests.domain.test_planning.PlanningTests.test_cp22_nested_truth_table_unknown_and_empty",
         "tests.domain.test_identity.CourseIdentityTests.test_cp22_prerequisites_compare_resolved_identities",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_variant_satisfies_and_unlisted_course_stays_unknown",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_old_codes_find_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_internship_downstream_check_finds_the_current_course_recommendation",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
       ],
       "implementation_scope": "backend_evidence",
@@ -493,7 +497,10 @@
       "tests": [
         "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_snapshot_coverage_and_review_decide_availability",
         "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_current_snapshot_never_confirms_a_later_term",
-        "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded"
+        "tests.domain.test_offerings.OfferingAvailabilityTests.test_cp23_a_current_variant_outranks_a_historical_one",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_offerings_unknown_until_a_snapshot_is_loaded",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_a_corrected_snapshot_from_the_same_workbook_is_stored_as_a_new_version",
+        "server.records.test_offerings.OfferingAPITests.test_cp23_load_offerings_rejects_a_malformed_term"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -517,9 +524,14 @@
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_unknown_lab_semantics_report_possible_clash_but_clear_when_none_can_clash",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_missing_snapshot_meetings_or_variant_choice_is_not_checked",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_duplicated_source_meetings_do_not_double_conflicts",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_dated_meetings_clash_only_when_a_shared_date_falls_on_their_weekday",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_stale_offering_variant_is_an_error_not_missing_meetings",
+        "tests.domain.test_offerings.MeetingClashTests.test_cp24_conflict_ids_stay_unique_when_a_course_is_planned_twice",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_validation_reports_term_checks_and_keeps_history_credits",
         "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_plan_without_snapshot_never_reports_clear",
-        "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot"
+        "tests.domain.test_offerings.PlanValidationWithSnapshotTests.test_cp24_empty_term_is_not_checked_with_or_without_a_snapshot",
+        "server.records.test_offerings.OfferingAPITests.test_cp24_saved_plan_validation_uses_the_stored_snapshot",
+        "server.records.test_offerings.OfferingAPITests.test_cp24_plan_validation_response_matches_the_schema"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -583,9 +595,13 @@
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_stale_scenario_needs_rebase_before_any_comparison",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_grade_and_award_goal_are_labelled_not_certified",
         "tests.domain.test_scenarios.ScenarioTests.test_cp28_hypothetical_attempt_of_an_undesignated_planned_row_is_degree_learning",
+        "tests.domain.test_scenarios.ScenarioTests.test_cp28_passing_hypothetical_grade_keeps_the_course_planned",
         "tests.domain.test_scenarios.PlanApplyTests.test_cp28_apply_writes_plan_edits_only",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_scenarios_are_owned_isolated_and_compared_without_touching_the_record",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -631,7 +647,11 @@
         "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_previews_diff_then_commits_only_on_confirmation",
         "server.records.test_export.ExportRestoreTests.test_cp30_unknown_foreign_or_malformed_backups_are_rejected_without_changes",
-        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record"
+        "server.records.test_export.ExportRestoreTests.test_cp30_failed_restore_rolls_back_the_record",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_rejects_rows_the_record_editor_would_reject",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_keeps_justified_history_and_owned_verified_approvals",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restore_accepts_only_well_formed_reported_controls",
+        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -668,6 +688,9 @@
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_password_rechecks_are_throttled_like_login",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_delete_account_must_be_a_json_boolean",
+        "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
         "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"

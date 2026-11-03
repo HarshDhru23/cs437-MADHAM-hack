@@ -79,10 +79,19 @@ Implemented routes:
 | `GET/POST /scenarios` | Owned list (`{scenarios:[...]}`) / create `{plan_id,label?,changes?,internship?,award_ids?}`. The baseline record, plan and rule revisions are captured at creation. |
 | `GET/PATCH/DELETE /scenarios/{id}` | PATCH/DELETE need `expected_revision`; PATCH with `rebase: true` moves the baseline to the current record and plan. |
 | `POST /scenarios/compare` | `{scenario_ids:[1-6, same plan]}`; for each, baseline and scenario evaluations (audit, labelled hypothetical performance, plan validation, internship) and their deltas. Stale scenarios return `stale: true` and `SCENARIO_STALE`, no evaluation. `internship_cases` tabulates none / 3 / 6 month choices. |
-| `POST /scenarios/{id}/apply-plan` | `{expected_plan_revision}`; writes drop/postpone/replace edits to the saved plan only; `not_applied` lists hypothetical fail/grade/cap/internship changes. 409 when the scenario or plan is stale. Never changes the record. |
+| `POST /scenarios/{id}/apply-plan` | `{expected_scenario_revision,expected_plan_revision}` (both required; the scenario revision is the one the client compared). Writes drop/postpone/replace edits to the saved plan only and returns `{plan,not_applied}`; `not_applied` lists hypothetical fail/grade/cap/internship changes. Never changes the record. Errors are listed below the table. |
 | `GET /export?kind=json` | Owned backup download: `kind: "coursepath-backup"`, `backup_version: "1"`, account username, rule version/review status/sources/missing sources, grading policy ID, record (with revision), plans and scenarios. No password, session or CSRF data. |
-| `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version, owner, cohort, attempts and plans, and returns a diff. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
-| `DELETE /account/data` | `{expected_revision, password, confirm: "delete my data", delete_account?}`. Re-authenticates (403 `REAUTH_FAILED`), then deletes the owner's attempts, current enrolment, reported controls, plans, scenarios, import previews and approval evidence; with `delete_account: true` also deletes the account and ends every session. Returns counts and the retention statement. |
+| `POST /imports/backup-preview` | `{expected_revision, backup}` (the downloaded envelope or its `data`); validates version (the envelope's `schema_version` must be `"1"`), owner, cohort, attempts, reported controls (decimal strings only) and plans, and returns a diff. Restored rows follow the `PATCH /record` rules: a row already in the record keeps its evidence, server-assigned fields and whole correction history and may only append justified corrections; a new row must match its `original` source values except where a justified correction says otherwise, claims no `course_version_id`, and cites only this owner's verified approval evidence. Otherwise 422 `BACKUP_INVALID` with the row IDs in `entity_refs`, and nothing changes. Plans that still exist (same ID or identical content) are not copied again; the diff lists them in `plans_skipped_existing`. Scenarios are not restored (they need an exact baseline). Commit with `POST /imports/{id}/commit` `{expected_revision, confirm: true}`; the record and new plans commit in one transaction. |
+| `DELETE /account/data` | `{expected_revision, password, confirm: "delete my data", delete_account?}` (`delete_account` is a JSON boolean; anything else is 400). Re-authenticates (403 `REAUTH_FAILED`; password re-checks share the login limit, then 429 `AUTH_THROTTLED` and nothing is deleted), then deletes the owner's attempts, current enrolment, reported controls, plans, scenarios, import previews and approval evidence; with `delete_account: true` also deletes the account and ends every session. A staff account that verified other students' approval evidence is not deleted: 409 `ACCOUNT_HAS_VERIFICATIONS`, nothing deleted and the session kept. Returns counts and the retention statement. |
+
+Apply-plan errors, checked in this order; each changes nothing:
+
+- 404 `NOT_FOUND`: missing or foreign scenario.
+- 400 `INVALID_INPUT`: either expected revision is missing or not a nonnegative integer.
+- 409 `REVISION_CONFLICT`, data `{current_revision,action:"reload_compare"}`: `current_revision` is the scenario's revision when the scenario changed since it was compared, otherwise the plan's revision when the plan is stale. Reload, compare again, then apply.
+- 409 `SCENARIO_STALE`, data `{action:"rebase",scenario_revision,current_record_revision,current_plan_revision,current_rule_version,baseline_record_revision,baseline_plan_revision,rule_version}`: the record, plan or rules moved since the scenario's baseline. PATCH the scenario with `{expected_revision:scenario_revision,rebase:true}`, compare again, then apply.
+
+Examples: `examples/scenario.json`, `scenario-comparison.json`, `plan-apply.json`, `scenario-stale.json`.
 
 An empty plan has `semesters: []`. Each semester has `term_id`, `courses`,
 `placeholders`; every item has a stable `id`. Selected courses have
@@ -97,8 +106,9 @@ and `meeting_check_status`; `meeting_checks[term]` lists each clash with both
 meeting IDs, planned item IDs and source cells. A clash is `certain: false`
 (severity warning) when a meeting's active dates are not stated or it belongs to
 an alternative/unstated group. Pick a meeting with `section_ids` (snapshot meeting
-IDs) and a source variant with `offering_id`. Terms without a snapshot, unresolved
-slots and placeholder-only selections are `not_checked`, never `clear`. No future
+IDs) and a source variant with `offering_id`; an `offering_id` missing from the
+snapshot is an `OFFERING_VARIANT_UNKNOWN` error. Terms without a snapshot, empty
+terms, unresolved slots and placeholder selections are `not_checked`, never `clear`. No future
 timetable is inferred, and an offering's credits never overwrite earned history.
 
 Import correction shape, keyed by candidate ID:
@@ -119,20 +129,24 @@ forces totals to agree or makes credits degree-eligible.
 PDF limits: 10 MB, 20 pages, 10 seconds in a killable extraction subprocess.
 PDF bytes stay in memory; Django upload handles are closed on every path.
 Paste limit: 1,000,000 characters. Previews expire after one hour and are owner
-protected. Expiry blocks commits. Each new preview deletes that owner's expired
+protected. Expiry blocks commits. Each new import or backup preview deletes that owner's expired
 previews; run `manage.py purge_previews` on a schedule in production to delete
 all expired ones.
 
 Supported errors: 400 invalid fields, 401 authentication, 403 CSRF, 404 foreign/
 missing objects, 409 stale revision, 413 upload limit, 422 uncommittable import,
-429 account throttling. A 409 contains `current_revision` and `reload_compare`;
+429 account throttling. A 409 contains `current_revision` and `reload_compare`
+(except apply-plan's `SCENARIO_STALE`, which asks for a rebase);
 do not automatically overwrite/retry. Self-service account recovery is not
 offered: no recovery email is configured, so no reset action is shown. The printable report is the frontend's print
 view of `POST /analysis`; the server does not render PDFs.
 
 Scenario changes: `{op:"drop"|"fail"|"grade",item_id}`, `{op:"postpone",item_id,term_id}`
 (later terms only), `{op:"replace",item_id,course:{normalized_code,credits}}`,
-`{op:"cap",term_id,credits}`. `grade` takes a letter grade. Internship:
+`{op:"cap",term_id,credits}`. `grade` takes a letter grade: a passing grade keeps the
+course planned, so audit and validation are unchanged and only the labelled CPI uses
+it; E or F removes the course like `fail`. A graded or failed item takes no further
+changes. Internship:
 `{duration_choice,start_date,end_date_exclusive,placement_mode,preset?,modules?}`;
 modules are `{id,credits,intended_allocation,status,grade?,quad_id?,approval_ref?,registration_id?}`.
 A module cannot carry an approval status: only staff-verified `ApprovalEvidence`
@@ -155,7 +169,10 @@ learning (D-21).
 `load_offerings snapshot.json --reviewed|--draft [--coverage complete|partial|unknown]`
 stores a snapshot produced by `scripts/build_timetable.py` after the adapter's
 structural check. One of `--reviewed` (staff checked it against the workbook) or
-`--draft` is required; a stored version is never overwritten.
+`--draft` is required; a stored version is never overwritten. The version ID is a
+SHA-256 of the stored snapshot's content, so a corrected snapshot of the same
+workbook is a new version while reloading an identical one is refused. The term
+ID must be a valid academic term.
 
 For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 `COURSEPATH_ALLOWED_HOSTS` (comma separated), and `COURSEPATH_DB_NAME`,
