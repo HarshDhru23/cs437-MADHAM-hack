@@ -551,7 +551,17 @@
         "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp24_slots_and_half_semester_dates_come_from_the_sources",
         "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp24_real_clashes_respect_half_semester_dates",
         "tests.domain.test_official_timetables.SameParityHintTests.test_cp24_hints_never_supply_meetings",
-        "server.records.test_official_data.OfficialTimetableAPITests.test_cp24_plan_validation_uses_the_official_timetable_and_the_same_parity_hint"
+        "server.records.test_official_data.OfficialTimetableAPITests.test_cp24_plan_validation_uses_the_official_timetable_and_the_same_parity_hint",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_ph202_es667_lecture_clashes_on_both_documented_slots",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_ph202_cs331_clash_is_the_h2_tutorial_only",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_undated_meetings_give_a_possible_clash_not_a_certain_one",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_duplicate_source_rows_do_not_create_extra_clashes",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_unknown_lab_alternatives_give_a_possible_clash_never_clear",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_course_missing_from_snapshot_is_not_checked",
+        "tests.reference.test_nov3_regression.DocumentedClashTests.test_no_snapshot_is_not_checked_never_clear",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_touching_endpoints_do_not_clash",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_same_slot_in_different_halves_of_term_does_not_clash",
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -696,20 +706,26 @@
       "id": "CP-31",
       "oct27_target": false,
       "tests": [],
-      "implementation_scope": "november_not_implemented",
+      "implementation_scope": "frontend",
       "release_evidence": {
-        "browser": false,
+        "browser": true,
         "human_review": false,
         "merged_pr": false
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
+        "e2e/tests/phone-keyboard.spec.ts::a student imports, inspects a requirement and plans on a phone with the keyboard alone (CP-31)",
+        "e2e/tests/responsive.spec.ts::requirements and import screens fit at phone 390",
         "e2e/tests/responsive.spec.ts::keyboard focus starts with the skip link and follows reading order",
         "e2e/tests/responsive.spec.ts::the import tabs can be operated with the keyboard alone",
+        "e2e/tests/student-flow.spec.ts::student flow > create a plan, add and move a course with the keyboard, see server totals (CP-04/05)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > the planner and timetable panel fit a 390px phone",
         "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
       ],
-      "frontend_tests": [],
-      "release_evidence_note": "Automated keyboard/responsive checks only; the observed user session (M09/A10) is still required."
+      "frontend_tests": [
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > moves a course with a keyboard-accessible select and button, and can undo"
+      ],
+      "release_evidence_note": "UI-only statement (implementation_scope frontend): tests-green comes from its browser tests on the real stack, all of which must run and pass. The observed user session (M09) is still required as release evidence."
     },
     {
       "id": "CP-32",
@@ -742,7 +758,8 @@
         "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > explains what is removed and quotes the documented retention",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > needs the typed phrase, then a wrong password is refused and nothing is claimed deleted",
-        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a %i %s refusal shows the server issue and claims nothing",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a 429 AUTH_THROTTLED refusal shows the server issue and claims nothing",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a 409 ACCOUNT_HAS_VERIFICATIONS refusal shows the server issue and claims nothing",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting data shows the server counts and retention, and reloads the empty record",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting the account clears personal state and goes to the public home page",
         "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > a plan that is missing or belongs to someone else shows not found, not data"
@@ -771,7 +788,14 @@
         "tests.domain.test_official_calendar.InternshipAgainstTheCalendarTests.test_cp33_a_may_internship_overlaps_the_summer_term_but_not_the_spring_exams",
         "server.records.test_official_data.CalendarAPITests.test_cp33_the_calendar_and_internship_presets_are_public",
         "server.records.test_official_data.CalendarAPITests.test_cp33_without_a_calendar_there_are_no_presets",
-        "server.records.test_official_data.CalendarAPITests.test_cp33_internship_comparison_checks_published_terms_and_flags_later_ones"
+        "server.records.test_official_data.CalendarAPITests.test_cp33_internship_comparison_checks_published_terms_and_flags_later_ones",
+        "tests.reference.test_nov3_regression.InternshipTests.test_calendar_month_arithmetic_on_leap_and_month_end",
+        "tests.reference.test_nov3_regression.InternshipTests.test_none_has_no_dates_no_credit_and_rejects_stale_modules",
+        "tests.reference.test_nov3_regression.InternshipTests.test_summer_internship_blocks_summer_courses_only",
+        "tests.reference.test_nov3_regression.InternshipTests.test_six_month_internship_spanning_semester_7_exposes_its_courses",
+        "tests.reference.test_nov3_regression.InternshipTests.test_remote_placement_needs_permission_not_a_silent_pass",
+        "tests.reference.test_nov3_regression.InternshipTests.test_without_a_calendar_nothing_is_reported_clear",
+        "tests.reference.test_nov3_regression.InternshipTests.test_three_cases_compare_on_one_untouched_baseline"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -808,7 +832,11 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
         "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
-        "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero"
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero",
+        "tests.reference.test_nov3_regression.InternshipTests.test_six_months_alone_earns_zero_credit",
+        "tests.reference.test_nov3_regression.InternshipTests.test_example_12oe_4hss_stays_proposed_without_approval",
+        "tests.reference.test_nov3_regression.InternshipTests.test_student_reported_approval_does_not_become_verified",
+        "tests.reference.test_nov3_regression.InternshipTests.test_caps_16_overall_8_hss_4_open_project"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -827,5 +855,5 @@
       ]
     }
   ],
-  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green."
+  "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."
 }

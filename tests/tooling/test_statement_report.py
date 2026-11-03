@@ -90,6 +90,21 @@ class LocalAndFrontendTests(unittest.TestCase):
         self.assertEqual((failed["tests_status"], failed["local_status"]), ("GREEN", "RED"))
         self.assertEqual(sr.summarize([s], {"a": "ok", "private": "ok"})[0]["local_status"], "GREEN")
 
+    def test_ui_only_statement_is_green_only_when_all_its_browser_tests_ran_and_passed(self):
+        s = {**stmt("CP-31", []), "implementation_scope": "frontend", "browser_tests": ["x", "y"]}
+        self.assertEqual(sr.summarize([s], {"x": "ok", "y": "ok"})[0]["tests_status"], "GREEN")
+        self.assertEqual(sr.summarize([s], {"x": "ok", "y": "FAIL"})[0]["tests_status"], "RED")
+        self.assertEqual(sr.summarize([s], {"x": "ok", "y": "skipped"})[0]["tests_status"], "RED")
+        self.assertEqual(sr.summarize([s], {})[0]["tests_status"], "RED")  # --browser not run
+
+    def test_ui_only_statement_without_browser_tests_is_red(self):
+        s = {**stmt("CP-31", []), "implementation_scope": "frontend", "frontend_tests": ["f"]}
+        self.assertEqual(sr.summarize([s], {"f": "ok"})[0]["tests_status"], "RED")
+
+    def test_browser_tests_never_make_a_backend_statement_green(self):
+        s = {**stmt("CP-02", []), "browser_tests": ["x"]}
+        self.assertEqual(sr.summarize([s], {"x": "ok"})[0]["tests_status"], "RED")
+
     def test_frontend_status_is_reported_separately(self):
         s = {**stmt("CP-05", ["a"]), "frontend_tests": ["f1", "f2"]}
         self.assertEqual(sr.summarize([s], {"a": "ok", "f1": "ok", "f2": "FAIL"})[0]["frontend_status"], "RED")

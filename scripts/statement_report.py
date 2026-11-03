@@ -13,6 +13,11 @@ Playwright suite on the real stack), Frontend (`frontend_tests`, run with
 originals, so they run only where COURSEPATH_REAL_INPUT_DIR has them; they never
 count towards tests-green and a skip there is NOT RUN, not RED).
 
+A statement with `"implementation_scope": "frontend"` is a UI-only promise with no
+Python or Django behaviour to test (CP-31, phone and keyboard). Its tests-green
+comes from its `browser_tests` instead: all of them must have run (--browser) and
+passed. Browser tests never make any other statement tests-green.
+
 Exit 1 if any selected statement is not tests-green, or any browser or frontend
 test that actually ran failed.
 """
@@ -67,9 +72,12 @@ def summarize(statements, outcomes):
         tests = s["tests"]
         failing = [t for t in tests if outcomes.get(t) in ("FAIL", "ERROR", "skipped")]
         missing = [t for t in tests if t not in outcomes]
-        green = bool(tests) and not failing and not missing
-        evidence = s.get("release_evidence", {})
         browser_status = evidence_status(s.get("browser_tests", []), outcomes)
+        if s.get("implementation_scope") == "frontend":
+            green = not tests and browser_status == "GREEN"
+        else:
+            green = bool(tests) and not failing and not missing
+        evidence = s.get("release_evidence", {})
         rows.append({"id": s["id"], "target": s.get("oct27_target", False), "tests": len(tests),
                      "browser_status": browser_status,
                      "frontend_status": evidence_status(s.get("frontend_tests", []), outcomes),

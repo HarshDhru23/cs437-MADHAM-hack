@@ -25,6 +25,25 @@ def _resolve_python(test_id):
     return 'missing file'
 
 
+LITERAL = re.compile(r"'([^'\n]*)'|\"([^\"\n]*)\"|`([^`]*)`")
+PLACEHOLDER = re.compile(r'%[sdifjo]|\$\{[^}]*\}')
+
+
+def _title_in_source(segment, text):
+    """A literal title, or a generated one (it.each `%s`, template `${...}`) whose filled-in values are in the file."""
+    if f"'{segment}'" in text or f'"{segment}"' in text or f'`{segment}`' in text:
+        return True
+    for match in LITERAL.finditer(text):
+        template = next(g for g in match.groups() if g is not None)
+        parts = PLACEHOLDER.split(template)
+        if len(parts) < 2:
+            continue
+        filled = re.fullmatch('(.+?)'.join(re.escape(p) for p in parts), segment)
+        if filled and all(re.search(rf'(?<![\w.]){re.escape(v)}(?![\w.])', text) for v in filled.groups()):
+            return True
+    return False
+
+
 def _resolve_js(test_id, prefix):
     file_part, _, title = test_id.partition('::')
     if not file_part.startswith(prefix):
@@ -33,7 +52,7 @@ def _resolve_js(test_id, prefix):
     if not path.exists():
         return 'missing file'
     text = _source(path)
-    missing = [segment for segment in title.split(' > ') if f"'{segment}'" not in text and f'"{segment}"' not in text]
+    missing = [segment for segment in title.split(' > ') if not _title_in_source(segment, text)]
     return f'title not found: {missing}' if missing or not title else None
 
 
@@ -81,3 +100,13 @@ class StatementTestMapTests(unittest.TestCase):
         self.assertIsNotNone(_resolve_python('tests.domain.test_statement_map.StatementTestMapTests.test_no_such_test'))
         self.assertIsNotNone(_resolve_js('e2e/tests/public.spec.ts::a test that was renamed', 'e2e/tests/'))
         self.assertIsNotNone(_resolve_js('frontend/src/missing.test.tsx::x', 'frontend/src/'))
+
+    def test_generated_titles_resolve_only_with_values_from_the_same_file(self):
+        # it.each('%i %s ...') and template-literal titles are reported by their filled-in names.
+        source = "it.each([[429, 'AUTH_THROTTLED']])('a %i %s refusal', f);\n" \
+                 "for (const v of [{ name: 'phone 390' }]) test(`fits at ${v.name}`, f);"
+        self.assertTrue(_title_in_source('a 429 AUTH_THROTTLED refusal', source))
+        self.assertTrue(_title_in_source('fits at phone 390', source))
+        self.assertFalse(_title_in_source('a 500 SERVER_DOWN refusal', source))  # values not in the file
+        self.assertFalse(_title_in_source('fits at watch 200', source))
+        self.assertFalse(_title_in_source('a refusal', source))

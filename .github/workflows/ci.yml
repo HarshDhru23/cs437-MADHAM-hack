@@ -44,16 +44,10 @@ jobs:
       - name: Run all suites
         run: python scripts/test.py
 
-      # The 27 Oct gate: every first-release statement tests-green, and no mapped frontend or
+      # The 3 Nov gate: every statement in SPEC.md tests-green, and no mapped frontend or
       # browser test failing. Private-input checks are local_tests and never count here.
-      - name: Statement report (first-release targets)
-        run: python scripts/statement_report.py --frontend --browser
-
-      # Informational: all 34 statements, including November work not yet tested.
       - name: Statement report (all statements)
-        if: always()
-        continue-on-error: true
-        run: python scripts/statement_report.py --all
+        run: python scripts/statement_report.py --all --frontend --browser
 
       # Synthetic data only (no private inputs exist in CI).
       - name: Upload browser test report
@@ -109,3 +103,15 @@ jobs:
 
       - name: Django tests on PostgreSQL
         run: python scripts/test.py --suite django
+
+      # M08: back up a synthetic account and restore it into a separate, empty PostgreSQL
+      # database; backup.py fails unless counts and revisions match the dump summary.
+      - name: Backup and restore rehearsal on PostgreSQL
+        env:
+          PGPASSWORD: coursepath-ci
+        run: |
+          python server/manage.py shell -c "from django.contrib.auth import get_user_model; from server.records.models import AcademicRecord, AcademicPlan; u = get_user_model().objects.create_user('ci-synthetic', password='ci-synthetic-pass-8812'); AcademicRecord.objects.create(owner=u, revision=3); AcademicPlan.objects.create(owner=u, revision=2, payload={'semesters': []})"
+          python scripts/backup.py dump --out "$RUNNER_TEMP/backup.json"
+          createdb -h 127.0.0.1 -U coursepath coursepath_restore
+          COURSEPATH_DB_NAME=coursepath_restore python scripts/backup.py restore --input "$RUNNER_TEMP/backup.json"
+          rm -f "$RUNNER_TEMP/backup.json"
