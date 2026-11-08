@@ -2,7 +2,8 @@
 complete allocation when one exists (D-07); most required credits and courses
 placed; narrowest requirement for each placed credit, so an incomplete record
 never spends a basket course on an unrestricted bucket (H07); least surplus
-(D-07). Every assignment consumes one indivisible instance; parents only aggregate.
+(D-07); among allocations equal on all of that, the first passed project on the
+open project (D-10). Every assignment consumes one indivisible instance; parents only aggregate.
 
 Verified mandatory matches are placed first: a course that matches a mandatory
 requirement can only usefully fill that requirement. The remaining flexible
@@ -17,10 +18,18 @@ from coursepath.rules.expressions import requirement_result
 from coursepath.issues import issue
 from coursepath.identity import identity_map, canonical_code
 from coursepath.repeats import superseded_attempts
+from coursepath.models import term_key
 
 
 def _subject(code):
     return code.split(' ', 1)[0]
+
+
+def _term_order(attempt):
+    try:
+        return term_key(attempt.get('term_id') or '')
+    except ValueError:
+        return (10 ** 6, 0)   # an unknown term sorts last
 
 
 def matches(rule, code, identity):
@@ -179,6 +188,14 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
         else:
             flexible.append(row)
     flexible.sort(key=lambda row: (len(row[1]), row[0]['id']))
+    # D-10 step 1: the open project is the first passed project course; it decides only between allocations that tie on everything else.
+    open_project = next((i for i, leaf in enumerate(leaves) if leaf.get('decision') == 'D-10'), None)
+    projects = sorted((r for r, (_, options, tags) in enumerate(flexible) if open_project in options and 'project' in tags),
+                      key=lambda r: (_term_order(flexible[r][0]), flexible[r][0]['id']))
+    project_rank, last_rank = {r: n for n, r in enumerate(projects)}, len(projects)
+
+    def open_project_rank(assignments):
+        return min((project_rank.get(row, last_rank) for row, leaf in assignments if leaf == open_project), default=last_rank)
 
     def compile_node(node):
         # Same satisfaction rule as requirement_result, on plain numbers, for use inside the search.
@@ -206,7 +223,7 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
     global_caps = [c for c, cap in enumerate(caps) if not cap.get('requirement_ids')]
     mandatory_leaves = [i for i, r in enumerate(leaves) if r['type'] == 'mandatory_course']
 
-    def bound(index, totals, counts, cap_totals):
+    def bound(index, totals, counts, cap_totals, assignments):
         """Optimistic score: every remaining course counted toward every open requirement the caps still allow."""
         extra_totals, extra_counts = list(totals), list(counts)
         credit_room, row_room = Decimal(0), 0
@@ -239,10 +256,13 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
             take = min(room, needed)
             cost += rank * take
             needed -= take
+        rank = open_project_rank(assignments)
+        if open_project is not None and open_leaf(open_project, totals, counts):
+            rank = min([rank] + [project_rank[r] for r in range(index, len(flexible)) if r in project_rank])
         return (sum(met(i, extra_totals, extra_counts) for i in mandatory_leaves),
                 satisfied_roots(extra_totals, extra_counts) == len(compiled_roots) and credit_room >= open_gap,
                 placed + min(credit_room, credit_gap), sum(min(x, t) for x, t in zip(counts, minimum_counts)) + min(row_room, count_gap),
-                breadth_score(totals) - cost, -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)))
+                breadth_score(totals) - cost, -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)), -rank)
 
     def breadth_score(totals):
         return -sum((rank * x for rank, x in enumerate(totals)), Decimal(0))
@@ -259,7 +279,7 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
         index, totals, counts, cap_totals, assignments = current
         # Same position and capped progress: keep only the path with the better narrowness/surplus tiebreak.
         key = (index, tuple(min(x, target) for x, target in zip(totals, minimums)), tuple(min(x, target) for x, target in zip(counts, minimum_counts)), cap_totals)
-        tiebreak = (breadth_score(totals), -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)))
+        tiebreak = (breadth_score(totals), -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)), -open_project_rank(assignments))
         if key in memo and memo[key] >= tiebreak:
             continue
         memo[key] = tiebreak
@@ -267,10 +287,10 @@ def allocate(curriculum, catalogue, attempts, *, node_budget=100000, time_budget
         satisfied = satisfied_roots(totals, counts)
         score = (sum(met(i, totals, counts) for i in mandatory_leaves), satisfied == len(compiled_roots),
                  sum(min(x, target) for x, target in zip(totals, minimums)), sum(min(x, target) for x, target in zip(counts, minimum_counts)),
-                 breadth_score(totals), -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)))
+                 breadth_score(totals), -sum(max(Decimal(0), x - t) for x, t in zip(totals, minimums)), -open_project_rank(assignments))
         if best_score is None or score > best_score:
             best_score, best = score, current
-        if index >= len(flexible) or bound(index, totals, counts, cap_totals) <= best_score:
+        if index >= len(flexible) or bound(index, totals, counts, cap_totals, assignments) <= best_score:
             continue
         if not any(open_leaf(i, totals, counts) for _, options, _ in flexible[index:] for i in options):
             continue
