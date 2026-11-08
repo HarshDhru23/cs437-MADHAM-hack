@@ -110,14 +110,15 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 
 | Method / path | Payload and response |
 | --- | --- |
-| GET `/session` | CSRF bootstrap and authenticated user summary or null. |
+| GET `/session` | CSRF bootstrap and authenticated user summary or null, plus `sign_in: {google_client_id, google_domain, password}` (D-46): what the sign-in page offers. |
+| POST `/auth/google` | `{credential}` (D-46). Public. Sign in with a Google ID token: accepted only for a verified `@iitgn.ac.in` address that matches Google's domain claim. 201 on a first sign-in (account created), 200 after; 401 token not accepted, 403 `NOT_IITGN_ACCOUNT` / `ACCOUNT_CONFLICT`, 429 throttled, 503 Google unreachable, 404 when no client ID is configured. While it is configured `POST /auth/signup` and `/auth/login` answer 403 `PASSWORD_SIGN_IN_DISABLED`. |
 | POST `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/password` | Django-backed account actions. Standard password validation; throttle attempts; no plaintext password persistence/logging. |
 | GET `/curricula/cse-2024`, `/catalogue` | Reviewed requirements/catalogue with source and data-gap status. Catalogue supports code/title/basket/department query. |
 | GET/PATCH `/record` | Return current owned record / accept validated edits with `expected_revision`. Profile/cohort remains supported. |
 | POST `/imports/preview` | Multipart file for PDF or JSON `{kind:"ims", text:..., expected_revision:N}`; creates owned expiring preview, no accepted-record change. |
 | POST `/imports/{id}/commit` | `{expected_revision, resolutions, accepted_candidate_ids}`; recompute/validate proposed record and commit transactionally; return new revision. Server rejects foreign/expired previews and unresolved blocking fields. |
 | POST `/analysis` | `{record_revision, plan_id?, plan_revision?, award_ids}`; server loads owned state and reviewed rules. Return audit, performance and validations. No client-supplied calculated totals are trusted. |
-| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. |
+| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. Every plan read or saved carries `status: {valid, problems, uncovered_credits}` (D-45), computed from the plan and the current record. |
 | GET `/offerings?term_id=...` | Snapshot coverage/evidence, offerings, section/meeting groups and unknown state when absent. Committed official snapshots are served without a load step (D-22). |
 | GET `/calendar` | Published academic calendar terms (classes, quads, exams, recess, events; end-exclusive) and D-25 internship presets; `CALENDAR_MISSING` for unpublished years. |
 | POST `/plans/{id}/validate` | Evaluate persisted plan at supplied revisions, with no state change. |

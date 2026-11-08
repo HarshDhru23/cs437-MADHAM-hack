@@ -9,9 +9,31 @@ from coursepath.issues import issue
 FIELDS = {'normalized_code', 'title', 'credits', 'grade', 'term_id', 'instance_id'}
 
 
-def reconcile_import(record, preview, resolutions):
+def is_imported(attempt):
+    """A row that came from an import (it carries its source); a row the student typed in has none."""
+    return bool(attempt.get('source_key') or attempt.get('source_refs'))
+
+
+def _same_attempt(a, b):
+    return (a['term_id'], a['normalized_code'], a.get('instance_id')) == (b['term_id'], b['normalized_code'], b.get('instance_id'))
+
+
+def reconcile_import(record, preview, resolutions, replace_imported=False):
+    """Compare an import with the saved record and build the record it would produce.
+
+    With `replace_imported`, a new import replaces what an earlier import saved: the previously imported rows are not compared
+    one by one for conflicts. A saved imported row that the new import repeats unchanged stays as it is (with any correction the
+    student made); one the import changes is replaced by the incoming row; one the import no longer has is removed. Rows the
+    student typed in themselves are never touched by that, and a changed one still needs an explicit decision."""
     proposed = deepcopy(record)
     attempts = proposed.setdefault('attempts', [])
+    prior = []
+    if replace_imported:
+        prior = [a for a in attempts if is_imported(a)]
+        attempts[:] = [a for a in attempts if not is_imported(a)]
+        kept = [a for a in prior if any(a.get('source_key') == e.get('source_key') or _same_attempt(a, e) for e in preview.get('excluded_attempts', []))]
+        attempts.extend(kept)  # a row the student left out of this review keeps its saved version
+        prior = [a for a in prior if a not in kept]
     by_source = {a.get('source_key', a['id']): a for a in attempts}
     issues, diff = [], []
     candidate_profile = preview.get('profile_candidates', {})
@@ -46,6 +68,21 @@ def reconcile_import(record, preview, resolutions):
         same_term_code = [a for a in preview['candidate_attempts'] if a['term_id'] == incoming['term_id'] and a['normalized_code'] == incoming['normalized_code']]
         if len(same_term_code) > 1 and not row.get('instance_id'):
             issues.append(issue('DUPLICATE_SOURCE_ROW', 'Assign reviewed instance IDs or omit repeated source rows.', 'error', [row['id']]))
+        if replace_imported:
+            before = next((a for a in prior if a.get('source_key') == row.get('source_key')), None) or next((a for a in prior if _same_attempt(a, row)), None)
+            if before is not None:
+                prior.remove(before)
+                if all(before.get(field) == row.get(field) for field in FIELDS) or (before.get('user_corrections') and before.get('original') == incoming.get('original') and not edits):
+                    attempts.append(before)
+                    diff.append({'candidate_id': incoming['id'], 'attempt_id': before['id'], 'status': 'unchanged'})
+                else:
+                    why = str(resolution.get('justification', '')).strip() or 'Replaced by a newer import'
+                    row['id'] = before['id']  # the saved attempt keeps its identity, so anything that points at it still does
+                    row['user_corrections'] = before.get('user_corrections', []) + row['user_corrections'] + [
+                        {'field': 'reimport', 'raw': {k: before.get(k) for k in FIELDS}, 'accepted': {k: row.get(k) for k in FIELDS}, 'justification': why}]
+                    attempts.append(row)
+                    diff.append({'candidate_id': incoming['id'], 'attempt_id': row['id'], 'status': 'replaced', 'existing': {k: before.get(k) for k in FIELDS}})
+                continue
         existing = by_source.get(row.get('source_key', row['id']))
         if existing is None:
             cross_source = [a for a in attempts if (a['term_id'], a['normalized_code'], a.get('instance_id')) == (row['term_id'], row['normalized_code'], row.get('instance_id'))]
@@ -71,6 +108,7 @@ def reconcile_import(record, preview, resolutions):
         else:
             attempts.append(row)
             diff.append({'candidate_id': row['id'], 'attempt_id': row['id'], 'status': 'new'})
+    diff.extend({'candidate_id': None, 'attempt_id': a['id'], 'status': 'removed', 'existing': {k: a.get(k) for k in FIELDS}} for a in prior)
     from coursepath.imports.normalization import summarize_candidates
     extracted = summarize_candidates(deepcopy(preview))['extracted_controls']
     fields = {'earned_credits': 'reported_grade_earned_credits', 'performance_credits': 'performance_credits', 'grade_points': 'grade_points'}

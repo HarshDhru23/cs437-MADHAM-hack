@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser } from './helpers';
+import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flow 4 (A08, CP-23/24) on the real stack, against the committed official
@@ -43,8 +43,7 @@ test.describe.serial('timetable clashes', () => {
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page);
     await expect(semester(page, '2026–27 Semester I')).toContainText('Current term');
   });
 

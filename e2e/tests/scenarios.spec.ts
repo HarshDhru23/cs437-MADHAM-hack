@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser } from './helpers';
+import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flow 6 (aaryan.md A10) on the real stack: baseline clone -> hypothetical drop
@@ -56,8 +56,7 @@ test.describe.serial('scenarios and internship comparison', () => {
     expect(recordBefore.attempts).toHaveLength(7);
 
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page);
     await addCourse('2026–27 Semester I', 'CS 202');
     await addCourse('2026–27 Semester I', 'CS 330');
     await addCourse('2026–27 Semester II', 'CS 331');

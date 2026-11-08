@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { IMS_TEXT, login, semester, signup, uniqueUser } from './helpers';
+import { IMS_TEXT, login, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flows 2, 7 and 8 on the real stack: new account -> IMS paste -> review and
@@ -99,8 +99,7 @@ test.describe.serial('student flow', () => {
   test('create a plan, add and move a course with the keyboard, see server totals (CP-04/05)', async () => {
     const page = pageA;
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page);
     planUrl = page.url();
     for (const term of ['2026–27 Semester I', '2026–27 Semester II', '2027–28 Semester I', '2027–28 Semester II']) await expect(semester(page, term)).toBeVisible();
     await expect(semester(page, '2026–27 Semester I')).toContainText('Current term');

@@ -31,9 +31,19 @@ export interface SessionUser {
   username: string;
 }
 
+/** What the sign-in page offers (D-46). With a Google client ID only IITGN Google accounts sign in and the password forms are off. */
+export interface SignInOptions {
+  /** The public OAuth client ID for Google sign-in, or null when it is not configured. */
+  google_client_id: string | null;
+  google_domain: string;
+  /** Whether username and password sign-up and sign-in are offered. */
+  password: boolean;
+}
+
 export interface SessionData {
   csrf_token: string;
   user: SessionUser | null;
+  sign_in?: SignInOptions;
 }
 
 export interface SourceReference {
@@ -139,9 +149,11 @@ export interface ExtractedControls {
 }
 
 export interface DiffEntry {
-  candidate_id: string;
+  /** null for a saved imported course the new import no longer has (status 'removed'). */
+  candidate_id: string | null;
   attempt_id?: string | null;
-  status: 'new' | 'unchanged' | 'conflicting' | string;
+  /** 'replaced': a saved imported course the new import changes; the new import replaces it. 'removed': it is not in the new import. */
+  status: 'new' | 'unchanged' | 'conflicting' | 'replaced' | 'removed' | string;
   existing?: Partial<CourseAttempt>;
   fields?: string[];
 }
@@ -360,9 +372,20 @@ export interface PlanPayload {
   semesters: PlannedSemester[];
 }
 
+/** D-45: a plan is valid when its check finds no error and no degree requirement is left uncovered. The server decides; a plan that is not valid can still be saved. */
+export interface PlanStatus {
+  valid: boolean;
+  /** Error-severity problems in the plan's check. */
+  problems: number;
+  /** Degree credits the plan leaves uncovered. */
+  uncovered_credits: DecimalString;
+}
+
 export interface AcademicPlan extends PlanPayload {
   id: string;
   revision: number;
+  /** Computed by the server from the plan and the current record whenever plans are read or saved. */
+  status?: PlanStatus;
 }
 
 export interface PerCourseValidation {
@@ -855,6 +878,7 @@ export interface PlanCheckRequirement {
 }
 
 export interface PlanCheck {
+  status: PlanStatus;
   validation: PlanValidation;
   degree: DegreeProgress;
   placeholder_credits: DecimalString;

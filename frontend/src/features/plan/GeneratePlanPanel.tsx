@@ -16,6 +16,7 @@ import { meterLevel, meterWidth, sumCredits } from './loadLevel';
 import { isNamedOnline, isOnline, nextOnlineId, OnlineCourseForm, onlinePlaceholder, type OnlineCourseChoice } from './OnlineCourseForm';
 import { plainIssues, type PlainIssue } from './plainIssues';
 import { PlanLoadStrip, type LoadCell } from './PlanLoadStrip';
+import { PlanStatusBadge, PlanStatusNote } from './PlanStatusNote';
 import { moreCredits, PlanProgress } from './PlanProgress';
 import { abortAfter, timeouts, usePlanCheck } from './usePlanCheck';
 import './plan.css';
@@ -214,7 +215,6 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
   }, [draft, check]);
   const codeFor = (id: string) => semesters.flatMap((s) => s.courses).find((c) => c.id === id)?.normalized_code;
   const issues = useMemo(() => plainIssues(check?.validation.issues ?? [], codeFor), [check, semesters]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hasError = issues.some((i) => i.severity === 'error');
   const limit = draft?.options.max_credits_per_term ?? DEFAULT_LIMIT;
   const visibleTerms = useMemo(() => [...new Set(semesters.map((s) => s.term_id))].sort(compareTerms), [semesters]);
   const hiddenTerms = [...new Set([...termChoices, ...(draft?.online_potential?.break_terms ?? [])])].filter((t) => !visibleTerms.includes(t)).sort(compareTerms);
@@ -459,9 +459,10 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
               ) : null}
             </div>
             <div className="pb-actions">
-              <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={busy || checking || hasError || stale || !!checkError || nameTooLong || (planned?.length ?? 0) === 0} aria-busy={saving}>
+              <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={busy || checking || stale || !!checkError || nameTooLong || (planned?.length ?? 0) === 0 || !check} aria-busy={saving}>
                 {saving ? 'Saving…' : 'Save as my plan'}
               </button>
+              {check && !checking ? <PlanStatusBadge status={check.status} /> : null}
               <button type="button" className="btn" onClick={resetDraft} disabled={!dirty || saving}>
                 Reset to generated plan
               </button>
@@ -670,7 +671,7 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
             </section>
           ) : null}
 
-          {hasError ? <p className="field-error">Fix the problems above to save.</p> : null}
+          {!stale && !checkError ? <PlanStatusNote status={check?.status} pending={checking} /> : null}
 
           <Dialog open={adding !== null} title={`Add course to ${adding ? formatTerm(adding) : ''}`} onClose={() => setAdding(null)} variant="drawer">
             {adding ? <CoursePicker term={adding} courses={catalogue.data?.courses ?? []} coverage={catalogue.data?.coverage ?? 'unknown'} onPick={(c) => addCourse(adding, c)} /> : null}

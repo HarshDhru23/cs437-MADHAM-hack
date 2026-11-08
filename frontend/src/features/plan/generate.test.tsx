@@ -35,7 +35,17 @@ const defaultRequirements = [
   row('open-electives', 'Open electives', 'Open electives', '16', '4', '12'),
 ];
 
-const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck => ({
+const withStatus = (check: Omit<PlanCheck, 'status'>): PlanCheck => ({
+  ...check,
+  status: {
+    valid: check.validation.issues.every((i) => i.severity !== 'error') && Number(check.uncovered_credits) <= 0,
+    problems: check.validation.issues.filter((i) => i.severity === 'error').length,
+    uncovered_credits: check.uncovered_credits,
+  },
+});
+
+const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck =>
+  withStatus({
   validation: emptyValidation,
   degree: { total_credits: '170', counted_credits: '100', remaining_credits: '70' },
   placeholder_credits: '4',
@@ -47,7 +57,7 @@ const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck => ({
     '2027-28-I': { planned_credits: '8', limit_credits: '28', available_credits: '20' },
   },
   ...change,
-});
+  });
 
 type Reply = { status?: number; data?: unknown; issues?: unknown[] };
 type Req = { body: unknown };
@@ -115,11 +125,10 @@ afterEach(() => {
 });
 
 describe('Generate plan entry points', () => {
-  it('is the first action on the empty Plan page, before "Create a plan", and manual planning stays', async () => {
+  it('is the only way to start a plan on the empty Plan page: no empty "My plan" to create', async () => {
     renderIndex(server());
     const generateButton = await screen.findByRole('button', { name: 'Generate plan' });
-    const create = await screen.findByRole('button', { name: 'Create a plan' });
-    expect(generateButton.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Create (a|another) plan/ })).not.toBeInTheDocument();
     expect(generateButton).toHaveClass('btn-primary');
   });
 
@@ -127,7 +136,7 @@ describe('Generate plan entry points', () => {
     const withPlans = server({ plans: [structuredClone(plan)] });
     const first = renderIndex(withPlans);
     expect(await screen.findByRole('button', { name: 'Generate plan' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create another plan' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Create another plan' })).not.toBeInTheDocument();
     first.unmount();
     const s = server();
     renderApp(<PlanPage />, { fetchImpl: s.fetchImpl, route: `/plan/${plan.id}`, path: '/plan/:plan_id' });
@@ -444,7 +453,8 @@ describe('Every change is checked and the answer is shown at once', () => {
     expect(within(summer).getByText(/Over the 10-credit limit/)).toBeInTheDocument();
     expect(within(summer).getByText('This semester is over the 10-credit limit.')).toBeInTheDocument();
     expect(within(draft).getByText(/This uses 12 credits of online courses taken in the breaks/)).toBeInTheDocument();
-    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeDisabled();   // an over-limit summer blocks saving like any error
+    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeEnabled();   // an over-limit summer makes the plan not valid, and it can still be saved
+    expect(within(draft).getByTestId('plan-validity')).toHaveTextContent('Not a valid plan yet');
   });
 
   it('shows each semester total out of 28 and how many more credits it can take, from the server, never a browser-side sum', async () => {
@@ -641,8 +651,8 @@ describe('Problems are shown where they belong, as soon as the check answers', (
     expect(later).toHaveTextContent('Semester total: 32 / 28 credits');
     expect(within(draft).queryByRole('region', { name: 'Problems with your plan' })).not.toBeInTheDocument(); // everything found its semester
     expect(draft.textContent).not.toMatch(/TIMETABLE_CONFLICT|OFFERING_NOT_IN_SNAPSHOT|LOAD_LIMIT|PLACEHOLDER_UNRESOLVED|Select actual courses/);
-    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeDisabled();
-    expect(within(draft).getByText('Fix the problems above to save.')).toBeInTheDocument();
+    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeEnabled(); // not valid, but it can still be saved
+    expect(within(draft).getByTestId('plan-validity')).toHaveTextContent(/Not a valid plan yet: 3 problems to fix/);
   });
 
   it('a problem that belongs to no semester is listed under "Check these"', async () => {
@@ -673,7 +683,7 @@ describe('Problems are shown where they belong, as soon as the check answers', (
     expect(list).toHaveTextContent('ZZ 421 is not offered this semester.');
   });
 
-  it('a semester that is over 28 credits is explained in plain words and the plan cannot be saved', async () => {
+  it('a semester that is over 28 credits is explained in plain words and the plan is marked not valid', async () => {
     const over = checkResult({
       validation: {
         ...emptyValidation,
@@ -689,9 +699,9 @@ describe('Problems are shown where they belong, as soon as the check answers', (
     expect(card).toHaveTextContent('Semester total: 32 / 28 credits');
     expect(card).toHaveTextContent('This semester is over the 28-credit limit.');
     expect(draft).not.toHaveTextContent('LOAD_LIMIT');
-    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeDisabled();
-    expect(within(draft).getByText('Fix the problems above to save.')).toBeInTheDocument();
-    expect(s.count('POST', '/plans')).toHaveLength(0);
+    expect(within(draft).getByRole('button', { name: 'Save as my plan' })).toBeEnabled(); // not valid, but it can still be saved
+    expect(within(draft).getByTestId('plan-validity')).toHaveTextContent(/Not a valid plan yet: 1 problem to fix/);
+    expect(s.count('POST', '/plans')).toHaveLength(0); // nothing is saved until the student saves
   });
 
   it('warnings do not stop saving', async () => {
@@ -821,6 +831,30 @@ describe('Saving', () => {
     const body = saved[0]!.body as { label: string; semesters: unknown };
     expect(body.semesters).toEqual(generation.semesters);
     expect(body.label).toBe('Generated plan'); // the student may rename it; D-42 replaces the old dated default
+  });
+
+  it('a valid plan says so beside Save, and the status follows each change the server checks', async () => {
+    const s = server({ check: () => ({ data: checkResult({ uncovered_credits: '0', requirements: defaultRequirements.map((r) => ({ ...r, uncovered_credits: '0' })) }) }) });
+    const draft = await generate(s);
+    await settled(draft);
+    const note = await within(draft).findByText(/Valid plan\./);
+    expect(note.closest('[data-tone="success"]')).not.toBeNull();
+    expect(draft).not.toHaveTextContent('Not a valid plan yet');
+    expect(within(draft).getByRole('button', { name: 'Save as my plan' }).parentElement).toHaveTextContent('Valid');
+  });
+
+  it('a plan that is not valid (credits still uncovered) can still be saved, and says why before it is', async () => {
+    const s = server(); // the default check leaves 66 credits uncovered
+    const draft = await generate(s);
+    await settled(draft);
+    const note = within(draft).getByTestId('plan-validity');
+    expect(note).toHaveTextContent('Not a valid plan yet');
+    expect(note).toHaveTextContent('66 credits of your degree not covered yet');
+    expect(note).toHaveTextContent('You can still save it');
+    expect(within(draft).getByRole('button', { name: 'Save as my plan' }).parentElement).toHaveTextContent('Not valid');
+    await userEvent.click(within(draft).getByRole('button', { name: 'Save as my plan' }));
+    await screen.findByText('navigated-away');
+    expect(s.count('POST', '/plans')).toHaveLength(1);
   });
 
   it('a double click on Save creates one plan, not two', async () => {

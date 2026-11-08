@@ -82,9 +82,54 @@ def spa(request, path=''):
     return result
 
 
+def sign_in_options():
+    """What the sign-in page offers (D-46). A configured Google client ID turns Google sign-in on and password sign-up off."""
+    client = settings.COURSEPATH_GOOGLE_CLIENT_ID
+    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
+
+
 @endpoint({'GET'}, public=True)
 def session(request):
-    return response({'csrf_token': get_token(request), 'user': {'id': str(request.user.pk), 'username': request.user.username} if request.user.is_authenticated else None})
+    return response({'csrf_token': get_token(request), 'user': {'id': str(request.user.pk), 'username': request.user.username} if request.user.is_authenticated else None,
+                     'sign_in': sign_in_options()})
+
+
+def verify_google_credential(credential):
+    """The claims of a Google ID token meant for this app, or an exception. Google's own library checks the signature, the audience (our client ID),
+    the issuer and the expiry. Tests replace this function; they never reach Google."""
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
+    return id_token.verify_oauth2_token(credential, google_requests.Request(), settings.COURSEPATH_GOOGLE_CLIENT_ID, clock_skew_in_seconds=10)
+
+
+def _google_sign_in(request, credential):
+    from google.auth.exceptions import GoogleAuthError, TransportError
+    domain = settings.COURSEPATH_GOOGLE_DOMAIN
+    if not isinstance(credential, str) or not 20 <= len(credential) <= 4096:
+        raise ValueError('Invalid Google credential')
+    try:
+        claims = verify_google_credential(credential)
+    except TransportError:
+        return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
+    except (ValueError, GoogleAuthError):
+        return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
+    email = claims.get('email')
+    # `hd` is the Google Workspace domain the account belongs to; the address must agree with it, and Google must have verified the address.
+    if not isinstance(email, str) or claims.get('email_verified') is not True or claims.get('hd') != domain or not email.lower().endswith('@' + domain):
+        return response(issues=[issue('NOT_IITGN_ACCOUNT', f'Sign in with your IITGN Google account (name@{domain}).', 'error')], status=403)
+    email = email.lower()
+    with transaction.atomic():
+        user = User.objects.filter(username=email).first()
+        if user is None:
+            user = User.objects.create_user(username=email, email=email)  # no password: this account signs in with Google only
+            AcademicRecord.objects.create(owner=user)
+            created = True
+        else:
+            created = False
+            if user.has_usable_password():
+                return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
+    login(request, user)
+    return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
 
 
 @transaction.atomic
@@ -101,7 +146,16 @@ def throttled(request):
 @endpoint({'POST'}, public=True)
 def auth(request, action):
     payload = request.payload
+    google = bool(settings.COURSEPATH_GOOGLE_CLIENT_ID)
+    if action == 'google':
+        if not google:
+            raise Http404
+        if throttled(request):
+            return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
+        return _google_sign_in(request, payload.get('credential'))
     if action in {'signup', 'login'}:
+        if google and (action == 'signup' or not settings.COURSEPATH_ALLOW_PASSWORD_LOGIN):
+            return response(issues=[issue('PASSWORD_SIGN_IN_DISABLED', f'Sign in with your IITGN Google account (name@{settings.COURSEPATH_GOOGLE_DOMAIN}).', 'error')], status=403)
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
         username, password = payload.get('username'), payload.get('password')
@@ -166,24 +220,26 @@ def validated_plan(payload):
 
 @endpoint({'GET', 'POST'})
 def plans(request):
+    record = get_object_or_404(AcademicRecord, owner=request.user)
     if request.method == 'GET':
-        return response([plan_data(p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
+        return response([_plan_with_status(request.user, record, p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
     stored = AcademicPlan.objects.create(owner=request.user, payload=validated_plan(request.payload))
-    return response({**plan_data(stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
+    return response({**_plan_with_status(request.user, record, stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
 
 
 @endpoint({'GET', 'PATCH', 'DELETE'})
 def plan_detail(request, plan_id):
     stored = get_object_or_404(AcademicPlan, pk=plan_id, owner=request.user)
     if request.method == 'GET':
-        return response(plan_data(stored))
+        return response(_plan_with_status(request.user, get_object_or_404(AcademicRecord, owner=request.user), stored))
     expected = expected_revision(request.payload)
     if request.method == 'DELETE':
         if not AcademicPlan.objects.filter(pk=stored.pk, owner=request.user, revision=expected).delete()[0]:
             raise RevisionConflict(AcademicPlan.objects.get(pk=stored.pk, owner=request.user).revision)
         return response()
     result = update_plan(stored, expected, validated_plan(request.payload))
-    return response({**result, 'validation': _validate_owned_plan(request.user, stored)})
+    record = get_object_or_404(AcademicRecord, owner=request.user)
+    return response({**result, 'status': plan_status(_plan_check(request.user, record, stored.payload)), 'validation': _validate_owned_plan(request.user, stored)})
 
 
 @endpoint({'POST'})
@@ -213,7 +269,7 @@ def import_preview(request):
         raise RevisionConflict(stored.revision)
     if not parsed['candidate_attempts']:
         return response(parsed, parsed['issues'], 422)
-    proposed = reconcile_import(record_data(stored), parsed, {})
+    proposed = reconcile_import(record_data(stored), parsed, {}, replace_imported=True)
     ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision,
                                            payload=parsed, expires_at=timezone.now() + timedelta(hours=1))
@@ -242,11 +298,11 @@ def import_commit(request, preview_id):
     resolutions = request.payload.get('resolutions', {})
     if not isinstance(resolutions, dict) or set(resolutions) - ({a['id'] for a in candidates} | {'_totals', '_unparsed'}):
         raise ValueError('Invalid resolution targets')
-    parsed = {**preview.payload, 'candidate_attempts': [a for a in candidates if a['id'] in selected]}
-    result = reconcile_import(record_data(stored), parsed, resolutions)
+    parsed = {**preview.payload, 'candidate_attempts': [a for a in candidates if a['id'] in selected], 'excluded_attempts': [a for a in candidates if a['id'] not in selected]}
+    result = reconcile_import(record_data(stored), parsed, resolutions, replace_imported=True)
     if any(i['severity'] == 'error' for i in result['issues']):
         return response({'diff': result['diff']}, result['issues'], 422)
-    reported = list(stored.reported_controls)
+    reported = []  # the totals an earlier import printed described the rows this import replaces
     if preview.payload.get('reported_controls'):
         reported.append({'preview_id': str(preview.pk), 'record_revision_at_import': expected + 1, 'controls': preview.payload['reported_controls'],
                          'source_refs': list({r['id'] for a in candidates for r in a['source_refs']})})
@@ -404,23 +460,14 @@ def plan_validate(request, plan_id):
     return response(_validate_owned_plan(request.user, plan))
 
 
-@endpoint({'POST'})
-def plans_check(request):
-    """Check an unsaved plan (for example an edited generated draft): the same validation as a saved plan, plus the degree credits it would
-    cover. Saves nothing."""
-    from coursepath.degree_audit import evaluate_audit
-    stored = get_object_or_404(AcademicRecord, owner=request.user)
-    if set(request.payload) - {'record_revision', 'semesters'}:
-        raise ValueError('Unsupported plan check fields')
-    if request.payload.get('record_revision') != stored.revision:
-        raise RevisionConflict(stored.revision)
-    from coursepath.degree_audit import requirement_progress
+def _plan_check(user, stored, payload):
+    """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
+    from coursepath.degree_audit import evaluate_audit, requirement_progress
     from coursepath.plan_generation import term_cap
-    payload = validated_plan({'semesters': request.payload.get('semesters')})
+    from coursepath.online_credits import count_online
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
-    from coursepath.online_credits import count_online
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
     held = {}
     for semester in payload['semesters']:
@@ -435,16 +482,41 @@ def plans_check(request):
         left = decimal_value(row['remaining_credits']) - covered
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
-    validation = _validate_payload(request.user, payload, simple_load=True)
+    validation = _validate_payload(user, payload, simple_load=True)
     validation['issues'] = validation['issues'] + online['issues']
     load = {}
     for term, row in validation['workload'].items():
         limit = term_cap(term)
         planned = decimal_value(row['target_credits'])
         load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
-    return response({'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
-                     'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
-                     'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}})
+    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
+            'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
+            'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+
+
+def plan_status(check):
+    """D-45: a plan is valid when its check finds no error and the plan leaves no degree requirement uncovered. A plan that is not valid can still be saved."""
+    problems = sum(1 for i in check['validation']['issues'] if i['severity'] == 'error')
+    uncovered = decimal_value(check['uncovered_credits'])
+    return {'valid': problems == 0 and uncovered == 0, 'problems': problems, 'uncovered_credits': decimal_string(uncovered)}
+
+
+def _plan_with_status(user, stored, plan):
+    return {**plan_data(plan), 'status': plan_status(_plan_check(user, stored, plan.payload))}
+
+
+@endpoint({'POST'})
+def plans_check(request):
+    """Check an unsaved plan (for example an edited generated draft): the same validation as a saved plan, plus the degree credits it would
+    cover and whether the plan is valid. Saves nothing."""
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    if set(request.payload) - {'record_revision', 'semesters'}:
+        raise ValueError('Unsupported plan check fields')
+    if request.payload.get('record_revision') != stored.revision:
+        raise RevisionConflict(stored.revision)
+    payload = validated_plan({'semesters': request.payload.get('semesters')})
+    check = _plan_check(request.user, stored, payload)
+    return response({**check, 'status': plan_status(check)})
 
 
 @endpoint({'POST'})

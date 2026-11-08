@@ -1,3 +1,4 @@
+import copy
 from copy import deepcopy
 from datetime import timedelta
 from unittest.mock import patch
@@ -81,3 +82,44 @@ class ImportAPITests(AccountAPIMixin, TestCase):
         result = self.request(self.client, 'post', f"/imports/{preview['id']}/commit", {'expected_revision': 0, 'accepted_candidate_ids': [a['id'] for a in preview['candidate_attempts']], 'resolutions': {}})
         self.assertEqual(result.status_code, 422)
         self.assertTrue(any(i['code'] == 'COHORT_MISMATCH' for i in result.json()['issues']))
+
+
+class ReimportReplacesTests(AccountAPIMixin, TestCase):
+    """CP-11: importing again replaces what the earlier import saved; it never fails on the saved copy of the same transcript."""
+
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=True)
+        self.signup(self.client, 'reimport-owner')
+
+    def import_text(self, text, revision):
+        preview = self.request(self.client, 'post', '/imports/preview', {'kind': 'ims', 'text': text, 'expected_revision': revision})
+        self.assertEqual(preview.status_code, 201, preview.content)
+        data = preview.json()
+        self.assertEqual([i for i in data['issues'] if i['severity'] == 'error'], [])
+        commit = self.request(self.client, 'post', f"/imports/{data['data']['id']}/commit",
+                              {'expected_revision': revision, 'accepted_candidate_ids': [a['id'] for a in data['data']['candidate_attempts']], 'resolutions': {}})
+        self.assertEqual(commit.status_code, 200, commit.content)
+        return data['data'], commit.json()['data']
+
+    def test_changed_grade_and_a_dropped_row_need_no_resolution(self):
+        self.import_text(TABLE, 0)
+        revised = TABLE.replace('\tA\n', '\tB\n', 1)
+        lines = revised.rstrip('\n').split('\n')[:-1]   # SC 372 is no longer in the transcript
+        preview, record = self.import_text('\n'.join(lines) + '\n', 1)
+        statuses = sorted(d['status'] for d in preview['diff'])
+        self.assertEqual(statuses, ['removed', 'replaced', 'unchanged', 'unchanged', 'unchanged'])
+        codes = sorted(a['normalized_code'] for a in record['attempts'])
+        self.assertEqual(codes, ['CS 299', 'CS 299', 'ES 242(N)', 'PE 101'])
+        self.assertEqual(next(a for a in record['attempts'] if a['title'] == 'Project & Research')['grade'], 'B')
+
+    def test_the_same_paste_twice_and_a_student_typed_row_survive(self):
+        _, first = self.import_text(TABLE, 0)
+        rows = copy.deepcopy(first['attempts'])
+        typed = {'id': 'manual-by-student', 'normalized_code': 'ZZ 900', 'original_code': 'ZZ 900', 'title': 'Typed in by the student', 'credits': '2', 'grade': 'B',
+                 'term_id': '2023-24-I', 'completion_status': 'completed', 'learning_designation': 'degree', 'course_version_id': None, 'instance_id': None,
+                 'source_refs': [], 'user_corrections': [], 'approval_refs': []}
+        saved = self.request(self.client, 'patch', '/record', {'expected_revision': 1, 'attempts': rows + [typed]})
+        self.assertEqual(saved.status_code, 200, saved.content)
+        _, again = self.import_text(TABLE, 2)
+        self.assertEqual(len(again['attempts']), 6)
+        self.assertIn('ZZ 900', [a['normalized_code'] for a in again['attempts']])

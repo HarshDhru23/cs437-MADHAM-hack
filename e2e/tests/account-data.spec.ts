@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { expectNoHorizontalOverflow, IMS_TEXT, PASSWORD, semester, signup, uniqueUser } from './helpers';
+import { expectNoHorizontalOverflow, IMS_TEXT, PASSWORD, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flow 8 on the real stack (A11, CP-30, CP-32): backup download, data deletion
@@ -43,8 +43,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page);
     await semester(page, '2026–27 Semester I').getByRole('button', { name: 'Add course to 2026–27 Semester I' }).click();
     const dialog = page.getByRole('dialog', { name: /Add course to 2026–27 Semester I/ });
     await dialog.getByLabel('Course code').fill('ZZ 330');

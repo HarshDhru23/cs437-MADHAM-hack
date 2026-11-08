@@ -72,17 +72,17 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
   const [pending, setPending] = useState(false);
   const [commitError, setCommitError] = useState<ApiError | null>(null);
 
-  const diffById = useMemo(() => new Map(preview.diff.map((d) => [d.candidate_id, d])), [preview.diff]);
+  const diffById = useMemo(() => new Map(preview.diff.flatMap((d) => (d.candidate_id ? [[d.candidate_id, d] as const] : []))), [preview.diff]);
   // The server's diff names the saved attempt; its values come from the accepted record.
   const savedById = useMemo(() => new Map((record.data?.attempts ?? []).map((a) => [a.id, a])), [record.data]);
   const allIssues: Issue[] = [...previewIssues, ...(commitError?.issues ?? [])];
   const issuesFor = (id: string) => visibleIssues(allIssues.filter((i) => i.entity_refs.includes(id)));
-  const conflicts = preview.diff.filter((d) => d.status === 'conflicting');
+  const conflicts = preview.diff.filter((d): d is typeof d & { candidate_id: string } => d.status === 'conflicting' && d.candidate_id !== null);
   const needsTotalsAck = allIssues.some((i) => i.code === 'IMPORT_TOTAL_MISMATCH');
   const flagged = (c: CourseAttempt) => issuesFor(c.id).length > 0 || diffById.get(c.id)?.status === 'conflicting' || !included.has(c.id) || Boolean(corrections[c.id]);
   const visible = filter === 'all' ? candidates : candidates.filter(flagged);
   const terms = [...new Set(candidates.map((c) => c.term_id))].sort(compareTerms);
-  const counts = { new: 0, unchanged: 0, conflicting: 0 } as Record<string, number>;
+  const counts = { new: 0, unchanged: 0, conflicting: 0, replaced: 0, removed: 0 } as Record<string, number>;
   for (const d of preview.diff) counts[d.status] = (counts[d.status] ?? 0) + 1;
 
   const blockers: string[] = [];
@@ -134,10 +134,25 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
       <Steps current="review" />
       <h1>Review imported rows</h1>
       <p>Check the courses below, fix anything that is wrong, then confirm. Nothing is saved until you confirm.</p>
-      {preview.diff.length > 0 && (counts.unchanged || counts.conflicting) ? (
+      {preview.diff.length > 0 && (counts.unchanged || counts.conflicting || counts.replaced || counts.removed) ? (
         <p className="muted">
           Compared with your saved record:{' '}
-          {[counts.new ? `${counts.new} new` : '', counts.unchanged ? `${counts.unchanged} already saved` : '', counts.conflicting ? `${counts.conflicting} changed` : ''].filter(Boolean).join(', ')}.
+          {[
+            counts.new ? `${counts.new} new` : '',
+            counts.unchanged ? `${counts.unchanged} already saved` : '',
+            counts.replaced ? `${counts.replaced} updated` : '',
+            counts.conflicting ? `${counts.conflicting} changed` : '',
+            counts.removed ? `${counts.removed} no longer in this import` : '',
+          ]
+            .filter(Boolean)
+            .join(', ')}
+          .
+        </p>
+      ) : null}
+      {counts.replaced || counts.removed ? (
+        <p className="callout" data-tone="warning" data-testid="reimport-replaces">
+          Confirming replaces the courses saved from your earlier import with the ones below
+          {counts.removed ? `; ${counts.removed === 1 ? '1 saved course that is not in this import is removed' : `${counts.removed} saved courses that are not in this import are removed`}` : ''}. Courses you added yourself are kept.
         </p>
       ) : null}
 
@@ -374,7 +389,7 @@ function CandidateRow({
           {changed('term_id') ? <div>Term: {show('term_id', formatTerm(value('term_id')))}</div> : null}
         </td>
         <td data-label="Status">
-          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : 'neutral'} symbol={diff.status === 'new' ? '+' : undefined}>{diff.status === 'conflicting' ? 'Changed' : humanize(diff.status)}</Badge> : null}{' '}
+          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : 'neutral'} symbol={diff.status === 'new' ? '+' : undefined}>{diff.status === 'conflicting' ? 'Changed' : diff.status === 'replaced' ? 'Updated' : humanize(diff.status)}</Badge> : null}{' '}
           {issues.some((i) => i.code === 'UNMATCHED_COURSE') ? <Badge tone="unknown" symbol="?">Needs review</Badge> : null}
           {issues.map((i, n) => (
             <div key={n}>

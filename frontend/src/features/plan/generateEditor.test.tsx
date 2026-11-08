@@ -34,7 +34,17 @@ const requirements = [
   row('open-electives', 'Open electives', 'Open electives', '16', '4', '12'),
 ];
 
-const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck => ({
+const withStatus = (check: Omit<PlanCheck, 'status'>): PlanCheck => ({
+  ...check,
+  status: {
+    valid: check.validation.issues.every((i) => i.severity !== 'error') && Number(check.uncovered_credits) <= 0,
+    problems: check.validation.issues.filter((i) => i.severity === 'error').length,
+    uncovered_credits: check.uncovered_credits,
+  },
+});
+
+const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck =>
+  withStatus({
   validation: emptyValidation,
   degree: { total_credits: '170', counted_credits: '100', remaining_credits: '70' },
   placeholder_credits: '4',
@@ -47,7 +57,7 @@ const checkResult = (change: Partial<PlanCheck> = {}): PlanCheck => ({
     '2026-27-SUMMER': { planned_credits: '0', limit_credits: '10', available_credits: '10' },
   },
   ...change,
-});
+  });
 
 const potential = (change: Partial<PlanGeneration['online_potential']> = {}): PlanGeneration['online_potential'] => ({
   credits_available: '16',

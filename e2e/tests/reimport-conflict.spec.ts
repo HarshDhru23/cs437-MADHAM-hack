@@ -2,9 +2,9 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { signup, uniqueUser } from './helpers';
 
 /**
- * Flow 3 remainder and flow 7 on the real stack (CP-11, CP-29): a changed grade
- * on re-import is a conflict that needs an explicit decision and never creates a
- * duplicate attempt; a commit against a record that changed elsewhere is refused
+ * Flow 3 remainder and flow 7 on the real stack (CP-11, CP-29): a new import
+ * replaces what the earlier import saved (changed grades are updated, missing
+ * courses are removed) and never creates a duplicate attempt; a commit against a record that changed elsewhere is refused
  * (409) and leaves the saved record untouched. Synthetic rows only.
  */
 const HEADER = 'Academic Period\tCourse No\tCourse Name\tCredit\tGrade';
@@ -28,24 +28,18 @@ test.describe.serial('re-import conflicts', () => {
     page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
   });
 
-  test('a changed grade must be resolved explicitly and never duplicates the attempt (CP-11)', async () => {
+  test('importing again replaces the earlier import and never duplicates an attempt (CP-11)', async () => {
     await signup(page, uniqueUser('e2e_reimport'));
     await parseIms(page, paste('B'));
     await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
     await page.getByRole('button', { name: 'Confirm record' }).click();
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
-    // The same source row comes back with a revised grade.
+    // The same transcript comes back with a revised grade: the new import replaces the earlier one, with no conflict to resolve.
     await parseIms(page, paste('A-'));
-    await expect(page.getByText(/Compared with your saved record: 1 already saved, 1 changed/)).toBeVisible();
+    await expect(page.getByText(/Compared with your saved record: 1 already saved, 1 updated/)).toBeVisible();
+    await expect(page.getByTestId('reimport-replaces')).toContainText('replaces the courses saved from your earlier import');
     const confirm = page.getByRole('button', { name: 'Confirm record' });
-    await expect(confirm).toBeDisabled();
-    await expect(page.getByRole('region', { name: 'Confirm' })).toContainText('Resolve the conflict for ZZ 104');
-    const decision = page.getByRole('radiogroup', { name: 'Resolve conflict for ZZ 104' });
-    await expect(page.locator('.callout').filter({ has: decision })).toContainText('Saved: Synthetic Calculus, 2 credits, grade B');
-    await decision.getByRole('radio', { name: /Use the imported version/ }).check();
-    await expect(confirm).toBeDisabled();
-    await page.getByLabel('Reason for using the imported version').fill('Grade revised after re-evaluation');
     await expect(confirm).toBeEnabled();
     await confirm.click();
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
@@ -53,20 +47,22 @@ test.describe.serial('re-import conflicts', () => {
     await page.goto('/record');
     await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
     await expect(calculusRow(page)).toContainText('A-');
-    await page.getByRole('button', { name: /Details for ZZ 104/ }).click();
-    const source = page.getByRole('dialog', { name: 'Details for ZZ 104' });
-    await expect(source).toContainText('Re-import: grade “B” → “A-” — Grade revised after re-evaluation');
-    await expect(source).not.toContainText('[object Object]');
-    await page.keyboard.press('Escape');
 
-    // Another revision: keeping the saved version leaves the accepted grade alone.
-    await parseIms(page, paste('C'));
-    await page.getByRole('radiogroup', { name: 'Resolve conflict for ZZ 104' }).getByRole('radio', { name: /Keep my saved version/ }).check();
+    // A course the newer import no longer has is removed, and nothing is duplicated.
+    await page.goto('/record/import');
+    await page.getByRole('tab', { name: 'Paste IMS grades' }).click();
+    await page.getByLabel('IMS grade table').fill([HEADER, '2024-25 Semester II\tZZ 104\tSynthetic Calculus\t2\tA-'].join('\n'));
+    await page.getByRole('button', { name: 'Parse grades' }).click();
+    await expect(page.getByText(/1 already saved, 1 no longer in this import/)).toBeVisible();
     await page.getByRole('button', { name: 'Confirm record' }).click();
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
     await page.goto('/record');
-    await expect(calculusRow(page)).toContainText('A-');
+    await expect(page.getByRole('region', { name: 'Academic history' })).not.toContainText('ZZ 101');
     await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
+    // The next test re-imports the original two rows against this record.
+    await parseIms(page, paste('A-'));
+    await page.getByRole('button', { name: 'Confirm record' }).click();
+    await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
   });
 
   test('a commit against a record saved in another tab is refused and changes nothing (409)', async () => {

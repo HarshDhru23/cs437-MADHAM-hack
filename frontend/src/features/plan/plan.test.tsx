@@ -418,36 +418,27 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
 });
 
 describe('PlanIndexPage', () => {
-  it('creates a plan from the next term through semester 8 when none exists', async () => {
-    const created: PlanPayload[] = [];
-    const { fetchImpl } = fakeApi({
-      'GET /record': () => ({ data: record }),
-      'GET /plans': () => ({ data: [] }),
-      'POST /plans': (req) => {
-        created.push(req.body as PlanPayload);
-        return { status: 201, data: { ...(req.body as PlanPayload), id: 'new-plan', revision: 0, validation: { workload: {}, per_course: [], issues: [], meeting_check_status: 'not_checked', completion_term: null } } };
-      },
-    });
+  it('has no button that makes an empty "My plan": plans come from Generate plan', async () => {
+    const { fetchImpl } = fakeApi({ 'GET /record': () => ({ data: record }), 'GET /plans': () => ({ data: [] }) });
     renderApp(<PlanIndexPage />, { fetchImpl, route: '/plan', path: '/plan' });
-    await userEvent.click(await screen.findByRole('button', { name: 'Create a plan' }));
-    await screen.findByText('navigated-away');
-    expect(created[0]?.semesters.map((x) => x.term_id)).toEqual(['2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II']);
+    expect(await screen.findByText(/You have no saved plans yet/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Create (a|another) plan/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('My plan')).not.toBeInTheDocument();
   });
 
-  it('starts a new plan at the semester currently in progress, not after it', async () => {
-    const created: PlanPayload[] = [];
-    const inProgress = { ...record, attempts: [...record.attempts, attempt({ id: 'a-now', normalized_code: 'ZZ 330', term_id: '2026-27-I', grade: '', completion_status: 'in_progress' })] };
+  it('shows "Valid" or "Not valid" beside each saved plan name, as the server says', async () => {
+    const saved = (id: string, label: string, status: { valid: boolean; problems: number; uncovered_credits: string }) => ({ id, revision: 0, label, semesters: [], status });
     const { fetchImpl } = fakeApi({
-      'GET /record': () => ({ data: inProgress }),
-      'GET /plans': () => ({ data: [] }),
-      'POST /plans': (req) => {
-        created.push(req.body as PlanPayload);
-        return { status: 201, data: { ...(req.body as PlanPayload), id: 'new-plan', revision: 0, validation: { workload: {}, per_course: [], issues: [], meeting_check_status: 'not_checked', completion_term: null } } };
-      },
+      'GET /record': () => ({ data: record }),
+      'GET /plans': () => ({ data: [saved('p-ok', 'Full plan', { valid: true, problems: 0, uncovered_credits: '0' }), saved('p-bad', 'Thin plan', { valid: false, problems: 0, uncovered_credits: '12' })] }),
     });
     renderApp(<PlanIndexPage />, { fetchImpl, route: '/plan', path: '/plan' });
-    await userEvent.click(await screen.findByRole('button', { name: 'Create a plan' }));
-    await screen.findByText('navigated-away');
-    expect(created[0]?.semesters[0]?.term_id).toBe('2026-27-I');
+    const list = await screen.findByRole('list', { name: 'Your saved plans' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('Full plan');
+    expect(rows[0]).toHaveTextContent('Valid');
+    expect(rows[0]).not.toHaveTextContent('Not valid');
+    expect(rows[1]).toHaveTextContent('Thin plan');
+    expect(rows[1]).toHaveTextContent('Not valid');
   });
 });

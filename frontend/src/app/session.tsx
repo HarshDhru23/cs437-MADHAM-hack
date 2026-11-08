@@ -8,7 +8,7 @@ import { ApiClient, ApiError } from '../api/client';
 import { endpoints, type Credentials } from '../api/endpoints';
 import { useResourceCache } from '../api/resources';
 import { saveRegistry } from '../api/saveRegistry';
-import type { SessionUser } from '../api/types';
+import type { SessionUser, SignInOptions } from '../api/types';
 import { importDraftStore } from '../features/import/draftStore';
 import { previewStore } from '../features/import/previewStore';
 
@@ -22,6 +22,10 @@ export interface SessionValue {
   mock: boolean;
   login: (credentials: Credentials) => Promise<void>;
   signup: (credentials: Credentials) => Promise<void>;
+  /** Sign in with the ID token Google's button returned. The server accepts only IITGN accounts. */
+  loginWithGoogle: (credential: string) => Promise<void>;
+  /** What the sign-in page offers; the password forms alone until the server says Google is configured. */
+  signIn: SignInOptions;
   logout: () => Promise<void>;
   /**
    * The server already ended the session (account deletion): clear every piece
@@ -39,6 +43,8 @@ export interface SessionValue {
 
 const SessionContext = createContext<SessionValue | null>(null);
 
+const PASSWORD_ONLY: SignInOptions = { google_client_id: null, google_domain: 'iitgn.ac.in', password: true };
+
 interface SessionProviderProps {
   children: ReactNode;
   createClient: (onAuthExpired: () => void) => ApiClient;
@@ -52,6 +58,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
   const [user, setUser] = useState<SessionUser | null>(null);
   const [status, setStatus] = useState<SessionValue['status']>('loading');
   const [expired, setExpired] = useState(false);
+  const [signIn, setSignIn] = useState<SignInOptions>(PASSWORD_ONLY);
   const [error, setError] = useState<ApiError | null>(null);
   const [attempt, setAttempt] = useState(0);
   const userRef = useRef<SessionUser | null>(null);
@@ -76,6 +83,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
         if (!active) return;
         userRef.current = session.user;
         setUser(session.user);
+        setSignIn(session.sign_in ?? PASSWORD_ONLY);
         if (session.user) {
           importDraftStore.adoptFor(session.user.id);
           saveRegistry.adoptFor(session.user.id);
@@ -93,9 +101,9 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
   }, [api, attempt]);
 
   const establish = useCallback(
-    async (action: 'login' | 'signup', credentials: Credentials) => {
+    async (start: () => Promise<unknown>) => {
       const previous = userRef.current;
-      await endpoints[action](api, credentials);
+      await start();
       // Django rotates CSRF on login; refresh the token and confirm the user.
       const session = await api.bootstrap();
       if (!session.user) throw new ApiError('auth', 401, 'Sign-in did not create a session.', []);
@@ -148,8 +156,10 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       expired,
       error,
       mock,
-      login: (c) => establish('login', c),
-      signup: (c) => establish('signup', c),
+      login: (c) => establish(() => endpoints.login(api, c)),
+      signup: (c) => establish(() => endpoints.signup(api, c)),
+      loginWithGoogle: (credential) => establish(() => endpoints.googleSignIn(api, credential)),
+      signIn,
       logout,
       forgetSession,
       notice,
@@ -157,7 +167,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       refreshPersonal: () => cacheRef.current.clear(),
       retryBootstrap: () => setAttempt((a) => a + 1),
     }),
-    [api, status, user, expired, error, mock, establish, logout, forgetSession, notice],
+    [api, status, user, expired, error, mock, signIn, establish, logout, forgetSession, notice],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
