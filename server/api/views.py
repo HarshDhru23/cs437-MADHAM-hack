@@ -376,7 +376,7 @@ def _validate_payload(owner, payload, simple_load=False):
     record = AcademicRecord.objects.get(owner=owner)
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
     return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown'),
-                          'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+                          'advisor_cap': record.profile.get('advisor_cap'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)

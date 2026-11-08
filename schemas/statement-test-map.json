@@ -503,7 +503,14 @@
         "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
-        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged"
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged",
+        "tests.reference.test_load_caps.DraftLoadLimitTests.test_cp21_a_draft_with_gps_standing_holds_24_credits",
+        "tests.reference.test_load_caps.DraftLoadLimitTests.test_cp21_a_draft_ignores_the_advisor_cap",
+        "tests.reference.test_load_caps.DraftLoadLimitTests.test_cp21_a_draft_still_stops_at_28_credits_whatever_the_standing",
+        "tests.reference.test_load_caps.DraftLoadLimitTests.test_cp21_saved_plan_validation_keeps_the_gps_and_advisor_limits",
+        "server.records.test_load_caps_regression.LoadCapAPITests.test_cp21_saved_plan_validation_applies_the_profile_advisor_cap",
+        "server.records.test_load_caps_regression.LoadCapAPITests.test_cp21_draft_check_ignores_the_advisor_cap_and_gps_standing",
+        "server.records.test_load_caps_regression.LoadCapAPITests.test_cp21_saved_plan_validation_keeps_the_gps_limit"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -980,7 +987,8 @@
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_online_placeholders_are_accepted_by_the_plan_save_path_and_must_be_true_or_false",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_the_check_reports_how_many_online_credits_count_and_warns_when_some_do_not",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_generation_with_lighten_returns_a_lighter_plan_and_what_it_replaced",
-        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400"
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400",
+        "tests.reference.test_load_caps.DraftLoadLimitTests.test_cp35_a_generated_draft_for_a_gps_student_reports_no_load_error"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
