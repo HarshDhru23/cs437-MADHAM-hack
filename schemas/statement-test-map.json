@@ -974,7 +974,11 @@
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_online_placeholders_are_accepted_by_the_plan_save_path_and_must_be_true_or_false",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_the_check_reports_how_many_online_credits_count_and_warns_when_some_do_not",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_generation_with_lighten_returns_a_lighter_plan_and_what_it_replaced",
-        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400"
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_goes_into_the_earliest_semester_with_room_and_the_plan_ends_a_semester_early",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_is_placed_in_the_first_term_where_it_fits",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_packed_plan_validates_and_stays_deterministic",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_a_lightened_plan_keeps_the_project_within_the_lighter_target"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
