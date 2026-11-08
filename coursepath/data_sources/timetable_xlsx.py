@@ -389,6 +389,9 @@ def _row_offering(ws, r, m, values, slot_map, source_id, rep):
             semantics = "unknown"
         elif kind == "lecture" or len(segs) <= 1:
             semantics = "all_required"
+        elif kind in ("lab", "tutorial"):
+            # D-26 (Harsh, 7 Nov 2026): the slots of a lab or tutorial are alternatives; each student is assigned to exactly one.
+            semantics = "choose_one"
         else:
             semantics = "unknown"
             rep.add("MEETING_SEMANTICS_UNKNOWN", "unknown",

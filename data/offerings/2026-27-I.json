@@ -3,201 +3,6 @@
   "id": "timetable-2026-27-I",
   "issues": [
     {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 101 (E) lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M4"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 112 (E) lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M8"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 115 (E) lab lists 10 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M10"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "HS 191 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L12"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "BS 192 lab lists 8 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M13"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 202 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L24"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 203 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L25"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 204 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L26"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CS 202 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M27"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CS 203 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M28"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CE 201 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M46"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CE 203 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M51"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 223 lab lists 4 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M52"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 322 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M55"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 339 lab lists 4 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M56"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
       "code": "ROW_UNRECOGNIZED",
       "entity_refs": [],
       "message": "Row 59 is not a recognizable course row.",
@@ -276,58 +81,6 @@
       "suggested_action": "Review manually; retained in unresolved_rows."
     },
     {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 313 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L79"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 314 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L80"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 315 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L81"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CL 326 lab lists 3 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M82"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
       "code": "ROW_UNRECOGNIZED",
       "entity_refs": [],
       "message": "Row 83 is not a recognizable course row.",
@@ -393,19 +146,6 @@
       "suggested_action": "Review manually; retained in unresolved_rows."
     },
     {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CE 301 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M95"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
       "code": "ROW_UNRECOGNIZED",
       "entity_refs": [],
       "message": "Row 99 is not a recognizable course row.",
@@ -456,19 +196,6 @@
         }
       ],
       "suggested_action": "Review manually; retained in unresolved_rows."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CS 202 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M110"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
     },
     {
       "code": "ROW_UNRECOGNIZED",
@@ -536,32 +263,6 @@
       "suggested_action": "Review manually; retained in unresolved_rows."
     },
     {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 322 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M127"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 333 lab lists 4 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M129"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
       "code": "ROW_UNRECOGNIZED",
       "entity_refs": [],
       "message": "Row 130 is not a recognizable course row.",
@@ -625,32 +326,6 @@
         }
       ],
       "suggested_action": "Review manually; retained in unresolved_rows."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "MSE 352 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M142"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 339 lab lists 4 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M143"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
     },
     {
       "code": "ROW_UNRECOGNIZED",
@@ -822,123 +497,6 @@
       "suggested_action": "Review manually; retained in unresolved_rows."
     },
     {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "IN 501 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M189"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "IN 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M190"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "BE 614 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M195"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "BE 618 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M197"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "BE 621 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M198"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "BE 623 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M200"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CE 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M209"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 248 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M240"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CS 437 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M242"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
       "code": "MEETING_TEXT_UNPARSED",
       "entity_refs": [],
       "message": "Meeting text 'Saturday (2:00 PM–3:30 PM) (7/207)' has no slot token.",
@@ -950,253 +508,6 @@
         }
       ],
       "suggested_action": null
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 304 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M257"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 420 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M263"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 421 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M265"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "ES 679 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M266"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 434 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M270"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EE 671 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M271"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "MSE 352 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M302"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "MSE 632 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M305"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "MA 605 tutorial lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!L335"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 618 lab lists 4 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M371"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 620 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M373"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 634 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M378"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 639 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M380"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "EH 692-I lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M383"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "CG 691-VIII lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M397"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "FP 602 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M400"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "FP 602 (MA) lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M401"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "FP 602 (CG) lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M402"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "FP 602 (CH) lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M403"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
     },
     {
       "code": "MEETING_TEXT_UNPARSED",
@@ -1236,19 +547,6 @@
         }
       ],
       "suggested_action": null
-    },
-    {
-      "code": "MEETING_SEMANTICS_UNKNOWN",
-      "entity_refs": [],
-      "message": "DES 601 lab lists 2 slots; whether they are all required or alternatives is not stated.",
-      "severity": "unknown",
-      "source_refs": [
-        {
-          "id": "SRC-TIMETABLE",
-          "locator": "Time table!M437"
-        }
-      ],
-      "suggested_action": "Confirm section/group meaning with the timetable owner."
     },
     {
       "code": "DUPLICATE_CODE_CONFLICT",
@@ -1716,7 +1014,7 @@
           "notes": [],
           "raw_text": "B1,D1\n(10/105)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -1956,7 +1254,7 @@
           "notes": [],
           "raw_text": "J1,L1\n(BE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -2095,7 +1393,7 @@
           "notes": [],
           "raw_text": "I2,M1\n(BE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -2295,7 +1593,7 @@
           "notes": [],
           "raw_text": "K2,L2\n(10/104)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -2730,7 +2028,7 @@
           "notes": [],
           "raw_text": "I1,K1,I2,M1,K2,L2,M2,P2\n(PH Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -2972,7 +2270,7 @@
           "notes": [],
           "raw_text": "I1,K1\n(11/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -3107,7 +2405,7 @@
           "notes": [],
           "raw_text": "J1,L1\n(10/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -3309,7 +2607,7 @@
           "notes": [],
           "raw_text": "L2,N2\n(CE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -4046,7 +3344,7 @@
           "notes": [],
           "raw_text": "J2,M2\n(CE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -6643,7 +5941,7 @@
           "notes": [],
           "raw_text": "I1,K1\n(7/201)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -8844,7 +8142,7 @@
           "notes": [],
           "raw_text": "A1,A2\n(7/109)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9006,7 +8304,7 @@
           "notes": [],
           "raw_text": "E1,E2\n(7/208)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9168,7 +8466,7 @@
           "notes": [],
           "raw_text": "D1,D2\n(11/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9330,7 +8628,7 @@
           "notes": [],
           "raw_text": "G1,G2\n(7/108)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9492,7 +8790,7 @@
           "notes": [],
           "raw_text": "E1,E2\n(10/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9654,7 +8952,7 @@
           "notes": [],
           "raw_text": "D1,D2\n(10/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -9807,7 +9105,7 @@
           "notes": [],
           "raw_text": "J1,L1,N1\n(CL Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -10870,7 +10168,7 @@
           "notes": [],
           "raw_text": "J2,M2\n(Harsha Patel Learning Theatre,10/204)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -11017,7 +10315,7 @@
           "notes": [],
           "raw_text": "K1,H1\n(10/104)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -11748,7 +11046,7 @@
           "notes": [],
           "raw_text": "K1,L1\n(10/203)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -12792,7 +12090,7 @@
           "notes": [],
           "raw_text": "M1,P1\n(13/125)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -13000,7 +12298,7 @@
           "notes": [],
           "raw_text": "I1,H1,J1,N1\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -13323,7 +12621,7 @@
           "notes": [],
           "raw_text": "L2,K2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -13719,7 +13017,7 @@
           "notes": [],
           "raw_text": "M1,P1,J2,M2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -13858,7 +13156,7 @@
           "notes": [],
           "raw_text": "A1,A2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -14930,7 +14228,7 @@
           "notes": [],
           "raw_text": "A1,A2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -15170,7 +14468,7 @@
           "notes": [],
           "raw_text": "C1,F1\n(10/105)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -15755,7 +15053,7 @@
           "notes": [],
           "raw_text": "G1,B2,E2,G2\n(10/104)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -15995,7 +15293,7 @@
           "notes": [],
           "raw_text": "K2,L2\n(EH Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -16530,7 +15828,7 @@
           "notes": [],
           "raw_text": "B1,D1\n(11/204)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -16869,7 +16167,7 @@
           "notes": [],
           "raw_text": "I1,K1\n(7/103)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -17204,7 +16502,7 @@
           "notes": [],
           "raw_text": "J1,L1\n(13/124)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -17365,7 +16663,7 @@
           "notes": [],
           "raw_text": "N1,N2\n(Surendra C Sheth Learning Theatre,Jayshree S Sheth Learning Theatre,10/203,10/204,7/208,7/209,Jagdish Patel Learning Theatre,Harsha Patel Learning Theatre,10/104,10/105,11/101,11/102)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -17610,7 +16908,7 @@
           "notes": [],
           "raw_text": "J2 (10/103,10/104,10/105,10/203)\nP1 (10/104,10/105,10/204,Jagdish Patel Learning Theatre,Harsha Patel Learning Theatre)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -18052,7 +17350,7 @@
           "notes": [],
           "raw_text": "A1,C1,I1,K1,I2,M1,K2,L2,M2,P2\n(Makers' Bhavan, Tinkerers' Lab, etc.)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -19158,7 +18456,7 @@
           "notes": [],
           "raw_text": "K2,L2\n(10/203)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -19459,7 +18757,7 @@
           "notes": [],
           "raw_text": "I1,K1,K2,L2\n(5/202)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -19629,7 +18927,7 @@
           "notes": [],
           "raw_text": "C1,F1\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -19791,7 +19089,7 @@
           "notes": [],
           "raw_text": "B1,B2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -21785,7 +21083,7 @@
           "notes": [],
           "raw_text": "B1,B2\n(EE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -22033,7 +21331,7 @@
           "notes": [],
           "raw_text": "P1,P2\n(7/101,7/102,7/103,7/104,7/105,7/204,7/205,7/206,7/207)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -22172,7 +21470,7 @@
           "notes": [],
           "raw_text": "I1,K1\n(7/108)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -22307,7 +21605,7 @@
           "notes": [],
           "raw_text": "I1,K1\n(Surendra C Sheth Learning Theatre)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -22447,7 +21745,7 @@
           "notes": [],
           "raw_text": "P1 (11/101)\nP2 (Jagdish Patel Learning Theatre,Harsha Patel Learning Theatre)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -23971,7 +23269,7 @@
           "notes": [],
           "raw_text": "B1,B2\n(7/101,7/102,7/103,7/104,7/201,7/205,7/207,7/209,7/109,11/101)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -26471,7 +25769,7 @@
           "notes": [],
           "raw_text": "B2,C2\n(13/124,13/125)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -26674,7 +25972,7 @@
           "notes": [],
           "raw_text": "B2,C2\n(13/124,13/125)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -28171,7 +27469,7 @@
           "notes": [],
           "raw_text": "C1 (7/105)\nB1 (7/110)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -33352,7 +32650,7 @@
           "notes": [],
           "raw_text": "L1,N1\n(MSE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",
@@ -33914,7 +33212,7 @@
           "notes": [],
           "raw_text": "I2,M1\n(MSE Lab)",
           "section_labels": [],
-          "selection_semantics": "unknown",
+          "selection_semantics": "choose_one",
           "source_refs": [
             {
               "id": "SRC-TIMETABLE",

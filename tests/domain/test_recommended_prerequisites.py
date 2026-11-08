@@ -42,8 +42,9 @@ class RecommendedPrerequisiteTests(unittest.TestCase):
         unlisted = validate_plan({**self.context, 'attempts': []}, plan('HS 151'))
         self.assertEqual(unlisted['per_course'][0]['eligibility'], 'unknown')
         unknown = [i for i in unlisted['issues'] if i['code'] == 'PREREQUISITE_UNKNOWN']
-        self.assertEqual(unknown[0]['severity'], 'unknown')
+        self.assertEqual(unknown[0]['severity'], 'info')  # D-30: informational, still not "no prerequisites"
         self.assertIn('No recommendation recorded', unknown[0]['message'])
+        self.assertIn('not a claim that it has no prerequisites', unknown[0]['message'])
 
     def test_cp22_old_codes_find_the_current_course_recommendation(self):
         # D-04: CS 433 is CS 331, CS 301 is CS 330, ES 413 is ES 667 and ES 215 is ES 336; the team list names current codes.
@@ -69,13 +70,14 @@ class RecommendedPrerequisiteTests(unittest.TestCase):
             semesters = [{'term_id': '2026-27-I', 'courses': [{'id': 'a', 'normalized_code': first, 'credits': '4'}]}] if first else []
             semesters.append({'term_id': '2026-27-II', 'courses': [{'id': 'b', 'normalized_code': second, 'credits': '4'}]})
             result = validate_plan({**self.context, 'attempts': list(attempts)}, {'semesters': semesters})
-            return [(i['code'], i['entity_refs']) for i in result['issues'] if i['code'] in {'REPEAT_POLICY_UNKNOWN', 'DUPLICATE_COURSE'}]
+            return [(i['code'], i['entity_refs']) for i in result['issues'] if i['code'] in {'REPEAT_POLICY_UNKNOWN', 'DUPLICATE_COURSE', 'RETAKE_PLANNED'}]
         # Planned twice: ES 242(N) after ES 242 is the same course (D-04), just like ES 242 twice.
-        self.assertEqual(repeats('ES 242', 'ES 242'), [('REPEAT_POLICY_UNKNOWN', ['b'])])
-        self.assertEqual(repeats('ES 242', 'ES 242(N)'), [('REPEAT_POLICY_UNKNOWN', ['b'])])
+        # D-32: the same course planned twice in one plan is a warning, not an unknown policy.
+        self.assertEqual(repeats('ES 242', 'ES 242'), [('DUPLICATE_COURSE', ['b', 'a'])])
+        self.assertEqual(repeats('ES 242', 'ES 242(N)'), [('DUPLICATE_COURSE', ['b', 'a'])])
         self.assertEqual(repeats('ES 242', 'ES 301'), [])
         # Against completed history: a passed old ES 242 makes a planned ES 242(N) a repeat; CS 203 never repeats CS 202 (D-03).
-        self.assertEqual(repeats(None, 'ES 242(N)', [attempt('old', 'ES 242', credits='3')]), [('REPEAT_POLICY_UNKNOWN', ['b'])])
+        self.assertEqual(repeats(None, 'ES 242(N)', [attempt('old', 'ES 242', credits='3')]), [('RETAKE_PLANNED', ['b'])])  # D-32: a retake, best grade counts
         self.assertEqual(repeats(None, 'CS 202', [attempt('tools', 'CS 203')]), [])
 
     def test_cp22_a_planned_variant_counts_as_earlier_preparation(self):

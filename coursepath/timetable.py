@@ -81,7 +81,7 @@ def check_meetings(items, snapshot):
     for item in items:
         if snapshot is None:
             per_item[item['id']] = 'not_checked'
-            issues.append(issue('MEETINGS_UNKNOWN', 'No timetable snapshot exists for this term; clashes were not checked.', entities=[item['id']]))
+            issues.append(issue('MEETINGS_UNKNOWN', 'No timetable is published for this term yet, so clashes were not checked.', 'info', [item['id']]))
             continue
         meetings, resolved = _resolve(item, snapshot, issues)
         resolved_meetings[item['id']] = meetings

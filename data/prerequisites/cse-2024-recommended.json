@@ -1,8 +1,8 @@
 {
   "id": "cse-2024-recommended-prerequisites",
-  "version": "draft-2026-10-29",
+  "version": "reviewed-2026-11-07",
   "cohort": "BTECH_CSE-2024",
-  "review_status": "draft",
+  "review_status": "reviewed",
   "authority": "team_recommendation",
   "severity": "warning",
   "decision_ref": "docs/academic-decisions.md#6-prerequisites",
@@ -13,7 +13,7 @@
     "Checked against the ADV13 p. 23 sample path: no listed preparation is scheduled there in the same or a later semester than the course that needs it."
   ],
   "sources": [
-    {"id": "team-recommendation", "kind": "team_decision", "title": "CoursePath team recommended preparation", "version": "draft-2026-10-29", "review_status": "draft", "authority": "team"}
+    {"id": "team-recommendation", "kind": "team_decision", "title": "CoursePath team recommended preparation", "version": "reviewed-2026-11-07", "review_status": "reviewed", "authority": "team"}
   ],
   "courses": [
     {"course_id": "CS 201", "title": "Theory of Computing", "expression": {"type": "course", "course_id": "ES 214", "source_refs": ["team-recommendation"]}, "rationale": "Proofs, sets and relations from Discrete Mathematics."},

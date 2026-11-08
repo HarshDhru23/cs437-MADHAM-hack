@@ -99,5 +99,56 @@ class SameParityHintTests(unittest.TestCase):
         self.assertEqual([row['offering_status'] for row in result['per_course']], ['historical', 'historical'])
 
 
+class LabAndTutorialAlternativesTests(unittest.TestCase):
+    """D-26 (Harsh, 7 Nov 2026): the slots a lab or tutorial lists are alternatives, one per student. Lectures keep every slot."""
+
+    def all_groups(self, term_id):
+        return [(o['display_code'], g) for o in SNAPSHOTS[term_id]['offerings'] for g in o['meeting_groups']]
+
+    def test_cp24_multi_slot_labs_and_tutorials_are_choose_one_and_nothing_else_changed(self):
+        # Counts were read from the committed files before D-26: Semester I had 42 labs + 8 tutorials with 2+ slots, Semester II 33 + 2.
+        expected = {'2026-27-I': (42, 8), '2026-27-II': (33, 2)}
+        for term_id, (labs, tutorials) in expected.items():
+            with self.subTest(term=term_id):
+                found = {'lab': 0, 'tutorial': 0}
+                for code, group in self.all_groups(term_id):
+                    if group['unresolved'] or not group['meetings']:
+                        self.assertEqual(group['selection_semantics'], 'unknown', f"{code} {group['kind']}: unresolved text is never guessed")
+                    elif group['kind'] in found and len(group['meetings']) >= 2:
+                        found[group['kind']] += 1
+                        self.assertEqual(group['selection_semantics'], 'choose_one', f"{code} {group['kind']}")
+                    else:
+                        self.assertEqual(group['selection_semantics'], 'all_required', f"{code} {group['kind']}: lectures and single slots stay required")
+                self.assertEqual((found['lab'], found['tutorial']), (labs, tutorials))
+
+    def test_cp24_no_stated_semantics_issue_is_left_for_resolved_groups_and_other_issues_are_untouched(self):
+        remaining = {'2026-27-I': {'ROW_UNRECOGNIZED': 38, 'MEETING_TEXT_UNPARSED': 4, 'DUPLICATE_CODE_CONFLICT': 2, 'SOURCE_COLUMN_EMPTY': 2},
+                     '2026-27-II': {'ROW_UNRECOGNIZED': 25, 'MEETING_TEXT_UNPARSED': 2, 'SOURCE_COLUMN_EMPTY': 2, 'DUPLICATE_CODE_CONFLICT': 1,
+                                    'SHEET_MISSING': 1, 'SLOT_LEGEND_FROM_OTHER_TERM': 1}}
+        for term_id, counts in remaining.items():
+            with self.subTest(term=term_id):
+                codes = [i['code'] for i in SNAPSHOTS[term_id]['issues']]
+                self.assertNotIn('MEETING_SEMANTICS_UNKNOWN', codes)
+                self.assertEqual({c: codes.count(c) for c in set(codes)}, counts)
+
+    def test_cp24_real_cs202_lab_alternatives_clash_only_when_the_assigned_slot_does(self):
+        # CS 202's lab is J2 (Fri 14:00) or M2 (Fri 15:30); CH 528 has a lecture in J2 and none in M2.
+        snapshot, j2, m2 = SNAPSHOTS['2026-27-I'], '2026-27-I:CS202:lab:J2', '2026-27-I:CS202:lab:M2'
+        items = lambda **extra: [{'id': 'tools', 'normalized_code': 'CS 202', **extra}, {'id': 'chem', 'normalized_code': 'CH 528'}]
+        # Slot not known yet: a possible clash (warning), never certain and never clear.
+        possible = check_meetings(items(), snapshot)
+        self.assertEqual(possible['status'], 'conflicts')
+        self.assertEqual([(c['certain'], sorted(c['item_ids'])) for c in possible['conflicts']], [(False, ['chem', 'tools'])])
+        self.assertIn(j2, possible['conflicts'][0]['meeting_ids'])
+        self.assertEqual([i['severity'] for i in possible['issues'] if i['code'] == 'TIMETABLE_CONFLICT'], ['warning'])
+        # Assigned the M2 slot: nothing overlaps.
+        free = check_meetings(items(section_ids=[m2]), snapshot)
+        self.assertEqual((free['status'], free['conflicts']), ('clear', []))
+        # Assigned the J2 slot: both meetings are dated and required, so the clash is certain.
+        certain = check_meetings(items(section_ids=[j2]), snapshot)
+        self.assertEqual([c['certain'] for c in certain['conflicts']], [True])
+        self.assertEqual([i['severity'] for i in certain['issues'] if i['code'] == 'TIMETABLE_CONFLICT'], ['error'])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -29,8 +29,8 @@ def overlaps(a, b):
     out = []
     for ga in a["meeting_groups"]:
         for gb in b["meeting_groups"]:
-            if ga["kind"] != gb["kind"] or "unknown" in (ga["selection_semantics"], gb["selection_semantics"]):
-                continue
+            if ga["kind"] != gb["kind"] or (ga["selection_semantics"], gb["selection_semantics"]) != ("all_required", "all_required"):
+                continue  # alternatives (D-26) and unknown groups are not required meetings
             for ma in ga["meetings"]:
                 for mb in gb["meetings"]:
                     if ma["weekday"] == mb["weekday"] and ma["start_minute"] < mb["end_minute"] \
@@ -84,9 +84,9 @@ class SampleReconciliationTests(unittest.TestCase):
         for code, spec in CONTROLS["rows"].items():
             self.assertEqual(self.by[code]["credits"], spec["credits"], code)
 
-    def test_cs202_lab_alternatives_stay_unknown(self):
+    def test_cs202_lab_slots_are_alternatives(self):
         lab = next(g for g in self.by["CS 202"]["meeting_groups"] if g["kind"] == "lab")
-        self.assertEqual(lab["selection_semantics"], "unknown")
+        self.assertEqual(lab["selection_semantics"], "choose_one")  # D-26: one slot per student
         self.assertEqual(sorted(m["original_slot"] for m in lab["meetings"]), ["J2", "M2"])
 
     def test_documented_slot_times_match_controls(self):

@@ -49,7 +49,7 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             eligibility = evaluate_prerequisite(expression, term, attempts, planned, identity)
             # D-17: prerequisites are CoursePath team recommendations; an unmet one warns and never blocks.
             if eligibility['status'] == 'unknown':
-                issues.append(issue('PREREQUISITE_UNKNOWN', 'No recommendation recorded for this course; its preparation is unknown, not "none".', entities=[entity]))
+                issues.append(issue('PREREQUISITE_UNKNOWN', 'No recommendation recorded for this course in the CoursePath team list. That is not a claim that it has no prerequisites.', 'info', [entity]))
             elif eligibility['status'] == 'ineligible':
                 issues.append(issue('PREREQUISITE_MISSING', 'Recommended preparation (CoursePath team) missing: ' + ', '.join(eligibility['missing']), 'warning',
                                     [entity], eligibility['source_refs'], 'Take the recommended course earlier, or keep the plan if you are prepared.'))
@@ -60,7 +60,13 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             completed = [a for a in attempts if canonical_code(a['normalized_code'], identity) == current and a['completion_status'] == 'completed']
             if previous or completed:
                 if metadata is None or metadata.get('repeatable') is None:
-                    issues.append(issue('REPEAT_POLICY_UNKNOWN', 'Repeat eligibility requires reviewed policy.', entities=[entity]))
+                    # D-32: any non-project course may be retaken and the best grade counts (D-15). Project registrations are separate attempts (D-01).
+                    if _is_project(current):
+                        pass
+                    elif completed:
+                        issues.append(issue('RETAKE_PLANNED', f'You already completed {current}; planning it again is a retake and the best grade counts.', 'info', [entity]))
+                    else:
+                        issues.append(issue('DUPLICATE_COURSE', 'This course is already selected in your plan.', 'warning', [entity] + previous))
                 elif not metadata['repeatable'] or not course.get('instance_id'):
                     issues.append(issue('DUPLICATE_COURSE', 'Already completed/selected or missing repeat instance evidence.', 'error', [entity] + previous))
             seen.setdefault(current, []).append(entity)
@@ -91,6 +97,11 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             'meeting_checks': meeting_checks, 'completion_term': None}
 
 
+def _is_project(code):
+    import re
+    return bool(re.match(r'^[A-Z]{2,4} [234]99', code))
+
+
 def _offering(snapshot, offering_id):
     return next(o for o in snapshot['offerings'] if o['id'] == offering_id)
 
@@ -99,7 +110,7 @@ def _load_issues(context, term, total):
     issues = []
     summer = term.endswith('SUMMER')
     standing = context.get('standing', 'unknown')
-    cap = Decimal(10 if summer else 21 if standing == 'GPS' else 28)
+    cap = Decimal(10 if summer else 21 if standing == 'GPS' else 28)  # D-31: regular standing is assumed until the profile says otherwise
     advisor = context.get('advisor_cap')
     if advisor is not None:
         cap = min(cap, decimal_value(advisor))
@@ -107,9 +118,12 @@ def _load_issues(context, term, total):
     if term_cap is not None:
         cap = min(cap, decimal_value(term_cap))
     if standing == 'unknown':
-        issues.append(issue('STANDING_UNKNOWN', 'Confirm standing and any advisor cap.', entities=[term]))
+        issues.append(issue('STANDING_ASSUMED', 'Assuming regular standing (28-credit cap) until you set your standing and any advisor cap in your profile.', 'info', [term]))
+    simple = context.get('simple_load') is True   # D-36: the product limit is 28 credits, with no overload path and no 20-24 guidance
+    if simple and not summer:
+        cap = min(cap, Decimal(28))
     if total > cap:
-        may_overload = not summer and standing != 'GPS' and cap == 28 and total <= 32
+        may_overload = not simple and not summer and standing != 'GPS' and cap == 28 and total <= 32
         if may_overload:
             evidence = context.get('overload', {})
             approved = evidence.get('verified') is True and evidence.get('recommendation_verified') is True and decimal_value(evidence.get('cpi', '0')) >= 7
@@ -117,6 +131,6 @@ def _load_issues(context, term, total):
                 issues.append(issue('OVERLOAD_APPROVAL_REQUIRED', 'Overload requires applicable CPI, recommendation and verified approval.', 'approval_required', [term]))
         else:
             issues.append(issue('LOAD_LIMIT', f'Target workload exceeds the {cap}-credit limit.', 'error', [term]))
-    if not summer and total and (total < 20 or total > 24):
+    if not summer and not simple and total and (total < 20 or total > 24):
         issues.append(issue('LOAD_GUIDANCE', 'Normal regular-term guidance is 20-24 credits.', 'warning', [term]))
     return issues

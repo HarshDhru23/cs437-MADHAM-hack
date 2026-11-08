@@ -157,7 +157,7 @@ class MeetingClashTests(unittest.TestCase):
 
     def test_cp24_unknown_lab_semantics_report_possible_clash_but_clear_when_none_can_clash(self):
         snapshot = reviewed(adapter_snapshot())
-        # CS 202 lab J2,M2 has unstated semantics; ES 112 meets in J2.
+        # CS 202 lab J2,M2 are alternatives (D-26); ES 112 meets in J2.
         possible = check_meetings([item('t', 'CS 202'), item('c', 'ES 112')], snapshot)
         self.assertEqual([c['certain'] for c in possible['conflicts']], [False])
         # Neither J2 nor M2 can meet CS 329's H1 slot, so either reading is clash-free.

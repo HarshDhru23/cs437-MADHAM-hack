@@ -87,6 +87,12 @@
         },
         {
           "$ref": "#/$defs/scenario_stale"
+        },
+        {
+          "$ref": "#/$defs/plan_generation"
+        },
+        {
+          "$ref": "#/$defs/plan_check"
         }
       ]
     },
@@ -153,6 +159,7 @@
           "enum": [
             "error",
             "warning",
+            "info",
             "unknown",
             "approval_required"
           ]
@@ -452,6 +459,26 @@
         }
       }
     },
+    "degree_progress": {
+      "type": "object",
+      "required": [
+        "total_credits",
+        "counted_credits",
+        "remaining_credits"
+      ],
+      "properties": {
+        "total_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "counted_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "remaining_credits": {
+          "$ref": "#/$defs/decimal"
+        }
+      },
+      "additionalProperties": false
+    },
     "audit": {
       "type": "object",
       "required": [
@@ -467,6 +494,27 @@
         "rule_version"
       ],
       "properties": {
+        "degree": {
+          "type": "object",
+          "description": "Degree credits counted so far, per view, against the degree total (170 for CSE 2024). Each requirement counts at most what it asks for.",
+          "required": [
+            "actual",
+            "current",
+            "projected"
+          ],
+          "properties": {
+            "actual": {
+              "$ref": "#/$defs/degree_progress"
+            },
+            "current": {
+              "$ref": "#/$defs/degree_progress"
+            },
+            "projected": {
+              "$ref": "#/$defs/degree_progress"
+            }
+          },
+          "additionalProperties": false
+        },
         "actual": {
           "type": "array",
           "items": {
@@ -913,6 +961,10 @@
         },
         "label": {
           "type": "string"
+        },
+        "online": {
+          "type": "boolean",
+          "description": "True for an online course the student takes (in a semester or a break): it counts against the pool of 16 online credits."
         }
       },
       "additionalProperties": false
@@ -1162,6 +1214,15 @@
             "reviewed",
             "conflicted"
           ]
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
@@ -2437,6 +2498,483 @@
           }
         }
       }
+    },
+    "plan_check": {
+      "type": "object",
+      "description": "POST /plans/check: validation of an unsaved plan, the degree credits its courses would cover, and the credits held by placeholders (internship, online, project) the student still arranges. Nothing is saved (D-36).",
+      "required": [
+        "validation",
+        "degree",
+        "placeholder_credits",
+        "uncovered_credits",
+        "requirements",
+        "load",
+        "online"
+      ],
+      "properties": {
+        "validation": {
+          "$ref": "#/$defs/validation"
+        },
+        "degree": {
+          "$ref": "#/$defs/degree_progress"
+        },
+        "placeholder_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "uncovered_credits": {
+          "$ref": "#/$defs/decimal",
+          "description": "Credits still needed after the plan's courses and the credits its placeholders hold (each placeholder counts only up to what its requirement still needs)."
+        },
+        "requirements": {
+          "type": "array",
+          "description": "One row per credit-bearing requirement (for example Open electives): required, counted by the plan's courses, held by placeholders, and still uncovered.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label",
+              "group",
+              "required_credits",
+              "counted_credits",
+              "remaining_credits",
+              "held_credits",
+              "uncovered_credits"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "required_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "counted_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "remaining_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "held_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "uncovered_credits": {
+                "$ref": "#/$defs/decimal"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "online": {
+          "type": "object",
+          "description": "Online courses in the plan: the credits planned and how many of them count toward the degree (the pool is 16 credits, and CSE electives take at most 8 together with projects).",
+          "required": [
+            "planned_credits",
+            "counted_credits"
+          ],
+          "properties": {
+            "planned_credits": {
+              "$ref": "#/$defs/decimal"
+            },
+            "counted_credits": {
+              "$ref": "#/$defs/decimal"
+            }
+          },
+          "additionalProperties": false
+        },
+        "load": {
+          "type": "object",
+          "description": "Per semester: credits planned (courses and placeholders), the limit (28 for a regular semester) and how many more fit.",
+          "propertyNames": {
+            "$ref": "#/$defs/term_id"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "planned_credits",
+              "limit_credits",
+              "available_credits"
+            ],
+            "properties": {
+              "planned_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "limit_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "available_credits": {
+                "$ref": "#/$defs/decimal"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan_generation": {
+      "type": "object",
+      "description": "POST /plans/generate: a draft plan for the remaining degree. Nothing is saved; the client saves it through POST /plans. Courses are suggestions the student edits (D-35).",
+      "required": [
+        "record_revision",
+        "rule_version",
+        "semesters",
+        "placements",
+        "unmet",
+        "summary",
+        "assumptions",
+        "options",
+        "graduation",
+        "online_potential",
+        "notice",
+        "validation"
+      ],
+      "properties": {
+        "record_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule_version": {
+          "type": "string"
+        },
+        "semesters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planned_semester"
+          }
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "item_id",
+              "kind",
+              "term_id",
+              "credits",
+              "requirement_id",
+              "requirement_label",
+              "basis",
+              "reason"
+            ],
+            "properties": {
+              "item_id": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "course",
+                  "placeholder"
+                ]
+              },
+              "term_id": {
+                "$ref": "#/$defs/term_id"
+              },
+              "normalized_code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "requirement_id": {
+                "type": "string"
+              },
+              "requirement_label": {
+                "type": "string"
+              },
+              "basis": {
+                "enum": [
+                  "confirmed_offering",
+                  "expected_pattern",
+                  "student_choice"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "offering_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "unmet": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "requirement_id",
+              "label",
+              "remaining_credits",
+              "remaining_courses",
+              "reason_code",
+              "reason",
+              "placeholder_ids"
+            ],
+            "properties": {
+              "requirement_id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "remaining_credits": {
+                "$ref": "#/$defs/decimal"
+              },
+              "remaining_courses": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reason_code": {
+                "enum": [
+                  "NO_OFFERED_COURSE",
+                  "NO_CAPACITY",
+                  "STUDENT_CHOICE",
+                  "ALLOCATION_UNRESOLVED"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "placeholder_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": [
+            "terms",
+            "total_credits",
+            "remaining_before",
+            "remaining_after",
+            "placed_credits",
+            "placeholder_credits",
+            "credits_by_term",
+            "busiest_semester_credits",
+            "complete"
+          ],
+          "properties": {
+            "terms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/term_id"
+              }
+            },
+            "total_credits": {
+              "$ref": "#/$defs/decimal"
+            },
+            "remaining_before": {
+              "$ref": "#/$defs/decimal"
+            },
+            "remaining_after": {
+              "$ref": "#/$defs/decimal"
+            },
+            "placed_credits": {
+              "$ref": "#/$defs/decimal"
+            },
+            "placeholder_credits": {
+              "$ref": "#/$defs/decimal"
+            },
+            "credits_by_term": {
+              "type": "object",
+              "propertyNames": {
+                "$ref": "#/$defs/term_id"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/decimal"
+              }
+            },
+            "busiest_semester_credits": {
+              "$ref": "#/$defs/decimal",
+              "description": "Credits in the plan's busiest regular semester (the internship semester and summer breaks are not counted)."
+            },
+            "complete": {
+              "type": "boolean",
+              "description": "True when every requirement is either placed or covered by a placeholder the student arranges (a project, internship modules or online courses)."
+            }
+          },
+          "additionalProperties": false
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "options": {
+          "type": "object",
+          "required": [
+            "terms",
+            "target_credits_per_term",
+            "max_credits_per_term",
+            "skip_terms"
+          ],
+          "properties": {
+            "terms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/term_id"
+              }
+            },
+            "target_credits_per_term": {
+              "$ref": "#/$defs/decimal"
+            },
+            "max_credits_per_term": {
+              "$ref": "#/$defs/decimal"
+            },
+            "skip_terms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/term_id"
+              }
+            },
+            "lighten_with_online": {
+              "type": "boolean"
+            },
+            "internship_term": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/term_id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "graduation": {
+          "type": "object",
+          "description": "early is true when the plan ends before the usual last semester (usual_last_term), false when it does not, null when the plan could not cover every requirement (D-37, D-40).",
+          "required": [
+            "internship_term",
+            "early",
+            "last_term",
+            "usual_last_term",
+            "online_credits",
+            "message"
+          ],
+          "properties": {
+            "internship_term": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/term_id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "early": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "usual_last_term": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/term_id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "online_credits": {
+              "$ref": "#/$defs/decimal",
+              "description": "Credits of online courses (taken in the breaks or the internship semester) the plan uses to end earlier; 0 when none are needed."
+            },
+            "last_term": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/term_id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "online_potential": {
+          "type": "object",
+          "description": "What online courses taken in the breaks (summers) and the internship semester could do for this plan (D-41, D-42): the credits still available (at most 16), the breaks that can hold them, this plan's busiest regular semester, and, when the plan was lightened with online credits, the busiest semester before that.",
+          "required": [
+            "credits_available",
+            "break_terms",
+            "busiest_semester_credits",
+            "busiest_before",
+            "lightened"
+          ],
+          "properties": {
+            "credits_available": {
+              "$ref": "#/$defs/decimal"
+            },
+            "break_terms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/term_id"
+              }
+            },
+            "busiest_semester_credits": {
+              "$ref": "#/$defs/decimal"
+            },
+            "busiest_before": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/decimal"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "lightened": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "notice": {
+          "type": "string"
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
