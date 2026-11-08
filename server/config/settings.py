@@ -58,6 +58,7 @@ USE_TZ = True
 TIME_ZONE = 'Asia/Kolkata'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 11 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_HANDLERS = ['server.api.uploads.LimitedMemoryUploadHandler']  # memory only, capped at the 10 MB above: an upload never touches disk
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
