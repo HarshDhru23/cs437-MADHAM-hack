@@ -22,6 +22,22 @@ def lines_from_words(words):
     return [sorted(row, key=lambda w: w['x0']) for row in rows]
 
 
+def _row_shaped(line, credit_x, grade_x):
+    """A number in the credit column and a single grade-like token in the grade column."""
+    credit = [w['text'] for w in line if credit_x <= w['x0'] < grade_x]
+    grade = [w['text'] for w in line if w['x0'] >= grade_x]
+    return len(credit) == 1 and re.fullmatch(r'\d+(?:\.\d+)?', credit[0]) is not None and len(grade) == 1 and re.fullmatch(r'[A-Za-z][+-]?', grade[0]) is not None
+
+
+def _split_glued_code(line, code):
+    """A code that fills its column touches the title ("491-VIIISpecial"); cut that word where the code ends.
+    The transcript font is monospaced, so the title keeps its real x position for wrapped-line matching."""
+    index = len(code.split()) - 1
+    word, cut = line[index], len(code.split()[-1])
+    split_x = word['x0'] + (word['x1'] - word['x0']) * cut / len(word['text'])
+    return line[:index] + [{**word, 'text': word['text'][:cut], 'x1': split_x}, {**word, 'text': word['text'][cut:], 'x0': split_x}] + line[index + 1:]
+
+
 def extract_pdf(data, source, max_pages):
     result = empty_result()
     reader = PdfReader(BytesIO(data), strict=True)
@@ -77,6 +93,11 @@ def extract_pdf(data, source, max_pages):
                         continue
                     joined = ' '.join(w['text'] for w in line)
                     match = re.match(rf'^({CODE})\s+', joined)
+                    glued = None if match else re.match(rf'^({CODE})(?=[A-Z][a-z])', joined)
+                    if glued:
+                        line = _split_glued_code(line, glued[1])
+                        joined = ' '.join(w['text'] for w in line)
+                        match = re.match(rf'^({CODE})\s+', joined)
                     if match:
                         code = match[1]
                         code_words = len(code.split())
@@ -101,9 +122,11 @@ def extract_pdf(data, source, max_pages):
                         previous['title'] += ' ' + joined
                         previous['original']['title'] += ' ' + joined
                         previous['source_refs'][0]['box'][3] = max(w['bottom'] for w in line)
-                    elif re.match(rf'^({CODE})\s+', joined):
+                    elif re.match(rf'^({CODE})\s+', joined) or _row_shaped(line, credit_x, grade_x):
+                        # A line with a credit and a grade is a course row even when its code is unreadable: disclose it, never skip it.
                         result['unparsed_rows'].append({'page': page_number, 'block': block, 'raw': joined})
                         result['issues'].append(issue('IMPORT_ROW_UNPARSED', 'Unrecognized course-looking PDF row.', 'error'))
+                        previous = None
     if not result['candidate_attempts']:
         result['issues'].append(issue('PDF_LAYOUT_UNKNOWN', 'No supported text layout found. Use IMS paste or manual entry.', 'error'))
     if result.get('profile_candidates', {}).get('programme') != 'BTECH_CSE':
