@@ -520,7 +520,11 @@
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_internship_downstream_check_finds_the_current_course_recommendation",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
-        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_corequisite_passed_in_the_same_term_is_eligible",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_plain_prerequisite_passed_in_the_same_term_is_still_missing",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_corequisite_failed_in_the_same_term_or_passed_later_is_missing",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_plan_validation_accepts_the_same_term_corequisite_on_the_record"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
