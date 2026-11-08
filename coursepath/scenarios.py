@@ -121,8 +121,11 @@ def _deltas(base, other):
     added = [i for i in other['issues'] if key(i) not in old]
     terms = sorted(set(base['validation']['workload']) | set(other['validation']['workload']), key=term_key)
     load = lambda result, term: result['validation']['workload'].get(term, {}).get('target_credits', '0')
+    # Downstream: a course newly short of recommended preparation, or short of more of it than in the baseline (D-17).
+    missing = lambda result: {c['id']: set(c['prerequisite_proof']['missing']) for c in result['validation']['per_course'] if c['eligibility'] == 'ineligible'}
+    was, now = missing(base), missing(other)
     return {'requirements': requirements, 'new_issues': added, 'resolved_issues': [i for i in base['issues'] if key(i) not in new],
-            'downstream_affected': sorted({e for i in added if i['code'] == 'PREREQUISITE_MISSING' for e in i['entity_refs']}),
+            'downstream_affected': sorted(e for e, m in now.items() if e not in was or m - was[e]),
             'workload': {t: {'baseline': load(base, t), 'scenario': load(other, t)} for t in terms if load(base, t) != load(other, t)},
             'cpi': {'baseline': base['performance']['cumulative']['unrounded_value'], 'scenario': other['performance']['cumulative']['unrounded_value'],
                     'hypothetical': other['performance']['hypothetical']},
