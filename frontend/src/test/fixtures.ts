@@ -3,7 +3,7 @@
  * Harsh's backend (de7a0ab, merged to main in a51399e). Codes use ZZ/YY
  * prefixes or explicitly synthetic titles; no real student data.
  */
-import type { AcademicPlan, AcademicRecord, AnalysisResult, CourseAttempt, Curriculum, ImportPreview, RequirementResult } from '../api/types';
+import type { AcademicPlan, AcademicRecord, AnalysisResult, Catalogue, CourseAttempt, Curriculum, ImportPreview, RequirementResult } from '../api/types';
 
 export const curriculum: Curriculum = {
   id: 'cse-2024',
@@ -122,8 +122,24 @@ const actualTree: RequirementResult[] = [
   node('cse-electives', 'needs_review', '26', '26', [node('theory', 'needs_review', '8', '8'), node('systems', 'needs_review', '8', '8'), node('cse-general', 'needs_review', '10', '10')]),
 ];
 
+/** A few catalogue courses with the requirements they could fill (real responses list ~300). */
+export const catalogue: Catalogue = {
+  coverage: 'partial',
+  review_status: 'reviewed',
+  courses: [
+    { id: 'c1', normalized_code: 'ZZ 301', title: 'Synthetic theory course', credits: '4', department: 'ZZ', baskets: ['theory'], could_satisfy: ['Theory & Algorithms basket'], offering_status: 'confirmed_in_snapshot' },
+    { id: 'c2', normalized_code: 'ZZ 327', title: 'Synthetic systems course', credits: '4', department: 'ZZ', baskets: ['systems'], could_satisfy: ['Systems basket'], offering_status: 'confirmed_in_snapshot' },
+    { id: 'c3', normalized_code: 'GE 101', title: 'Synthetic general education', credits: '2', department: 'GE', baskets: ['ge'], could_satisfy: ['General Education basket'], offering_status: 'confirmed_in_snapshot' },
+  ],
+};
+
 export const analysis: AnalysisResult = {
   audit: {
+    degree: {
+      actual: { total_credits: '170', counted_credits: '104', remaining_credits: '66' },
+      current: { total_credits: '170', counted_credits: '108', remaining_credits: '62' },
+      projected: { total_credits: '170', counted_credits: '116', remaining_credits: '54' },
+    },
     actual: actualTree,
     current: actualTree.map((n) => (n.id === 'cse-core' ? { ...n, status: 'conditional', counted_credits: '8' } : n)),
     projected: actualTree.map((n) => (n.id === 'hss' ? { ...n, status: 'conditional' } : n)),

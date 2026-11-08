@@ -52,11 +52,11 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
                 <dd>
                   {evaluation.start_date && evaluation.end_date_exclusive
                     ? `${formatDate(evaluation.start_date)} to ${formatDate(exclusiveToInclusive(evaluation.end_date_exclusive))} (last day)`
-                    : 'Unavailable — exact dates are needed'}
+                    : 'Exact dates are needed'}
                 </dd>
               </div>
               <div>
-                <dt>Actual duration (server)</dt>
+                <dt>Actual duration</dt>
                 <dd>{orUnavailable(evaluation.actual_days, (v) => `${v} days`)}</dd>
               </div>
               <div>
@@ -67,7 +67,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
             {differs ? (
               <p className="callout" data-tone="warning">
                 These dates do not match {durationLabel(evaluation.duration_choice)}: counted in calendar months from the start, that duration would end on{' '}
-                {formatDate(exclusiveToInclusive(evaluation.expected_end_date_exclusive))} (last day). The server uses your actual dates; the label is not a credit
+                {formatDate(exclusiveToInclusive(evaluation.expected_end_date_exclusive))} (last day). CoursePath uses your actual dates; the label is not a credit
                 formula.
               </p>
             ) : null}
@@ -82,7 +82,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
                 ))}
               </ul>
             ) : calendarMissing ? (
-              <p>Unavailable: no academic calendar is loaded (GAP-03), so overlapping terms were not checked. This is not the same as “no overlap”.</p>
+              <p>Overlap with your terms could not be checked for these dates. That is not the same as “no overlap”.</p>
             ) : (
               <p>No overlapping term was found in the calendar.</p>
             )}
@@ -103,13 +103,13 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
             <p className="muted">Nothing is moved automatically. Edit the plan or the scenario and compare again.</p>
           </>
         )}
-        <IssueList issues={conflictIssues} headingLevel={4} emptyMessage="The server reported no time-away issues." />
+        <IssueList issues={conflictIssues} headingLevel={4} emptyMessage="No clashes with your courses." />
       </section>
 
       <section className="panel" aria-labelledby={creditId} data-stale={stale || undefined}>
         <h2 id={creditId}>Proposed academic credit</h2>
         <p>
-          <strong>Choosing a duration awards no credit.</strong> Only IN 498 modules can carry credit, and only after institute approval (D-14).
+          <strong>Choosing a duration awards no credit.</strong> Only IN 498 modules can carry credit, and only after institute approval.
         </p>
         <div role="group" aria-label="Exposure credits">
         <dl className="facts">
@@ -128,7 +128,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
         </dl>
         </div>
         <p className="muted">Proposed by basket: {byTarget(credits?.proposed_by_target)}.</p>
-        <p className="muted">Policy caps (D-14): 4-credit modules, at most 16 exposure credits in total, HSS at most 8 and the open project at most 4. The server checks them.</p>
+        <p className="muted">Internship credit comes in 4-credit modules, at most 16 in total.</p>
         {evaluation.modules.length > 0 ? (
           <ul aria-label="Module approval states">
             {evaluation.modules.map((m, index) => {
@@ -139,7 +139,6 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
                   <Badge tone={state.tone} symbol={state.symbol}>
                     {state.label}
                   </Badge>
-                  {m.reasons.length ? <span className="issue-code"> {m.reasons.join(', ')}</span> : null}
                 </li>
               );
             })}
@@ -149,7 +148,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
         )}
         {assumptions.length > 0 ? (
           <>
-            <h3>Completion assumptions (server)</h3>
+            <h3>Completion assumptions</h3>
             <ul>
               {assumptions.map((a) => (
                 <li key={a}>{a}</li>
@@ -157,8 +156,8 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
             </ul>
           </>
         ) : null}
-        <h3>Unresolved evidence</h3>
-        <IssueList issues={creditIssues as Issue[]} headingLevel={4} emptyMessage="The server reported no unresolved credit evidence." />
+        <h3>Things to check</h3>
+        <IssueList issues={creditIssues as Issue[]} headingLevel={4} emptyMessage="Nothing to check." />
       </section>
     </div>
   );

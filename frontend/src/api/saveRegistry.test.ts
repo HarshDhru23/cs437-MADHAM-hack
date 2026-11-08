@@ -57,6 +57,17 @@ describe('saveRegistry', () => {
     expect(saveRegistry.claim('plan:1', 'user-a')).toBeNull();
   });
 
+  it('discarding a deleted resource drops its unsaved draft, so nothing is sent to it afterwards', async () => {
+    const queue = dirtyQueue();
+    saveRegistry.release('plan:1', queue);
+    await vi.runAllTimersAsync();
+    expect(saveRegistry.hasUnsaved()).toBe(true);
+    saveRegistry.discard('plan:1');
+    expect(saveRegistry.hasUnsaved()).toBe(false);
+    expect(saveRegistry.claim('plan:1', 'user-a')).toBeNull();
+    saveRegistry.discard('plan:never-existed'); // discarding an unknown id is harmless
+  });
+
   it('warns before the tab closes while an unsaved draft exists', async () => {
     const queue = dirtyQueue();
     saveRegistry.release('plan:1', queue);

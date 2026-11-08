@@ -37,7 +37,8 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await page.getByRole('tab', { name: 'Paste IMS grades' }).click();
     await page.getByLabel('IMS grade table').fill(IMS_ROWS);
     await page.getByRole('button', { name: 'Parse grades' }).click();
-    await expect(page.getByText(/7 rows found in 4 terms/)).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
+    await expect(page.getByText(/rows found/)).toHaveCount(0);   // row counts are not shown
     await page.getByRole('button', { name: 'Confirm record' }).click();
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
@@ -54,7 +55,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
 
   test('download a backup: own username, attempts and plan, no password (CP-30)', async ({}, testInfo) => {
     await page.goto('/account');
-    await expect(page.getByText(/not an official transcript or institute record/)).toBeVisible();
+    await expect(page.getByText(/not an official transcript/)).toBeVisible();
     const downloading = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download backup (JSON)' }).click();
     const download = await downloading;
@@ -77,7 +78,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
 
   test('deleting with a wrong password deletes nothing; the right password empties the record (CP-32)', async () => {
     await deleteData(page, 'Wrong-synthetic-pass-1');
-    await expect(page.getByRole('alert').filter({ hasText: 'Your current password was not accepted. Nothing was deleted.' })).toContainText('REAUTH_FAILED');
+    await expect(page.getByRole('alert').filter({ hasText: 'Your current password was not accepted. Nothing was deleted.' })).not.toContainText('REAUTH_FAILED');   // error codes are not shown
     await page.goto('/record');
     await expect(page.getByRole('region', { name: 'Academic history' })).toContainText('ES 242(N)');
 
@@ -88,7 +89,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await expect(done.getByRole('list', { name: 'Deleted items' })).toContainText('Plans: 1');
     await expect(done).toContainText('Retention:');
     await page.goto('/record');
-    await expect(page.getByText('No accepted attempts yet.')).toBeVisible();
+    await expect(page.getByText('No courses on your record yet.')).toBeVisible();
     await page.goto('/plan');
     await expect(page.getByText('You have no saved plans yet.')).toBeVisible();
   });
@@ -108,7 +109,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
 
     await preview.getByRole('button', { name: 'Restore this backup…' }).click();
     await page.getByRole('dialog', { name: 'Replace your saved record?' }).getByRole('button', { name: 'Replace record and restore' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Backup restored.' })).toContainText('with 7 attempts; 1 plan was added.');
+    await expect(page.getByRole('status').filter({ hasText: 'Backup restored.' })).toContainText('Your record now has 7 courses; 1 plan was added.');
 
     await page.goto('/record');
     await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 299', { exact: true })).toHaveCount(2);
@@ -124,15 +125,24 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await expect(page).toHaveURL(/\/report\/[0-9a-f-]+$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Printable report' })).toBeVisible();
     await expect(page.getByRole('note')).toContainText('Not an official institute approval.');
-    await expect(page.getByRole('region', { name: 'Rules and sources' })).toContainText('Rule version');
-    for (const view of ['Actual completed history', 'Completed + confirmed current enrolment', 'Projected with this plan'])
-      await expect(page.getByRole('table', { name: view })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Actual completed history' })).toContainText('ES 242(N)');
+    await expect(page.getByRole('region', { name: 'Summary' })).toContainText('B.Tech CSE, 2024 entry');
+    await expect(page.getByText(/Rule version|Review status|revision/i)).toHaveCount(0);   // developer detail is not printed
+    for (const view of ['Completed', 'Completed + current courses', 'With this plan'])
+      await expect(page.getByRole('table', { name: view, exact: true })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Completed', exact: true })).toContainText('ES 242(N)');
     await expect(page.getByRole('region', { name: 'Planned semesters' })).toContainText('ZZ 330');
     await expect(page.getByRole('region', { name: 'Scenario assumptions' })).toContainText('None.');
-    await expect(page.getByRole('region', { name: 'Unresolved issues' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Things to check' })).toBeVisible();
 
     await page.emulateMedia({ media: 'print' });
+    // On paper the report is black on white whatever the screen theme (the dark screen theme is the default).
+    const paper = await page.evaluate(() => {
+      const cell = document.querySelector('.report-sheet td, .report-sheet th') as HTMLElement;
+      return { page: getComputedStyle(document.body).backgroundColor, text: getComputedStyle(cell).color };
+    });
+    expect(paper.page).toBe('rgb(255, 255, 255)');
+    const [r = 255, g = 255, b = 255] = paper.text.match(/\d+/g)!.map(Number);
+    expect((r + g + b) / 3).toBeLessThan(90);
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Print' })).toBeHidden();
     await expect(page.getByRole('note')).toBeVisible();
@@ -156,7 +166,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('status').filter({ hasText: 'Your CoursePath account and its data were deleted' })).toContainText('Attempts: 7');
     await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Public requirements (no personal data)');
+    await expect(page.getByRole('region', { name: 'Data context' })).toContainText('B.Tech CSE, 2024 entry');
     await expect(page.getByText(owner)).toHaveCount(0);
     await page.goto('/record');
     await expect(page.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeVisible();
@@ -166,7 +176,7 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     const other = await (await browser.newContext()).newPage();
     await signup(other, uniqueUser('e2e_data_other'));
     await other.goto('/record');
-    await expect(other.getByText('No accepted attempts yet.')).toBeVisible();
+    await expect(other.getByText('No courses on your record yet.')).toBeVisible();
     await other.goto(new URL(restoredPlanUrl).pathname);
     await expect(other.getByText('Plan not found')).toBeVisible();
     await other.goto(new URL(restoredPlanUrl).pathname.replace('/plan/', '/report/'));
@@ -176,9 +186,9 @@ test.describe.serial('account data: backup, restore, report and deletion', () =>
     await other.goto('/account');
     await other.getByLabel('Backup file (.json)').setInputFiles(backupPath);
     await other.getByRole('button', { name: 'Preview restore' }).click();
-    await expect(other.getByRole('alert').filter({ hasText: 'This backup cannot be restored. Your saved record was not changed.' })).toContainText('BACKUP_OWNER_MISMATCH');
+    await expect(other.getByRole('alert').filter({ hasText: 'This backup cannot be restored. Your saved record was not changed.' })).not.toContainText('BACKUP_OWNER_MISMATCH'); // error codes are not shown
     await other.goto('/record');
-    await expect(other.getByText('No accepted attempts yet.')).toBeVisible();
+    await expect(other.getByText('No courses on your record yet.')).toBeVisible();
     await other.close();
   });
 });

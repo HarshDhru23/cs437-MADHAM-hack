@@ -1,31 +1,23 @@
-import { useState } from 'react';
-import type { Allocation, CourseAttempt, Curriculum, RequirementDefinition, RequirementResult } from '../../api/types';
-import { CreditProgress } from '../../components/CreditProgress';
-import { DecisionBadge, RequirementStatusBadge } from '../../components/StatusBadge';
-import { formatCredits, formatTerm, humanize, isZeroDecimal } from '../../lib/format';
+import { createContext, useContext, useId, useState } from 'react';
+import type { Allocation, CatalogueCourse, Curriculum, RequirementDefinition, RequirementResult, RequirementStatus } from '../../api/types';
+import { Badge } from '../../components/StatusBadge';
+import { formatCredits, humanize } from '../../lib/format';
+import './requirements.css';
+
+/** How a course that counts toward a requirement was found: taken (with its grade), being taken now, or planned. */
+export interface CountedSource {
+  code: string;
+  title?: string;
+  grade?: string;
+  kind: 'done' | 'current' | 'planned';
+}
+
+const COURSE_LIST_LIMIT = 30;
 
 export function requirementLabel(def: RequirementDefinition | undefined, result?: RequirementResult): string {
   if (def?.label) return def.label;
   if (result?.label && result.label !== result.id) return result.label;
   return humanize(def?.id ?? result?.id ?? 'requirement');
-}
-
-/** Plain description of the rule shape from the server definition (no evaluation). */
-export function describeRule(def: RequirementDefinition | undefined): string {
-  if (!def) return 'Rule definition not provided by the server.';
-  const credits = def.minimum_credits ? `${formatCredits(def.minimum_credits)} credits` : null;
-  switch (def.type) {
-    case 'mandatory_course':
-      return `Mandatory course ${def.course_id ?? '(code not provided)'}${credits ? ` · ${credits}` : ''}`;
-    case 'choose_courses':
-      return `Choose at least ${def.minimum_courses ?? 'an unspecified number of'} courses${credits ? ` · at least ${credits}` : ''}`;
-    case 'all_of':
-      return `All parts below${credits ? ` · ${credits} in total` : ''}`;
-    case 'minimum_credits':
-      return credits ? `At least ${credits}` : 'Minimum credits not specified';
-    default:
-      return `${humanize(def.type)}${credits ? ` · ${credits}` : ''}`;
-  }
 }
 
 export function indexDefinitions(curriculum: Curriculum | null): Map<string, RequirementDefinition> {
@@ -40,132 +32,240 @@ export function indexDefinitions(curriculum: Curriculum | null): Map<string, Req
   return map;
 }
 
-interface TreeProps {
+interface Ctx {
   definitions: Map<string, RequirementDefinition>;
-  /** Public mode: render definitions only. */
-  defs?: RequirementDefinition[];
-  /** Personal mode: render server results. */
-  results?: RequirementResult[];
-  ledger?: Allocation[];
-  attempts?: Map<string, CourseAttempt>;
-  onWhy: (id: string) => void;
-  highlight?: Set<string>;
-  label?: string;
+  ledger: Allocation[];
+  sources: Map<string, CountedSource>;
+  catalogue: CatalogueCourse[];
+  /** The group the ring is pointing at (top-level rows only), and how to point at one. */
+  activeId: string | null;
+  onActive: (id: string | null) => void;
 }
 
-export function RequirementTree({ definitions, defs, results, ledger = [], attempts, onWhy, highlight, label }: TreeProps) {
-  const items = results ? results.map((r) => ({ id: r.id, result: r as RequirementResult | undefined, def: definitions.get(r.id) })) : (defs ?? []).map((d) => ({ id: d.id, result: undefined, def: d }));
+const TreeContext = createContext<Ctx>({ definitions: new Map(), ledger: [], sources: new Map(), catalogue: [], activeId: null, onActive: () => undefined });
+
+const MARK: Record<RequirementStatus, { tone: 'success' | 'warning' | 'scenario' | 'neutral'; symbol: string; label: string }> = {
+  satisfied: { tone: 'success', symbol: '✓', label: 'Done' },
+  conditional: { tone: 'scenario', symbol: '◐', label: 'Planned' },
+  pending: { tone: 'warning', symbol: '○', label: 'To do' },
+  needs_review: { tone: 'neutral', symbol: '○', label: 'To do' },
+};
+
+function StatusMark({ status }: { status: RequirementStatus }) {
+  const meta = MARK[status] ?? MARK.pending;
   return (
-    <ul className="req-list" aria-label={label}>
-      {items.map(({ id, result, def }) => (
-        <RequirementRow key={id} id={id} result={result} def={def} definitions={definitions} ledger={ledger} attempts={attempts} onWhy={onWhy} highlight={highlight} />
-      ))}
-    </ul>
+    <Badge tone={meta.tone} symbol={meta.symbol}>
+      {meta.label}
+    </Badge>
   );
 }
 
-function RequirementRow({
-  id,
-  result,
-  def,
-  definitions,
-  ledger,
-  attempts,
-  onWhy,
-  highlight,
-}: {
-  id: string;
-  result?: RequirementResult;
-  def?: RequirementDefinition;
+interface TreeProps {
+  /** Every definition by id, so a server result can be shown with its label and courses. */
   definitions: Map<string, RequirementDefinition>;
-  ledger: Allocation[];
-  attempts?: Map<string, CourseAttempt>;
-  onWhy: (id: string) => void;
-  highlight?: Set<string>;
-}) {
+  /** Without a record: the requirements only. */
+  defs?: RequirementDefinition[];
+  /** With a record: the server's result for each requirement. */
+  results?: RequirementResult[];
+  ledger?: Allocation[];
+  sources?: Map<string, CountedSource>;
+  catalogue?: CatalogueCourse[];
+  label?: string;
+  /** Pointing at a group row highlights its arc in the ring, and the other way round. */
+  activeId?: string | null;
+  onActive?: (id: string | null) => void;
+}
+
+/** The top-level groups that carry credits, in the order the list (and so the ring) shows them. */
+export function shownGroups(definitions: Map<string, RequirementDefinition>, defs?: RequirementDefinition[], results?: RequirementResult[]) {
+  const items = results
+    ? results.map((r) => ({ id: r.id, result: r as RequirementResult | undefined, def: definitions.get(r.id) }))
+    : (defs ?? []).map((d) => ({ id: d.id, result: undefined, def: d }));
+  return items.filter((i) => i.def && i.def.type !== 'noncredit') as { id: string; result: RequirementResult | undefined; def: RequirementDefinition }[];
+}
+
+export function RequirementTree({ definitions, defs, results, ledger = [], sources, catalogue = [], label, activeId = null, onActive = () => undefined }: TreeProps) {
+  const value: Ctx = { definitions, ledger, sources: sources ?? new Map(), catalogue, activeId, onActive };
+  const shown = shownGroups(definitions, defs, results);
+  return (
+    <TreeContext.Provider value={value}>
+      <ul className="req-list" aria-label={label}>
+        {shown.map(({ id, result, def }) => (
+          <RequirementRow key={id} id={id} result={result} def={def} top />
+        ))}
+      </ul>
+    </TreeContext.Provider>
+  );
+}
+
+const creditsText = (def: RequirementDefinition, result?: RequirementResult): string => {
+  const required = def.minimum_credits ?? result?.required_credits;
+  return required ? `${formatCredits(required)} credits` : '';
+};
+
+/** Credits counted so far, never shown above what the requirement asks for. */
+function progressText(def: RequirementDefinition, result: RequirementResult): string | null {
+  const required = def.minimum_credits ?? result.required_credits;
+  if (!required || result.counted_credits == null) return null;
+  const counted = Number(result.counted_credits) > Number(required) ? required : result.counted_credits;
+  return `${formatCredits(counted)} of ${formatCredits(required)} credits`;
+}
+
+/** How much of a requirement's bar to fill: a drawing detail, the counted credits themselves come from the server. */
+function meterPercent(def: RequirementDefinition, result?: RequirementResult): number {
+  const required = Number(def.minimum_credits ?? result?.required_credits);
+  const counted = Number(result?.counted_credits);
+  return Number.isFinite(required) && required > 0 && Number.isFinite(counted) ? Math.max(0, Math.min(100, (counted / required) * 100)) : 0;
+}
+
+function RequirementRow({ id, result, def, top = false }: { id: string; result?: RequirementResult; def: RequirementDefinition; top?: boolean }) {
+  const { catalogue, ledger, sources, definitions, activeId, onActive } = useContext(TreeContext);
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const name = requirementLabel(def, result);
-  const childDefs = def?.children ?? [];
-  const childResults = result?.children ?? [];
   const counted = result ? ledger.filter((a) => result.allocation_ids.includes(a.id)) : [];
-  const detailsId = `req-details-${id}`;
+  const countedSources = counted.map((a) => sources.get(a.attempt_id)).filter((s): s is CountedSource => Boolean(s));
+
+  if (def.type === 'mandatory_course') {
+    const taken = countedSources[0];
+    const catalogueEntry = catalogue.find((c) => c.normalized_code === def.course_id);
+    return (
+      <li data-requirement={id} className="req-course">
+        <div className="req-course-row">
+          <span className="mono">{def.course_id}</span>
+          <span>{name}</span>
+          <span className="num">{creditsText(def, result) || (catalogueEntry?.credits ? `${formatCredits(catalogueEntry.credits)} credits` : '')}</span>
+          {result ? <StatusMark status={result.status} /> : null}
+          {taken && taken.code !== def.course_id ? (
+            <span className="muted">
+              {' '}
+              counted: {taken.code}
+              {taken.grade ? ` (grade ${taken.grade})` : ''}
+            </span>
+          ) : taken?.grade ? (
+            <span className="muted"> grade {taken.grade}</span>
+          ) : null}
+        </div>
+      </li>
+    );
+  }
+
+  const children = def.children ?? [];
+  const childResults = new Map((result?.children ?? []).map((r) => [r.id, r]));
+  const progress = result ? progressText(def, result) : null;
+  const courses = eligibleCourses(def, catalogue);
+  const countedCodes = new Set(countedSources.map((s) => s.code));
+  const hint = describe(def);
+
   return (
     <li data-requirement={id}>
-      <div className="req-row" data-highlight={highlight?.has(id) ? 'true' : undefined}>
-        <div className="req-head">
-          <div>
-            <h3>{name}</h3>
-            {def?.decision ? <DecisionBadge decision={def.decision} /> : null}
-            <p className="muted">{describeRule(def)}</p>
-          </div>
-          <div className="req-metrics">
-            {result ? <RequirementStatusBadge status={result.status} /> : null}
-            {result ? (
-              <CreditProgress label={name} counted={result.counted_credits} required={result.required_credits} />
-            ) : (
-              <span className="num">Requires {formatCredits(def?.minimum_credits)} credits</span>
-            )}
-            {result ? <span className="num">Remaining: {formatCredits(result.remaining_credits)}</span> : null}
-            {result?.surplus_credits && !isZeroDecimal(result.surplus_credits) ? (
-              <span className="num" title="Counted beyond this requirement; never reused elsewhere (D-07)">
-                Surplus: {formatCredits(result.surplus_credits)} credits
-              </span>
-            ) : null}
-            {result?.missing_terms && result.missing_terms.length > 0 ? (
-              <span>No P recorded yet for: {result.missing_terms.map(formatTerm).join(', ')}</span>
-            ) : null}
-            {result && result.required_courses != null ? (
-              <span className="num">
-                Courses: {result.counted_courses ?? 'Unknown'} of {result.required_courses}
-              </span>
-            ) : null}
-            <button type="button" className="btn btn-small" aria-expanded={open} aria-controls={detailsId} aria-label={`Details for ${name}`} onClick={() => setOpen((o) => !o)}>
-              Details
-            </button>
-            <button type="button" className="btn btn-small btn-quiet" aria-label={`Why? ${name}`} onClick={() => onWhy(id)}>
-              Why?
-            </button>
-          </div>
-        </div>
+      <div
+        className="req-row"
+        data-highlight={top && activeId === id ? 'true' : undefined}
+        {...(top ? { onMouseEnter: () => onActive(id), onMouseLeave: () => onActive(null), onFocus: () => onActive(id), onBlur: () => onActive(null) } : {})}
+      >
+        <h3 className="req-title">
+          <button type="button" className="req-toggle" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((o) => !o)}>
+            <span className="req-chevron" aria-hidden="true">
+              {open ? '▾' : '▸'}
+            </span>
+            <span className="req-name">{name}</span>
+            <span className="req-meter" aria-hidden="true" data-done={result?.status === 'satisfied' ? 'true' : undefined}>
+              {result ? <i style={{ width: `${meterPercent(def, result)}%` }} /> : null}
+            </span>
+            <span className="req-credits num">{progress ?? creditsText(def, result)}</span>
+            {result ? <StatusMark status={result.status} /> : null}
+          </button>
+        </h3>
         {open ? (
-          <div className="req-details" id={detailsId}>
-            {result ? (
+          <div className="req-details" id={panelId}>
+            {hint ? <p className="muted">{hint}</p> : null}
+            {countedSources.length > 0 ? (
               <>
-                <h4>Counted toward this requirement</h4>
-                {counted.length === 0 ? (
-                  <p className="muted">No attempts are counted here by the server.</p>
-                ) : (
-                  <ul>
-                    {counted.map((a) => {
-                      const at = attempts?.get(a.attempt_id);
-                      return (
-                        <li key={a.id}>
-                          <span className="mono">{at?.normalized_code ?? a.attempt_id}</span> {at?.title ?? ''} · <span className="num">{formatCredits(a.credits)} credits</span> ·{' '}
-                          {a.counting_context} — {a.explanation}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                <h4>Counted for you</h4>
+                <ul>
+                  {countedSources.map((s, i) => (
+                    <li key={`${s.code}-${i}`}>
+                      <span className="mono">{s.code}</span> {s.title ?? ''}
+                      {s.kind === 'current' ? ' — in progress' : s.kind === 'planned' ? ' — planned' : s.grade ? ` — grade ${s.grade}` : ''}
+                    </li>
+                  ))}
+                </ul>
               </>
             ) : null}
-            {def?.course_ids && def.course_ids.length > 0 ? (
-              <p>
-                Listed courses in these rules: <span className="mono">{def.course_ids.join(', ')}</span>
-              </p>
-            ) : def && def.type !== 'mandatory_course' && def.type !== 'all_of' ? (
-              <p className="muted">Eligible course list: not provided by the reviewed data yet.</p>
-            ) : null}
-            <p className="muted">Sources: {(result?.source_refs ?? def?.source_refs ?? []).join(', ') || 'none provided'}</p>
-            {def?.source_locator ? <p className="muted">Where in the source: {def.source_locator}</p> : null}
+            {children.length > 0 ? (
+              <ul className="req-list" aria-label={`Parts of ${name}`}>
+                {children
+                  .filter((c) => c.type !== 'noncredit')
+                  .map((c) => (
+                    <RequirementRow key={c.id} id={c.id} def={definitions.get(c.id) ?? c} result={childResults.get(c.id)} />
+                  ))}
+              </ul>
+            ) : (
+              <CourseList courses={courses} done={countedCodes} name={name} />
+            )}
           </div>
         ) : null}
       </div>
-      {result && childResults.length > 0 ? (
-        <RequirementTree definitions={definitions} results={childResults} ledger={ledger} attempts={attempts} onWhy={onWhy} highlight={highlight} label={`Parts of ${name}`} />
-      ) : !result && childDefs.length > 0 ? (
-        <RequirementTree definitions={definitions} defs={childDefs} onWhy={onWhy} highlight={highlight} label={`Parts of ${name}`} />
-      ) : null}
     </li>
+  );
+}
+
+function describe(def: RequirementDefinition): string | null {
+  if (def.any_course) return 'Any course that is not needed for another requirement.';
+  const credits = def.minimum_credits ? `${formatCredits(def.minimum_credits)} credits` : '';
+  switch (def.type) {
+    case 'choose_courses':
+      return `Choose ${def.minimum_courses ?? 'some'} courses${credits ? ` (${credits} in total)` : ''}.`;
+    case 'minimum_credits':
+      return credits ? `${credits} from the courses below.` : null;
+    default:
+      return null;
+  }
+}
+
+interface ListedCourse {
+  code: string;
+  title?: string;
+  credits?: string | null;
+}
+
+/** The courses that can fill a requirement: those the catalogue places in it, plus any the rules name outright. */
+function eligibleCourses(def: RequirementDefinition, catalogue: CatalogueCourse[]): ListedCourse[] {
+  if (def.any_course || (def.children?.length ?? 0) > 0) return [];
+  const found = new Map<string, ListedCourse>();
+  for (const c of catalogue) {
+    if (c.baskets?.includes(def.id) || c.could_satisfy?.includes(def.id)) found.set(c.normalized_code, { code: c.normalized_code, title: c.title, credits: c.credits });
+  }
+  for (const code of def.course_ids ?? []) {
+    if (!found.has(code)) {
+      const known = catalogue.find((c) => c.normalized_code === code);
+      found.set(code, { code, title: known?.title, credits: known?.credits });
+    }
+  }
+  return [...found.values()].sort((a, b) => a.code.localeCompare(b.code));
+}
+
+function CourseList({ courses, done, name }: { courses: ListedCourse[]; done: Set<string>; name: string }) {
+  const [all, setAll] = useState(false);
+  if (courses.length === 0) return null;
+  const visible = all ? courses : courses.slice(0, COURSE_LIST_LIMIT);
+  return (
+    <>
+      <ul className="req-courses" aria-label={`Courses for ${name}`}>
+        {visible.map((c) => (
+          <li key={c.code}>
+            <span className="mono">{c.code}</span> {c.title ?? ''}
+            {c.credits ? <span className="muted"> · {formatCredits(c.credits)} credits</span> : null}
+            {done.has(c.code) ? <span className="muted"> ✓ counted</span> : null}
+          </li>
+        ))}
+      </ul>
+      {courses.length > COURSE_LIST_LIMIT && !all ? (
+        <button type="button" className="btn btn-small" onClick={() => setAll(true)}>
+          Show all {courses.length} courses
+        </button>
+      ) : null}
+    </>
   );
 }

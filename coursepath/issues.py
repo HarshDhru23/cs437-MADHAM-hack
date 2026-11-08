@@ -12,7 +12,7 @@ class Issue:
     suggested_action: str = 'Review the source evidence.'
 
     def __post_init__(self):
-        if self.severity not in {'error', 'warning', 'unknown', 'approval_required'}:
+        if self.severity not in {'error', 'warning', 'info', 'unknown', 'approval_required'}:
             raise ValueError('Invalid issue severity')
 
     def to_dict(self):

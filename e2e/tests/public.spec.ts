@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 // Flow 1 (CP-01): full requirements before login/history, through the real API.
-// Expected labels, version and sources are from the reviewed rules in data/curricula/cse-2024.json (ADV13, D-16).
-// The draft banner and unreviewed-policy states are covered by the frontend unit tests.
-test('public requirements are browsable before sign-in, with review status and sources', async ({ page }) => {
+// Expected labels and courses are from the reviewed rules in data/curricula/cse-2024.json (ADV13).
+// The page shows no rule version, review status, source or decision text.
+test('public requirements are browsable before sign-in, each group opening to its courses', async ({ page }) => {
   const personalCalls: string[] = [];
   page.on('request', (r) => {
     if (/\/api\/v1\/(record|analysis|plans)/.test(r.url())) personalCalls.push(r.url());
   });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Graduation requirements' })).toBeVisible();
   const list = page.getByRole('list', { name: 'Requirements' });
   for (const name of [
     'Institute core',
@@ -20,19 +20,28 @@ test('public requirements are browsable before sign-in, with review status and s
     'Basic Science elective',
     'Open electives',
   ]) {
-    await expect(list.getByRole('heading', { name, exact: true })).toBeVisible();
+    await expect(list.getByRole('button', { name: new RegExp(`^${name.replace(/[()]/g, '\\$&')}\\s*\\d`) })).toBeVisible();
   }
-  await expect(page.getByRole('region', { name: 'Data context' })).toContainText('cse-2024-v1 (reviewed)');
-  await expect(page.getByText(/These rules are a draft/)).toHaveCount(0);
-  const obligations = page.getByRole('region', { name: 'Non-credit obligations' });
+  await expect(page.getByRole('region', { name: 'Data context' })).toContainText('B.Tech CSE, 2024 entry');
+  await expect(page.getByText(/cse-2024-v1|Rule set|review status|draft/i)).toHaveCount(0);
+  const obligations = page.getByRole('region', { name: 'Other requirements' });
   await expect(obligations).toContainText('Comprehensive viva');
-  await expect(obligations).not.toContainText('not yet reviewed');
+  await expect(obligations).toContainText('Physical education');
 
-  await page.getByRole('button', { name: 'Why? CSE core' }).click();
-  const dialog = page.getByRole('dialog', { name: /CSE core/ });
-  await expect(dialog).toContainText('Academic Affairs Advisory No. 13');
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
+  // Opening a group lists its courses; opening it again hides them.
+  const core = list.getByRole('button', { name: /^Institute core\s*\d/ });
+  await expect(core).toHaveAttribute('aria-expanded', 'false');
+  await core.click();
+  await expect(core).toHaveAttribute('aria-expanded', 'true');
+  await expect(list.getByText('ES 101')).toBeVisible();
+  await expect(list.getByText('Engineering Graphics')).toBeVisible();
+  const hss = list.getByRole('button', { name: /^Humanities and Social Sciences \(GE included\)\s*\d/ });
+  await hss.click();
+  await expect(list.getByText('HS 191')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Why\?/ })).toHaveCount(0);
+  await expect(page.getByText(/\bD-\d\d\b|Advisory No\. 13|ADV13/)).toHaveCount(0);
+  await core.click();
+  await expect(core).toHaveAttribute('aria-expanded', 'false');
   expect(personalCalls).toEqual([]);
 });
 

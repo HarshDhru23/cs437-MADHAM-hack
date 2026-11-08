@@ -12,19 +12,20 @@ export interface PlanItem {
   id: string;
   code: string;
   term_id: string;
+  credits?: string;
 }
 
 export function planItems(plan: AcademicPlan | null): PlanItem[] {
   if (!plan) return [];
   return [...plan.semesters]
     .sort((a, b) => compareTerms(a.term_id, b.term_id))
-    .flatMap((s) => s.courses.map((c) => ({ id: c.id, code: c.normalized_code, term_id: s.term_id })));
+    .flatMap((s) => s.courses.map((c) => ({ id: c.id, code: c.normalized_code, term_id: s.term_id, credits: c.credits })));
 }
 
 export function itemName(items: PlanItem[], id: string | null | undefined): string {
   if (!id) return 'unknown item';
   const item = items.find((i) => i.id === id);
-  return item ? `${item.code} (${formatTerm(item.term_id)})` : `planned item ${id}`;
+  return item ? `${item.code} (${formatTerm(item.term_id)})` : 'a course that is no longer in the plan';
 }
 
 export function itemCode(items: PlanItem[], id: string): string {
@@ -65,6 +66,13 @@ export function describeChange(change: ScenarioChange, items: PlanItem[]): strin
       return `Unrecognised change (${String(unknown.op)})`;
     }
   }
+}
+
+/** A change an apply left in the scenario, in words: the change it was, or "Internship choice". */
+export function describeSkipped(skipped: { op: string; item_id: string | null; term_id: string | null }, changes: ScenarioChange[], items: PlanItem[]): string {
+  if (skipped.op === 'internship') return 'Internship choice';
+  const found = changes.find((c) => c.op === skipped.op && ('item_id' in c ? c.item_id === skipped.item_id : c.term_id === skipped.term_id));
+  return found ? describeChange(found, items) : humanize(skipped.op);
 }
 
 export function splitChanges(changes: ScenarioChange[]): { planEdits: ScenarioChange[]; hypothetical: ScenarioChange[] } {
@@ -221,8 +229,8 @@ export function examOverlapText(value: boolean | null | undefined): string {
   return ', exam overlap unknown';
 }
 
-/** A server value that may be missing. Missing is "Unavailable", never 0. */
+/** A value that may be missing. Missing shows a dash, never 0. */
 export function orUnavailable(value: string | number | null | undefined, format: (v: string) => string = (v) => v): string {
-  if (value === null || value === undefined || value === '') return 'Unavailable';
+  if (value === null || value === undefined || value === '') return '—';
   return format(String(value));
 }

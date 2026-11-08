@@ -35,15 +35,23 @@ describe('RecordPage (CP-02, A04)', () => {
     expect(captions).toEqual(['2024–25 Semester I', '2024–25 Semester II', '2025–26 Semester I', '2025–26 Semester II']);
     expect(screen.getByRole('region', { name: 'Current enrolment' })).toHaveTextContent(/No confirmed current courses/);
     expect(screen.getByText(/Latest completed term/).parentElement).toHaveTextContent('2025–26 Semester II');
-    expect(screen.getByText(/Current enrolment is never filled in automatically/)).toBeInTheDocument();
+    expect(screen.getByText(/Add only the courses you are registered for this term/)).toBeInTheDocument();
   });
 
-  it('keeps both repeated registrations and shows unresolved classification', async () => {
+  it('shows no revision numbers, source references or other developer detail', async () => {
+    const s = server();
+    const { container } = renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
+    await screen.findByRole('region', { name: 'Academic history' });
+    expect(container.textContent).not.toMatch(/revision|server|Designation unknown|\bD-\d\d\b|[A-Z]{3,}_[A-Z_]{3,}/i);
+    expect(screen.queryByRole('button', { name: /^Source for/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps both repeated registrations and no longer calls rule-matched rows unmatched', async () => {
     const s = server();
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
     await screen.findByRole('region', { name: 'Academic history' });
     expect(screen.getAllByText('ZZ 299')).toHaveLength(2);
-    expect(screen.getAllByText('Not matched to a reviewed catalogue').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/reviewed catalogue/)).not.toBeInTheDocument(); // D-29: rows are matched by the approved rules
   });
 
   it('requires a justification to correct an attempt and keeps the original evidence', async () => {
@@ -108,7 +116,8 @@ describe('RecordPage (CP-02, A04)', () => {
     await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
     expect(s.patches[0]).toMatchObject({ expected_revision: 3, current_enrolment: [{ normalized_code: 'ZZ 330', credits: '4', confirmed: true, term_id: '2026-27-I' }] });
     await waitFor(() => expect(within(section).getByRole('status')).toHaveTextContent('Saved'));
-    expect(within(section).getByRole('status')).toHaveTextContent('Server revision 4');
+    expect(within(section).getByRole('status')).toHaveTextContent('Saved');
+    expect(within(section).getByRole('status')).not.toHaveTextContent(/revision/i);
   });
 
   it('on a stale save (409) keeps the draft and offers reload/compare, never auto-retrying', async () => {
@@ -162,8 +171,8 @@ describe('RecordPage (CP-02, A04)', () => {
     const s = server({ ...record, attempts: [...record.attempts, reimported] });
     renderApp(<RecordPage />, { fetchImpl: s.fetchImpl });
     await screen.findByRole('region', { name: 'Academic history' });
-    await userEvent.click(screen.getByRole('button', { name: 'Source for ZZ 104 (2024–25 Semester II)' }));
-    const dialog = screen.getByRole('dialog', { name: 'Source for ZZ 104' });
+    await userEvent.click(screen.getByRole('button', { name: 'Details for ZZ 104 (2024–25 Semester II)' }));
+    const dialog = screen.getByRole('dialog', { name: 'Details for ZZ 104' });
     expect(dialog).toHaveTextContent('Re-import: grade “B” → “A-” — Grade revised after re-evaluation');
     expect(dialog).not.toHaveTextContent('[object Object]');
   });
@@ -187,7 +196,7 @@ describe('RecordPage (CP-02, A04)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Correct ZZ 372 (2024–25 Semester I)' }));
     const dialog = screen.getByRole('dialog', { name: /Correct ZZ 372/ });
     expect(within(dialog).getByLabelText('Status')).toHaveValue('unknown');
-    expect(within(dialog).getByText(/does not approve a course equivalence/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/does not make one course count as another/)).toBeInTheDocument();
   });
 
   it('rejects a course code or credit value the server would reject, before saving', async () => {

@@ -7,8 +7,12 @@ import type {
   AnalysisResult,
   Catalogue,
   Curriculum,
+  GenerationOptions,
   ImportCommitPayload,
   ImportPreview,
+  PlanCheck,
+  PlanGeneration,
+  PlannedSemester,
   PlanMutationResult,
   PlanPayload,
   PlanValidation,
@@ -49,8 +53,19 @@ export const endpoints = {
   plan: (api: ApiClient, id: string, o?: RequestOptions) => api.get<AcademicPlan>(`/plans/${encodeURIComponent(id)}`, o),
   patchPlan: (api: ApiClient, id: string, body: PlanPayload & { expected_revision: number }, o?: RequestOptions) =>
     api.send<PlanMutationResult>('PATCH', `/plans/${encodeURIComponent(id)}`, body, o),
+  /** Delete one saved plan. The record and other plans are untouched. A stale revision is a 409; a missing or foreign plan is a 404. */
+  deletePlan: (api: ApiClient, id: string, expectedRevision: number, o?: RequestOptions) =>
+    api.send<null>('DELETE', `/plans/${encodeURIComponent(id)}`, { expected_revision: expectedRevision }, o),
   validatePlan: (api: ApiClient, id: string, body: { record_revision: number; plan_revision: number }, o?: RequestOptions) =>
     api.send<PlanValidation>('POST', `/plans/${encodeURIComponent(id)}/validate`, body, o),
+
+  /** D-35: a draft plan for the remaining degree. Sends the record revision it was asked against; a stale one is a 409. Saves nothing. */
+  generatePlan: (api: ApiClient, recordRevision: number, options?: GenerationOptions, o?: RequestOptions) =>
+    api.send<PlanGeneration>('POST', '/plans/generate', { record_revision: recordRevision, ...(options && Object.keys(options).length > 0 ? { options } : {}) }, o),
+
+  /** D-36: check an unsaved (for example edited, generated) plan: validation, degree credits its courses cover, credits held by placeholders. Saves nothing. */
+  checkPlan: (api: ApiClient, recordRevision: number, semesters: PlannedSemester[], o?: RequestOptions) =>
+    api.send<PlanCheck>('POST', '/plans/check', { record_revision: recordRevision, semesters }, o),
 
   analysis: (api: ApiClient, body: AnalysisRequest, o?: RequestOptions) => api.send<AnalysisResult>('POST', '/analysis', body, o),
 };
@@ -60,6 +75,10 @@ import type { TermOfferingSnapshot } from './types';
 
 export const offeringEndpoints = {
   offerings: (api: ApiClient, termId: string, o?: RequestOptions) => api.get<TermOfferingSnapshot>(`/offerings?term_id=${encodeURIComponent(termId)}`, o),
+};
+
+export const calendarEndpoints = {
+  calendar: (api: ApiClient, o?: RequestOptions) => api.get<import('./types').CalendarData>('/calendar', o),
 };
 
 // A09 — scenarios (server/README.md: /scenarios, /scenarios/{id}, /scenarios/compare, /scenarios/{id}/apply-plan).

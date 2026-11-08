@@ -7,15 +7,14 @@ import { useResourceCache } from '../../api/resources';
 import type { CandidateResolution, CourseAttempt, DiffEntry, Issue } from '../../api/types';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
-import { Dialog } from '../../components/Dialog';
-import { IssueList } from '../../components/IssueList';
-import { SourcePanel } from '../../components/SourcePanel';
+import { IssueList, visibleIssues } from '../../components/IssueList';
 import { Badge, SeverityBadge } from '../../components/StatusBadge';
-import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
+import { compareTerms, describeCorrection, formatCredits, formatTerm, humanize, plainMessage } from '../../lib/format';
 import { isDecimalString } from '../../lib/validation';
 import { importDraftStore } from './draftStore';
 import { Steps } from './ImportPage';
 import { previewStore } from './previewStore';
+import './import.css';
 
 type EditableField = 'normalized_code' | 'title' | 'credits' | 'grade' | 'term_id';
 const FIELDS: { key: EditableField; label: string }[] = [
@@ -70,7 +69,6 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
   const [totalsReason, setTotalsReason] = useState('');
   const [filter, setFilter] = useState<'all' | 'review'>('all');
   const [editing, setEditing] = useState<string | null>(null);
-  const [source, setSource] = useState<CourseAttempt | null>(null);
   const [pending, setPending] = useState(false);
   const [commitError, setCommitError] = useState<ApiError | null>(null);
 
@@ -78,7 +76,7 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
   // The server's diff names the saved attempt; its values come from the accepted record.
   const savedById = useMemo(() => new Map((record.data?.attempts ?? []).map((a) => [a.id, a])), [record.data]);
   const allIssues: Issue[] = [...previewIssues, ...(commitError?.issues ?? [])];
-  const issuesFor = (id: string) => allIssues.filter((i) => i.entity_refs.includes(id));
+  const issuesFor = (id: string) => visibleIssues(allIssues.filter((i) => i.entity_refs.includes(id)));
   const conflicts = preview.diff.filter((d) => d.status === 'conflicting');
   const needsTotalsAck = allIssues.some((i) => i.code === 'IMPORT_TOTAL_MISMATCH');
   const flagged = (c: CourseAttempt) => issuesFor(c.id).length > 0 || diffById.get(c.id)?.status === 'conflicting' || !included.has(c.id) || Boolean(corrections[c.id]);
@@ -132,18 +130,16 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
   const restart = commitError && (commitError.kind === 'conflict' || commitError.kind === 'not_found' || commitError.code === 'PREVIEW_EXPIRED');
 
   return (
-    <div>
+    <div className="import-flow">
       <Steps current="review" />
       <h1>Review imported rows</h1>
-      <p>
-        {candidates.length} rows found in {terms.length} terms from your {stored.kind === 'pdf' ? 'transcript PDF' : 'IMS paste'}. Nothing is saved until you confirm.
-        Preview expires {formatTimestamp(preview.expires_at)}.
-      </p>
-      <p className="muted">
-        Compared with your saved record: {counts.new ?? 0} new, {counts.unchanged ?? 0} unchanged, {counts.conflicting ?? 0} conflicting.
-      </p>
-
-      <TotalsTable extracted={preview.extracted_controls} reported={preview.reported_controls} />
+      <p>Check the courses below, fix anything that is wrong, then confirm. Nothing is saved until you confirm.</p>
+      {preview.diff.length > 0 && (counts.unchanged || counts.conflicting) ? (
+        <p className="muted">
+          Compared with your saved record:{' '}
+          {[counts.new ? `${counts.new} new` : '', counts.unchanged ? `${counts.unchanged} already saved` : '', counts.conflicting ? `${counts.conflicting} changed` : ''].filter(Boolean).join(', ')}.
+        </p>
+      ) : null}
 
       {commitError ? (
         <div className="callout" data-tone="danger" role="alert">
@@ -155,7 +151,7 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
                   ? 'This preview has expired.'
                   : commitError.kind === 'not_found'
                     ? 'This preview is not available for your account.'
-                    : 'The server did not accept this import yet.'}
+                    : 'This import could not be saved.'}
             </strong>{' '}
             Your saved record was not changed.
           </p>
@@ -168,10 +164,12 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
         </div>
       ) : null}
 
-      <section className="panel" aria-label="Import issues">
-        <h2>Issues to review</h2>
-        <IssueList issues={previewIssues} emptyMessage="The parser reported no issues." headingLevel={3} />
-      </section>
+      {visibleIssues(previewIssues).length > 0 ? (
+        <section className="panel" aria-label="Import issues">
+          <h2>Check before confirming</h2>
+          <IssueList issues={previewIssues} headingLevel={3} />
+        </section>
+      ) : null}
 
       {preview.unparsed_rows.length > 0 ? (
         <section className="panel" aria-label="Lines that could not be read">
@@ -201,8 +199,8 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
 
       {needsTotalsAck ? (
         <section className="panel" aria-label="Totals discrepancy">
-          <h2>Totals discrepancy</h2>
-          <p>Acknowledging does not force the totals to agree or make credits degree-countable.</p>
+          <h2>Totals do not match</h2>
+          <p>The totals printed in your document differ from the courses read from it. Compare them before you confirm.</p>
           <div className="field">
             <label>
               <input type="checkbox" checked={totalsAck} onChange={(e) => setTotalsAck(e.target.checked)} /> I have compared the totals with my source document
@@ -215,15 +213,13 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
         </section>
       ) : null}
 
-      <fieldset className="panel">
-        <legend>
-          <strong>Show</strong>
-        </legend>
-        <div className="panel-row" role="radiogroup" aria-label="Row filter">
-          <label className="btn">
+      <fieldset className="rv-filter">
+        <legend className="visually-hidden">Show</legend>
+        <div className="rv-seg" role="radiogroup" aria-label="Row filter">
+          <label data-checked={filter === 'all' ? 'true' : undefined}>
             <input type="radio" name="row-filter" checked={filter === 'all'} onChange={() => setFilter('all')} /> All rows ({candidates.length})
           </label>
-          <label className="btn">
+          <label data-checked={filter === 'review' ? 'true' : undefined}>
             <input type="radio" name="row-filter" checked={filter === 'review'} onChange={() => setFilter('review')} /> Rows needing review ({candidates.filter(flagged).length})
           </label>
         </div>
@@ -242,9 +238,8 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
       {terms.map((term) => {
         const rows = visible.filter((c) => c.term_id === term);
         if (rows.length === 0) return null;
-        const extractedTerm = preview.extracted_controls?.terms?.[term];
         return (
-          <div className="table-wrap" key={term}>
+          <div className="table-wrap review-table" key={term}>
             <table className="data stack-mobile">
               <caption>{formatTerm(term)}</caption>
               <thead>
@@ -255,7 +250,7 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
                     Credits
                   </th>
                   <th scope="col">Grade / status</th>
-                  <th scope="col">Match / review state</th>
+                  <th scope="col">Status</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>
@@ -290,16 +285,10 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
                       setEditing(null);
                     }}
                     onDecide={(d) => setDecisions((all) => ({ ...all, [c.id]: d }))}
-                    onSource={() => setSource(c)}
                   />
                 ))}
               </tbody>
             </table>
-            {extractedTerm ? (
-              <p className="muted num">
-                Extracted for this term: {extractedTerm.attempt_count} rows, {formatCredits(extractedTerm.raw_credits)} credits (raw sum).
-              </p>
-            ) : null}
           </div>
         );
       })}
@@ -313,7 +302,7 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
             ))}
           </ul>
         ) : (
-          <p>Unmatched rows can be confirmed; they stay visibly unresolved in your audit. Confirming does not approve any equivalence.</p>
+          <p>Everything looks ready. Confirm to save these courses to your record.</p>
         )}
         <div className="panel-row">
           <button type="button" className="btn btn-primary" disabled={blockers.length > 0 || pending} onClick={confirm}>
@@ -322,53 +311,6 @@ function Review({ previewId, stored }: { previewId: string; stored: NonNullable<
           <Link to="/record/import">Back to import</Link>
         </div>
       </section>
-
-      <Dialog open={source !== null} title={source ? `Source for ${source.normalized_code}` : 'Source'} onClose={() => setSource(null)} variant="drawer">
-        {source ? <SourcePanel refs={source.source_refs} /> : null}
-      </Dialog>
-    </div>
-  );
-}
-
-function TotalsTable({ extracted, reported }: { extracted?: import('../../api/types').ExtractedControls; reported: Record<string, unknown> }) {
-  const rows: { measure: string; origin: string; value: string }[] = [];
-  if (extracted) {
-    if (extracted.attempt_count !== undefined) rows.push({ measure: 'Rows', origin: 'Extracted from rows', value: String(extracted.attempt_count) });
-    rows.push({ measure: 'Credits (raw sum of rows)', origin: 'Extracted from rows', value: formatCredits(extracted.raw_credits) });
-    if (extracted.performance_credits !== undefined) rows.push({ measure: 'Performance credits', origin: 'Extracted from rows', value: formatCredits(extracted.performance_credits) });
-    if (extracted.grade_points !== undefined) rows.push({ measure: 'Grade points', origin: 'Extracted from rows', value: formatCredits(extracted.grade_points) });
-    rows.push({ measure: 'Degree-allocated credits', origin: 'Server audit', value: extracted.degree_allocated_credits ? formatCredits(extracted.degree_allocated_credits) : 'Not allocated at import' });
-  }
-  for (const [key, value] of Object.entries(reported ?? {})) {
-    rows.push({ measure: humanize(key), origin: 'Source-reported', value: typeof value === 'string' || typeof value === 'number' ? String(value) : 'Unknown' });
-  }
-  if (Object.keys(reported ?? {}).length === 0) rows.push({ measure: 'Source totals', origin: 'Source-reported', value: 'None printed in this input' });
-  return (
-    <div className="panel">
-      <table className="data">
-        <caption>Totals: source-reported vs extracted</caption>
-        <thead>
-          <tr>
-            <th scope="col">Measure</th>
-            <th scope="col">Origin</th>
-            <th scope="col" className="num">
-              Value
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={`${r.origin}-${r.measure}`}>
-              <th scope="row">{r.measure}</th>
-              <td>{r.origin}</td>
-              <td className="num">{r.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {extracted?.status === 'arithmetic_only' ? (
-        <p className="muted">Extracted totals are arithmetic only. They are not forced to match the source and are not degree-countable credits.</p>
-      ) : null}
     </div>
   );
 }
@@ -386,7 +328,6 @@ function CandidateRow({
   onEdit,
   onApply,
   onDecide,
-  onSource,
 }: {
   candidate: CourseAttempt;
   diff?: DiffEntry;
@@ -400,7 +341,6 @@ function CandidateRow({
   onEdit: () => void;
   onApply: (c: Correction) => void;
   onDecide: (d: { action: 'keep_existing' | 'accept_incoming'; justification: string }) => void;
-  onSource: () => void;
 }) {
   const value = (k: EditableField) => correction?.fields[k] ?? candidate[k] ?? '';
   const changed = (k: EditableField) => correction?.fields[k] !== undefined;
@@ -415,7 +355,7 @@ function CandidateRow({
     );
   return (
     <Fragment>
-      <tr data-changed={correction ? 'true' : undefined} data-excluded={included ? undefined : 'true'}>
+      <tr data-changed={correction ? 'true' : undefined} data-excluded={included ? undefined : 'true'} data-flagged={issues.length > 0 || diff?.status === 'conflicting' ? 'true' : undefined}>
         <td data-label="Include">
           <input type="checkbox" checked={included} onChange={(e) => onToggle(e.target.checked)} aria-label={`Include ${candidate.normalized_code}`} />
           {!included ? <span className="muted"> Excluded</span> : null}
@@ -433,12 +373,12 @@ function CandidateRow({
           {show('grade', value('grade') || 'Blank')} · {humanize(candidate.completion_status)}
           {changed('term_id') ? <div>Term: {show('term_id', formatTerm(value('term_id')))}</div> : null}
         </td>
-        <td data-label="Match / review state">
-          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : 'neutral'} symbol={diff.status === 'new' ? '+' : undefined}>{humanize(diff.status)}</Badge> : null}{' '}
-          {candidate.course_version_id ? <Badge tone="success">Catalogue matched</Badge> : <Badge tone="unknown" symbol="?">Unmatched</Badge>}
+        <td data-label="Status">
+          {diff ? <Badge tone={diff.status === 'conflicting' ? 'danger' : 'neutral'} symbol={diff.status === 'new' ? '+' : undefined}>{diff.status === 'conflicting' ? 'Changed' : humanize(diff.status)}</Badge> : null}{' '}
+          {issues.some((i) => i.code === 'UNMATCHED_COURSE') ? <Badge tone="unknown" symbol="?">Needs review</Badge> : null}
           {issues.map((i, n) => (
             <div key={n}>
-              <SeverityBadge severity={i.severity} /> {i.message}
+              <SeverityBadge severity={i.severity} /> {plainMessage(i.message)}
             </div>
           ))}
           {diff?.status === 'conflicting' ? (
@@ -453,9 +393,6 @@ function CandidateRow({
           <div className="panel-row">
             <button type="button" className="btn btn-small" aria-expanded={editing} aria-label={`Edit ${candidate.normalized_code}`} onClick={onEdit}>
               Edit
-            </button>
-            <button type="button" className="btn btn-small btn-quiet" aria-label={`Source for ${candidate.normalized_code}`} onClick={onSource}>
-              Source
             </button>
           </div>
         </td>
@@ -543,7 +480,7 @@ function InlineEditor({ candidate, correction, onApply, onCancel }: { candidate:
             <div className="field" key={f.key}>
               <label htmlFor={`${id}-${f.key}`}>{f.label}</label>
               <input id={`${id}-${f.key}`} type="text" value={values[f.key]} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))} />
-              <span className="hint">Source: {String(candidate[f.key] ?? '') || 'blank'}</span>
+              <span className="hint">Printed: {String(candidate[f.key] ?? '') || 'blank'}</span>
             </div>
           ))}
         </div>

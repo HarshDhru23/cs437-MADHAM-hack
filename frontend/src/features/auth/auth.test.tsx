@@ -27,6 +27,15 @@ describe('LoginPage', () => {
     expect(screen.queryByText(/SSO|institute login|IMS password/i)).not.toBeInTheDocument();
   });
 
+  it('is one centred panel with a decorative wordmark and a single heading', async () => {
+    const { fetchImpl } = fakeApi({}, null);
+    const { container } = renderApp(<LoginPage />, { fetchImpl, route: '/login', path: '/login' });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument();
+    expect(container.querySelector('.auth-wrap .auth-panel')).not.toBeNull();
+    expect(container.querySelector('.auth-mark')).toHaveAttribute('aria-hidden', 'true'); // the page's real name is in the shell, not announced twice
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('shows a generic failure for rejected credentials and does not leak which field was wrong', async () => {
     const { fetchImpl } = fakeApi({ 'POST /auth/login': () => ({ status: 401, issues: [issue('INVALID_CREDENTIALS', 'error')] }) }, null);
     renderApp(<LoginPage />, { fetchImpl, route: '/login', path: '/login' });

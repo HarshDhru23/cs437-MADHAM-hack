@@ -1,0 +1,142 @@
+/* Performance: the CPI readout, the SPI sparkline and the per-term table. Tokens only (styles/tokens.css). */
+
+.perf-tiles {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.4fr) repeat(2, minmax(9rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-3);
+}
+.perf-tiles > div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  padding: var(--space-3) var(--space-4);
+}
+.perf-tiles dt {
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.perf-tiles dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-m);
+  font-size: 1.35rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.perf-tiles .perf-cpi {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.perf-tiles .perf-cpi dd {
+  font-family: var(--font-d);
+  font-size: clamp(2.4rem, 8vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+}
+.perf-tiles dd small {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: var(--font-b);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.spark {
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+  max-width: 34rem;
+}
+.spark-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.spark-grid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+.spark-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.spark-dot {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.spark-end {
+  fill: var(--accent);
+}
+.perf-table .spark-caption.mono {
+  color: var(--text-muted);
+}
+.spark-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.perf-table table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.perf-table table.data caption {
+  text-align: left;
+  padding-bottom: var(--space-2);
+  font-family: var(--font-m);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.perf-table table.data th,
+.perf-table table.data td {
+  padding: 6px var(--space-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.perf-table table.data thead th {
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom-color: var(--border-strong);
+}
+.perf-table table.data td.num,
+.perf-table table.data th.num {
+  text-align: right;
+  font-family: var(--font-m);
+  font-variant-numeric: tabular-nums;
+}
+.perf-table table.data tbody tr:hover {
+  background: var(--accent-soft);
+}
+.perf-table .mono {
+  font-family: var(--font-m);
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .perf-tiles {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .perf-tiles .perf-cpi {
+    grid-column: 1 / -1;
+  }
+  .perf-table table.data td.num {
+    text-align: left;
+  }
+}

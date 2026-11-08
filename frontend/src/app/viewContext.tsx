@@ -38,10 +38,10 @@ export function usePublishView(info: Partial<ViewInfo>): void {
 }
 
 export const DATA_MODE_LABEL: Record<DataMode, string> = {
-  public: 'Public requirements (no personal data)',
-  actual: 'Actual completed history',
-  current: 'Completed + confirmed current enrolment',
-  projected: 'Projected plan (not completed)',
-  scenario: 'Scenario (hypothetical)',
+  public: 'Requirements',
+  actual: 'Your completed courses',
+  current: 'Completed and current courses',
+  projected: 'Your plan (not completed yet)',
+  scenario: 'A what-if scenario',
   none: '—',
 };

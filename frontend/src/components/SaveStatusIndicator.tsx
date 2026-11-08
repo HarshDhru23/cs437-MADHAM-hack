@@ -13,7 +13,7 @@ const TEXT: Record<SaveStatus, string> = {
 
 const SYMBOL: Record<SaveStatus, string> = { idle: '✓', pending: '•', saving: '…', saved: '✓', offline: '⚠', error: '✕', conflict: '⚠' };
 
-export function SaveStatusIndicator({ status, revision, savedAt, label }: { status: SaveStatus; revision: number | null; savedAt?: Date | null; label?: string }) {
+export function SaveStatusIndicator({ status, savedAt, label }: { status: SaveStatus; revision?: number | null; savedAt?: Date | null; label?: string }) {
   const tone = status === 'error' || status === 'conflict' ? 'danger' : status === 'offline' || status === 'pending' ? 'warning' : 'neutral';
   return (
     <span className="save-status" role="status" aria-live="polite" aria-label={label}>
@@ -21,7 +21,6 @@ export function SaveStatusIndicator({ status, revision, savedAt, label }: { stat
         <span aria-hidden="true">{SYMBOL[status]}</span>
         {TEXT[status]}
       </span>
-      {revision !== null ? <span className="muted num">Server revision {revision}</span> : null}
       {savedAt && status === 'saved' ? <span className="muted">at {formatTimestamp(savedAt.toISOString())}</span> : null}
     </span>
   );

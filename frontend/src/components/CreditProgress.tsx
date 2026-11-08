@@ -16,7 +16,7 @@ export function CreditProgress({ label, counted, required }: { label: string; co
       <span className="num">{text}</span>
       {drawable ? (
         <div className="progress-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-valuetext={text}>
-          <div className="progress-fill" style={{ width: `${percent}%` }} />
+          <div className="progress-fill" data-tone={percent >= 100 ? 'ok' : undefined} style={{ width: `${percent}%` }} />
         </div>
       ) : null}
     </div>

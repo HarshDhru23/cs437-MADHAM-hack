@@ -93,12 +93,11 @@ function DownloadBackup() {
     <section aria-labelledby="backup-heading">
       <h3 id="backup-heading">Download a backup</h3>
       <p>
-        The backup is a JSON file with your username, your accepted record (course attempts with their source evidence and corrections, confirmed current
-        enrolment, source-reported totals and the record revision), your plans and scenarios, and the rule version, review status and sources it was made
-        against. It contains no password or session data.
+        The backup is a file with your username, your record (courses, corrections and current courses), your plans and your scenarios. It contains no
+        password.
       </p>
       <p className="muted">
-        It is your own copy for restoring into this CoursePath account. It is not an official transcript or institute record, and it does not show any approval.
+        It is your own copy for restoring into this CoursePath account. It is not an official transcript.
       </p>
       <button type="button" className="btn btn-primary" onClick={download} disabled={pending}>
         {pending ? 'Preparing backup…' : 'Download backup (JSON)'}
@@ -107,7 +106,7 @@ function DownloadBackup() {
         <div className="callout" role="status">
           <p>
             Saved <span className="mono">{done.name}</span>
-            {done.revision !== null ? ` (record revision ${done.revision})` : ''}. Keep it somewhere private: it contains your grades.
+            . Keep it somewhere private: it contains your grades.
           </p>
           {done.issues.length > 0 ? <IssueList issues={done.issues} grouped={false} headingLevel={4} /> : null}
         </div>
@@ -298,8 +297,7 @@ function RestoreBackup({ record }: { record: AcademicRecord | null }) {
         <section className="panel" aria-label="Restore preview">
           <h4>What restoring would change</h4>
           <p className="muted">
-            Compared with your saved record at revision {preview.data.base_record_revision}, as reported by the server. Preview expires{' '}
-            {formatTimestamp(preview.data.expires_at)}.
+            Compared with your saved record. This preview expires {formatTimestamp(preview.data.expires_at)}.
           </p>
           <RestoreDiff diff={diff} lookup={lookup} />
           {preview.issues.length > 0 ? <IssueList issues={preview.issues} headingLevel={4} /> : null}
@@ -316,8 +314,7 @@ function RestoreBackup({ record }: { record: AcademicRecord | null }) {
 
       {done ? (
         <p className="callout" role="status">
-          Backup restored. Your record is now at revision {done.revision} with {done.attempts} attempts; {done.plans} {done.plans === 1 ? 'plan was' : 'plans were'}{' '}
-          added.
+          Backup restored. Your record now has {done.attempts} courses; {done.plans} {done.plans === 1 ? 'plan was' : 'plans were'} added.
         </p>
       ) : null}
 
@@ -333,7 +330,7 @@ function RestoreBackup({ record }: { record: AcademicRecord | null }) {
             const fresh = await latestRecord();
             return (
               <p>
-                Revision {fresh.revision}, {fresh.attempts.length} attempts.
+                {fresh.attempts.length} courses.
               </p>
             );
           }}
@@ -354,7 +351,7 @@ function RestoreBackup({ record }: { record: AcademicRecord | null }) {
       <ConfirmDialog open={confirming} title="Replace your saved record?" confirmLabel="Replace record and restore" danger onConfirm={commit} onCancel={() => setConfirming(false)}>
         {diff ? (
           <p>
-            Your saved record (revision {preview?.data.base_record_revision}) will be replaced by the backup: {diff.attempts_added.length} attempts added,{' '}
+            Your saved record will be replaced by the backup: {diff.attempts_added.length} courses added,{' '}
             {diff.attempts_removed.length} removed and {diff.attempts_changed.length} changed. {diff.plans_to_create} plans will be created;{' '}
             {diff.scenarios_not_restored} scenarios are not restored. This cannot be undone except by restoring another backup.
           </p>
@@ -461,7 +458,7 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
   const revisionConflict = error?.kind === 'conflict' && error.code !== 'ACCOUNT_HAS_VERIFICATIONS';
 
   return (
-    <section aria-labelledby="delete-heading">
+    <section aria-labelledby="delete-heading" className="danger-zone">
       <h3 id="delete-heading">Delete my data</h3>
       <p>Deleting removes from CoursePath:</p>
       <ul>
@@ -481,7 +478,7 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
         <footer className="muted">— CoursePath server documentation (server/README.md)</footer>
       </blockquote>
 
-      <form onSubmit={review} noValidate style={{ maxWidth: '36rem' }}>
+      <form onSubmit={review} noValidate className="form-narrow">
         <PasswordField label="Current password for deletion" value={password} onChange={setPassword} autoComplete="current-password" error={errors.password} />
         <div className="field">
           <label htmlFor={phraseId}>Type “{DELETE_PHRASE}” to confirm</label>
@@ -502,8 +499,8 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
             </span>
           ) : null}
         </div>
-        <div className="field">
-          <label htmlFor={accountId} style={{ fontWeight: 400 }}>
+        <div className="field checkbox-row">
+          <label htmlFor={accountId}>
             <input id={accountId} type="checkbox" checked={deleteAccount} onChange={(e) => setDeleteAccount(e.target.checked)} /> Delete my account too
           </label>
         </div>
@@ -515,8 +512,7 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
       {result ? (
         <div className="callout" role="status">
           <p>
-            <strong>Your data was deleted.</strong> Your record is now empty
-            {result.record_revision !== null ? ` at revision ${result.record_revision}` : ''}. Your account remains.
+            <strong>Your data was deleted.</strong> Your record is now empty. Your account remains.
           </p>
           <DeletedCounts result={result} />
         </div>

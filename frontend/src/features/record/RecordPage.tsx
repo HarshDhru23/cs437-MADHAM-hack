@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { endpoints } from '../../api/endpoints';
-import { useCurriculum, useRecord } from '../../api/hooks';
+import { useRecord } from '../../api/hooks';
 import { useResourceCache } from '../../api/resources';
 import type { AcademicRecord, CompletionStatus, CourseAttempt, CurrentEnrolment } from '../../api/types';
 import { useSaveQueue } from '../../api/useSaveQueue';
@@ -13,12 +13,12 @@ import { ConflictPanel } from '../../components/ConflictPanel';
 import { Dialog } from '../../components/Dialog';
 import { DataTable } from '../../components/DataTable';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
-import { SourcePanel } from '../../components/SourcePanel';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
 import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
+import './record.css';
 
 const STATUS_LABEL: Record<CompletionStatus, string> = {
   completed: 'Completed',
@@ -26,7 +26,7 @@ const STATUS_LABEL: Record<CompletionStatus, string> = {
   failed: 'Failed / not completed',
   withdrawn: 'Withdrawn',
   incomplete: 'Incomplete',
-  unknown: 'Unknown',
+  unknown: 'To check',
 };
 
 function newId(prefix: string): string {
@@ -48,8 +48,7 @@ export function RecordPage() {
   const [editing, setEditing] = useState<CourseAttempt | null>(null);
   const [adding, setAdding] = useState(false);
   const [source, setSource] = useState<CourseAttempt | null>(null);
-  const curriculum = useCurriculum();
-  usePublishView({ ruleVersion: record.data?.profile.curriculum_version ?? null, reviewStatus: curriculum.data?.review_status ?? null, dataMode: 'actual', recordRevision: record.data?.revision ?? null });
+  usePublishView({ dataMode: 'actual' });
 
   const onSaved = (next: AcademicRecord) => {
     cache.set(`record:${user?.id}`, { data: next, issues: [] });
@@ -73,34 +72,26 @@ export function RecordPage() {
     <div>
       <SubNav label="My record" items={RECORD_TABS} />
       <h1>My record</h1>
-      <dl className="summary-grid">
-        <div>
-          <dt>Record revision</dt>
-          <dd>{data.revision}</dd>
-        </div>
-        <div>
-          <dt>Last updated</dt>
-          <dd>{data.updated_at ? formatTimestamp(data.updated_at) : <small>Update time not reported by the server</small>}</dd>
-        </div>
+      <dl className="rec-tiles">
+        {data.updated_at ? (
+          <div>
+            <dt>Last updated</dt>
+            <dd>{formatTimestamp(data.updated_at)}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>Latest completed term</dt>
           <dd>{latestCompleted ? formatTerm(latestCompleted) : 'None'}</dd>
         </div>
         <div>
-          <dt>Attempts</dt>
+          <dt>Courses on record</dt>
           <dd>{completed.length}</dd>
         </div>
       </dl>
-      {data.reported_controls.length > 0 ? (
-        <p className="muted">
-          Imported from {data.reported_controls.length} source document(s); the latest import was accepted at record revision{' '}
-          {data.reported_controls.at(-1)?.record_revision_at_import}.
-        </p>
-      ) : null}
 
       {completed.length === 0 ? (
         <div className="panel panel-row">
-          <p style={{ margin: 0 }}>No accepted attempts yet.</p>
+          <p style={{ margin: 0 }}>No courses on your record yet.</p>
           <Link className="btn btn-primary" to="/record/import">
             Import transcript or IMS grades
           </Link>
@@ -110,7 +101,7 @@ export function RecordPage() {
         </div>
       ) : null}
 
-      <section aria-label="Academic history" className="stack">
+      <section aria-label="Academic history" className="stack rec-history">
         <div className="panel-row" style={{ justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0 }}>Academic history</h2>
           {completed.length > 0 ? (
@@ -124,10 +115,7 @@ export function RecordPage() {
             </div>
           ) : null}
         </div>
-        <p className="muted">
-          Every accepted attempt is kept, including failed attempts and repeated registrations; only completed attempts earn credit. Corrections keep the original
-          source text.
-        </p>
+        <p className="muted">Failed and repeated courses stay on your record; only completed courses earn credit.</p>
         {terms.map((term) => (
           <DataTable
             key={term}
@@ -139,15 +127,14 @@ export function RecordPage() {
               { key: 'code', header: 'Code', rowHeader: true, render: (a) => <span className="mono">{a.normalized_code}</span> },
               { key: 'title', header: 'Title', render: (a) => a.title },
               { key: 'credits', header: 'Credits', numeric: true, render: creditsCell },
-              { key: 'grade', header: 'Grade', render: (a) => a.grade || <span className="muted">Blank</span> },
+              { key: 'grade', header: 'Grade', render: (a) => (a.grade ? <span className="grade-pill mono">{a.grade}</span> : <span className="muted">Blank</span>) },
               { key: 'status', header: 'Status', render: (a) => STATUS_LABEL[a.completion_status] ?? a.completion_status },
               {
                 key: 'class',
-                header: 'Classification',
+                header: 'Counts as',
                 render: (a) => (
                   <>
-                    {a.course_version_id ? <Badge tone="success">Catalogue matched</Badge> : <Badge tone="unknown" symbol="?">Not matched to a reviewed catalogue</Badge>}{' '}
-                    {a.learning_designation === 'unknown' ? <span className="muted">Designation unknown</span> : humanize(a.learning_designation)}
+                    {a.learning_designation === 'unknown' ? <span className="muted">—</span> : humanize(a.learning_designation)}
                     {a.user_corrections.length > 0 ? (
                       <>
                         {' '}
@@ -165,9 +152,11 @@ export function RecordPage() {
                     <button type="button" className="btn btn-small" aria-label={`Correct ${a.normalized_code} (${formatTerm(a.term_id)})`} onClick={() => setEditing(a)}>
                       Correct
                     </button>
-                    <button type="button" className="btn btn-small btn-quiet" aria-label={`Source for ${a.normalized_code} (${formatTerm(a.term_id)})`} onClick={() => setSource(a)}>
-                      Source
-                    </button>
+                    {a.user_corrections.length > 0 || a.original ? (
+                      <button type="button" className="btn btn-small btn-quiet" aria-label={`Details for ${a.normalized_code} (${formatTerm(a.term_id)})`} onClick={() => setSource(a)}>
+                        Details
+                      </button>
+                    ) : null}
                   </div>
                 ),
               },
@@ -207,10 +196,9 @@ export function RecordPage() {
           }}
         />
       ) : null}
-      <Dialog open={source !== null} title={source ? `Source for ${source.normalized_code}` : 'Source'} onClose={() => setSource(null)} variant="drawer">
+      <Dialog open={source !== null} title={source ? `Details for ${source.normalized_code}` : 'Details'} onClose={() => setSource(null)} variant="drawer">
         {source ? (
           <>
-            <SourcePanel refs={source.source_refs} />
             {source.original ? (
               <p>
                 Original values: code <span className="mono">{source.original.code ?? '—'}</span>, title “{source.original.title ?? '—'}”, credits {formatCredits(source.original.credits)}, grade{' '}
@@ -229,7 +217,7 @@ export function RecordPage() {
                 </ul>
               </>
             ) : null}
-            <p className="muted">A correction fixes a transcription error. It does not approve a course equivalence or substitution.</p>
+            <p className="muted">A correction fixes a typing error; it does not make one course count as another.</p>
           </>
         ) : null}
       </Dialog>
@@ -261,7 +249,7 @@ function AttemptDialog({
   const [grade, setGrade] = useState(initial?.grade ?? '');
   const [term, setTerm] = useState(initial?.term_id ?? defaultTerm ?? '');
   const [status, setStatus] = useState<CompletionStatus>(initial?.completion_status ?? 'completed');
-  // D-21 gives imported, current and planned rows a default; a row added by hand asks the student instead.
+  // Imported, current and planned rows have a default; a row added by hand asks the student instead.
   const [designation, setDesignation] = useState<'' | 'degree' | 'additional'>('');
   const [justification, setJustification] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -302,7 +290,7 @@ function AttemptDialog({
         e instanceof ApiError
           ? e.kind === 'conflict'
             ? 'Your record was changed elsewhere. Close this dialog, reload the page and try again; your typed values are still shown here.'
-            : `The server did not accept this change: ${e.message}`
+            : `This change could not be saved: ${e.message}`
           : String(e),
       );
     } finally {
@@ -340,7 +328,7 @@ function AttemptDialog({
               <option value="failed">Failed / not completed</option>
               <option value="withdrawn">Withdrawn</option>
               <option value="incomplete">Incomplete</option>
-              <option value="unknown">Unknown / needs review</option>
+              <option value="unknown">Not sure</option>
             </select>
           </div>
           <div className="field">
@@ -364,13 +352,7 @@ function AttemptDialog({
             <textarea id={`${id}-why`} value={justification} onChange={(e) => setJustification(e.target.value)} style={{ minHeight: '5rem' }} />
           </div>
         ) : null}
-        <p className="muted">The server decides whether the grade and status are consistent and how the attempt counts.</p>
-        {initial ? (
-          <p className="muted">
-            A correction fixes a transcription error only. Changing the code does not approve a course equivalence or substitution (for example, CS 203 does not
-            become CS 202).
-          </p>
-        ) : null}
+        {initial ? <p className="muted">A correction fixes a typing error only. Changing the code does not make one course count as another.</p> : null}
         {error ? (
           <p className="field-error" role="alert">
             {error}
@@ -462,7 +444,7 @@ function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { record:
         {queue.state ? <SaveStatusIndicator status={queue.state.status} revision={queue.state.revision} savedAt={queue.state.savedAt} /> : null}
       </div>
       <p className="muted">
-        Current enrolment is never filled in automatically from a transcript or example plan. Add only courses you are actually registered for this term.
+        Add only the courses you are registered for this term. They are never filled in from a transcript.
       </p>
       {queue.state?.status === 'conflict' ? (
         <ConflictPanel

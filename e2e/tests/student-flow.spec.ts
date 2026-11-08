@@ -24,10 +24,10 @@ test.describe.serial('student flow', () => {
 
     await expect(page).toHaveURL(/\/record\/review\//);
     await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
-    await expect(page.getByText(/7 rows found in 4 terms/)).toBeVisible();
+    await expect(page.getByText(/rows found/)).toHaveCount(0);   // row counts are not shown
     await expect(page.getByRole('region', { name: 'Lines that could not be read' })).toContainText('this footer line is not a course row');
-    // Equivalence evidence stays visible; nothing offers to approve it.
-    await expect(page.getByText(/no equivalence is approved/i).first()).toBeVisible();
+    // The CS 203 note is a note, not something to act on: it is never shown, and no decision id or code leaks.
+    await expect(page.getByText(/team decision|\bD-\d\d\b|EQUIVALENCE_UNCONFIRMED/)).toHaveCount(0);
     await expect(page.getByRole('button', { name: /approve/i })).toHaveCount(0);
 
     const confirm = page.getByRole('button', { name: 'Confirm record' });
@@ -50,16 +50,18 @@ test.describe.serial('student flow', () => {
     // Lands on the real audit for the new record revision.
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Actual completed history');
-    await expect(page.getByRole('region', { name: 'Attempts not counted' })).toContainText('ZZ 105');
-    await expect(page.getByRole('region', { name: 'Unresolved decisions and issues' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Your completed courses');
+    await expect(page.getByRole('region', { name: 'Attempts not counted' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Unresolved decisions and issues' })).toHaveCount(0);
     // Expected from the reviewed rule data, not from the app: CS 202 is a mandatory core course (ADV13 p. 14) and
     // CS 203 does not satisfy it (D-03), so "tools" can never be satisfied; most core courses are absent, so no completion.
-    await expect(page.getByRole('region', { name: 'Overview' }).getByText('Overall verdict').locator('..')).toContainText('Not complete');
-    const toolsHeading = page.getByRole('list', { name: 'Requirements' }).getByRole('heading', { name: 'Software Tools and Techniques for CSE', exact: true });
-    const tools = toolsHeading.locator('xpath=ancestor::li[1]');
+    await expect(page.getByRole('region', { name: 'Overview' }).getByRole('status')).toContainText(/Not yet eligible to graduate — \d+ credits to go/);
+    await expect(page.getByRole('region', { name: 'Overview' }).getByText('Credits counted').locator('..')).toContainText(/of 170/);
+    const core = page.getByRole('list', { name: 'Requirements' }).getByRole('button', { name: /^CSE core\s*\d/ });
+    await core.click();
+    const tools = page.locator('[data-requirement="tools"]');
     await expect(tools).toContainText('CS 202');
-    await expect(tools).not.toContainText('Satisfied');
+    await expect(tools).not.toContainText('Done');
   });
 
   test('accepted record keeps repeats, failed attempts and the correction (CP-02/10)', async () => {
@@ -70,8 +72,8 @@ test.describe.serial('student flow', () => {
     await expect(history).toContainText('ES 242(N)');
     await expect(history).toContainText('Failed / not completed');
     await expect(history).toContainText('Corrected (1)');
-    await history.getByRole('button', { name: /Source for ZZ 104/ }).click();
-    await expect(page.getByRole('dialog', { name: 'Source for ZZ 104' })).toContainText('Synthetic Calculs');
+    await history.getByRole('button', { name: /Details for ZZ 104/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Details for ZZ 104' })).toContainText('Synthetic Calculs');
     await page.keyboard.press('Escape');
   });
 
@@ -82,16 +84,16 @@ test.describe.serial('student flow', () => {
     await expect(cpi).toBeVisible();
     // Independent arithmetic on IMS_TEXT with the roadmap points (A 10, A- 9, B 8, F 0; P excluded):
     // ZZ 299 A 4x10 + CS 203 A 4x10 + ZZ 104 B 2x8 + ZZ 105 F 4x0 + ES 242(N) A- 4x9 = 132 over 18 credits.
-    // The draft backend has no official rounding policy, so the displayed CPI must be Unavailable, never 0.
+    // D-28 (7 Nov): the grade table is reviewed and display rounds half up to 2 decimals, so 132 / 18 = 7.333... shows as 7.33 (never 0).
     const value = (label: string | RegExp) => cpi.getByText(label, { exact: typeof label === 'string' }).locator('xpath=following-sibling::dd[1]');
-    await expect(value('CPI (server)')).toContainText('Unavailable');
-    await expect(value('CPI (server)')).not.toHaveText(/^0(\.0+)?\b/);
+    await expect(value('CPI')).toContainText('7.33');
+    await expect(value('CPI')).not.toHaveText(/^0(\.0+)?\b/);
     await expect(value('Grade points')).toHaveText('132');
-    await expect(value(/Performance credits \(denominator\)/)).toHaveText('18');
-    // 2025-26 Semester I has only a P attempt: no denominator, so its SPI is unavailable rather than 0.
+    await expect(value('Graded credits')).toHaveText('18');
+    // 2025-26 Semester I has only a P attempt: no denominator, so its SPI shows a dash rather than 0.
     const spi = page.getByRole('table', { name: 'Term SPI' });
     await expect(spi).toContainText('2024–25 Semester I');
-    await expect(spi.getByRole('row', { name: /2025–26 Semester I\b/ }).first()).toContainText('Unavailable');
+    await expect(spi.getByRole('row', { name: /2025–26 Semester I\b/ }).first()).toContainText('—');
   });
 
   test('create a plan, add and move a course with the keyboard, see server totals (CP-04/05)', async () => {
@@ -110,8 +112,9 @@ test.describe.serial('student flow', () => {
     await dialog.getByRole('button', { name: 'Add course', exact: true }).click();
     const status = page.getByRole('status', { name: 'Plan save status' });
     await expect(status).toContainText('Saved');
-    await expect(semester(page, '2026–27 Semester I')).toContainText('Selected courses: 4 credits');
-    await expect(semester(page, '2026–27 Semester I')).toContainText('Not checked');
+    await expect(semester(page, '2026–27 Semester I')).toContainText(/Semester total: 4 \/ 28 credits/);   // Plan tab wording (F2-owned)
+    // A course that is in no timetable is never reported as a clash-free one (the Plan tab no longer prints a 'not checked' note: F2-owned wording).
+    await expect(semester(page, '2026–27 Semester I')).not.toContainText(/No clash/i);
 
     // Keyboard-only move.
     const select = semester(page, '2026–27 Semester I').getByLabel('Move ZZ 330 to');
@@ -122,8 +125,8 @@ test.describe.serial('student flow', () => {
     await page.keyboard.press('Enter');
     await expect(semester(page, '2026–27 Semester II')).toContainText('ZZ 330');
     await expect(status).toContainText('Saved');
-    await expect(semester(page, '2026–27 Semester II')).toContainText('Selected courses: 4 credits');
-    await expect(page.getByRole('region', { name: 'Plan validation' })).toContainText(/No recommendation recorded|PREREQUISITE_UNKNOWN/);
+    await expect(semester(page, '2026–27 Semester II')).toContainText(/Semester total: 4 \/ 28 credits/);
+    await expect(page.getByRole('region', { name: 'Plan validation' })).not.toContainText(/PREREQUISITE_UNKNOWN|D-\d\d/);
   });
 
   test('a second browser context sees the acknowledged save; a stale edit gets a 409 (CP-29)', async ({ browser }) => {
@@ -131,7 +134,7 @@ test.describe.serial('student flow', () => {
     const pageB = await contextB.newPage();
     await login(pageB, owner, new URL(planUrl).pathname);
     await expect(semester(pageB, '2026–27 Semester II')).toContainText('ZZ 330');
-    await expect(pageB.getByRole('status', { name: 'Plan save status' })).toContainText('Server revision 2');
+    await expect(pageB.getByRole('status', { name: 'Plan save status' })).not.toContainText(/revision/i);
 
     // B saves a change; A is now stale.
     await semester(pageB, '2026–27 Semester II').getByRole('button', { name: 'Remove ZZ 330' }).click();
@@ -186,11 +189,11 @@ test.describe.serial('student flow', () => {
     await expect(pageA.getByRole('region', { name: 'Overview' })).toBeVisible();
     await pageA.getByRole('button', { name: 'Sign out' }).click();
     await expect(pageA.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
-    await expect(pageA.getByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeVisible();
+    await expect(pageA.getByRole('heading', { level: 1, name: 'Graduation requirements' })).toBeVisible();
     await expect(pageA.getByRole('region', { name: 'Overview' })).toHaveCount(0);
     await expect(pageA.getByRole('region', { name: 'Attempts not counted' })).toHaveCount(0);
-    await expect(pageA.getByRole('region', { name: 'Data context' })).toContainText('Public requirements (no personal data)');
-    await expect(pageA.getByRole('region', { name: 'Data context' })).not.toContainText('Record revision');
+    await expect(pageA.getByRole('region', { name: 'Data context' })).toContainText('B.Tech CSE, 2024 entry');
+    await expect(pageA.getByRole('region', { name: 'Data context' })).not.toContainText(/revision/i);
     await expect(pageA.getByText('ZZ 299')).toHaveCount(0);
     await pageA.getByRole('link', { name: 'My record', exact: true }).click();
     await expect(pageA.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeVisible();

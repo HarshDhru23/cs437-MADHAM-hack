@@ -25,25 +25,21 @@ test('PDF import shows every semester and source totals; re-import is idempotent
   await page.getByRole('button', { name: 'Parse transcript' }).click();
 
   await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
-  await expect(page.getByText(/8 rows found in 4 terms/)).toBeVisible();
+  await expect(page.getByText(/rows found/)).toHaveCount(0);   // row counts are not shown
   for (const term of ['2024–25 Semester I', '2024–25 Semester II', '2025–26 Semester I', '2025–26 Semester II']) {
     await expect(page.getByRole('table', { name: term, exact: true })).toBeVisible();
   }
-  const totals = page.getByRole('table', { name: 'Totals: source-reported vs extracted' });
-  await expect(totals.getByRole('row', { name: /Earned credits/ })).toContainText('16');
-  await expect(totals.getByRole('row', { name: /Credits \(raw sum of rows\)/ })).toContainText('16');
-  await page.getByRole('button', { name: /Source for ES 242\(N\)/ }).first().click();
-  await expect(page.getByRole('dialog', { name: /Source for ES 242\(N\)/ })).toContainText('Page 1');
-  await page.keyboard.press('Escape');
+  await expect(page.getByRole('table', { name: /Totals/ })).toHaveCount(0);   // no reconciliation table
+  await expect(page.getByRole('button', { name: /^Source for/ })).toHaveCount(0);   // no source viewer
   await page.getByRole('button', { name: 'Confirm record' }).click();
   await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Overview' })).toContainText('Earned credits');
+  await expect(page.getByRole('region', { name: 'Overview' })).toContainText('Credits counted');
 
   // Re-import the same file: every row is unchanged and nothing is duplicated.
   await page.goto('/record/import');
   await page.getByLabel('Choose transcript PDF').setInputFiles(SYNTHETIC_PDF);
   await page.getByRole('button', { name: 'Parse transcript' }).click();
-  await expect(page.getByText(/0 new, 8 unchanged, 0 conflicting/)).toBeVisible();
+  await expect(page.getByText(/Compared with your saved record: 8 already saved/)).toBeVisible();
   await page.getByRole('button', { name: 'Confirm record' }).click();
   await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
   await page.goto('/record');

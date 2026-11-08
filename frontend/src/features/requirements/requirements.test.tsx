@@ -1,57 +1,72 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { analysis, curriculum, plan, record } from '../../test/fixtures';
+import { analysis, catalogue, curriculum, plan, record } from '../../test/fixtures';
 import { fakeApi, issue, renderApp } from '../../test/harness';
 import { RequirementsPage } from './RequirementsPage';
 
-const publicRoutes = { 'GET /curricula/cse-2024': () => ({ data: curriculum, issues: [issue('SOURCE_MISSING', 'unknown', [], 'Only a draft is available.')] }) };
+const DEVELOPER_TEXT = /\bD-\d\d\b|team decision|[A-Z]{3,}_[A-Z_]{3,}|Rule set|review status|cse-2024|BTECH_CSE|Why\?|Server revision|Record revision/;
+const publicRoutes = {
+  'GET /curricula/cse-2024': () => ({ data: curriculum, issues: [issue('SOURCE_MISSING', 'unknown', [], 'Only a draft is available.')] }),
+  'GET /catalogue': () => ({ data: catalogue, issues: [] }),
+};
 
 describe('RequirementsPage — public mode (CP-01)', () => {
-  it('shows every requirement grouped by basket before any history or sign-in', async () => {
+  it('shows every requirement group before any history or sign-in, each as a button that opens it', async () => {
     const { fetchImpl, calls } = fakeApi(publicRoutes, null);
     renderApp(<RequirementsPage />, { fetchImpl });
-    await screen.findByRole('heading', { name: 'CSE 2024 graduation requirements' });
+    await screen.findByRole('heading', { level: 1, name: 'Graduation requirements' });
     const list = screen.getByRole('list', { name: 'Requirements' });
     for (const label of ['HSS (GE included)', 'Science basket', 'Bs elective', 'Cse core', 'Cse electives']) {
-      expect(within(list).getByRole('heading', { name: label })).toBeInTheDocument();
+      expect(within(list).getByRole('button', { name: new RegExp(`^${label.replace(/[()]/g, '\\$&')}`) })).toBeInTheDocument();
     }
-    // GE is inside HSS; electives' sub-baskets inside the elective parent; core separate.
-    const hss = within(list).getByRole('heading', { name: 'HSS (GE included)' }).closest('li') as HTMLElement;
-    expect(within(hss).getByRole('heading', { name: 'Ge' })).toBeInTheDocument();
-    expect(within(hss).getByText(/Choose at least 2 courses/)).toBeInTheDocument();
-    const electives = within(list).getByRole('heading', { name: 'Cse electives' }).closest('li') as HTMLElement;
-    expect(within(electives).getByRole('heading', { name: 'Theory' })).toBeInTheDocument();
-    const core = within(list).getByRole('heading', { name: 'Cse core' }).closest('li') as HTMLElement;
-    expect(within(core).queryByRole('heading', { name: 'Theory' })).not.toBeInTheDocument();
-    expect(within(core).getByText(/Mandatory course CS 202/)).toBeInTheDocument();
     expect(calls.some((c) => c.path === '/record' || c.path === '/analysis')).toBe(false);
   });
 
-  it('makes the draft status and missing sources prominent', async () => {
+  it('opens and closes a group: aria-expanded toggles and the courses appear', async () => {
     const { fetchImpl } = fakeApi(publicRoutes, null);
     renderApp(<RequirementsPage />, { fetchImpl });
-    expect(await screen.findByText(/These rules are a draft/)).toBeInTheDocument();
-    expect(screen.getByText('Equivalence/substitution decisions')).toBeInTheDocument();
-    expect(screen.getByText('Only a draft is available.')).toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Requirements' });
+    const core = within(list).getByRole('button', { name: /^Cse core/ });
+    expect(core).toHaveAttribute('aria-expanded', 'false');
+    expect(within(list).queryByText('CS 202')).not.toBeInTheDocument();
+    await userEvent.click(core);
+    expect(core).toHaveAttribute('aria-expanded', 'true');
+    expect(within(list).getByText('CS 202')).toBeInTheDocument();
+    expect(within(list).getByText('ES 242')).toBeInTheDocument();
+    await userEvent.click(core);
+    expect(core).toHaveAttribute('aria-expanded', 'false');
+    expect(within(list).queryByText('CS 202')).not.toBeInTheDocument();
   });
 
-  it('shows zero-credit PE/viva obligations with unknown completion policy, not as complete', async () => {
+  it('lists the courses of a basket from the rules and the catalogue, with titles', async () => {
     const { fetchImpl } = fakeApi(publicRoutes, null);
     renderApp(<RequirementsPage />, { fetchImpl });
-    const section = await screen.findByRole('region', { name: 'Non-credit obligations' });
-    expect(within(section).getByText(/4 semesters/)).toBeInTheDocument();
-    expect(within(section).getAllByText(/Completion policy not yet reviewed/)).toHaveLength(2);
-    expect(within(section).queryByText(/Satisfied|Complete\b/)).not.toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Requirements' });
+    await userEvent.click(within(list).getByRole('button', { name: /^Cse electives/ }));
+    await userEvent.click(within(list).getByRole('button', { name: /^Theory/ }));
+    const courses = within(list).getByRole('list', { name: 'Courses for Theory' });
+    expect(within(courses).getByText('ZZ 301')).toBeInTheDocument();
+    expect(within(courses).getByText('Synthetic theory course')).toBeInTheDocument();
+    expect(within(courses).getByText('ZZ 614')).toBeInTheDocument(); // named by the rules, not in the catalogue: code only
   });
 
-  it('opens a source explanation from Why?', async () => {
+  it('shows no draft banner, rule version, source or decision text, and no issue panel', async () => {
+    const { fetchImpl } = fakeApi(publicRoutes, null);
+    const { container } = renderApp(<RequirementsPage />, { fetchImpl });
+    const list = await screen.findByRole('list', { name: 'Requirements' });
+    for (const button of within(list).getAllByRole('button')) await userEvent.click(button);
+    expect(container.textContent).not.toMatch(DEVELOPER_TEXT);
+    expect(screen.queryByText(/draft/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Total in these rules/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Only a draft is available.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Unresolved decisions and issues' })).not.toBeInTheDocument();
+  });
+
+  it('states the degree total in plain words', async () => {
     const { fetchImpl } = fakeApi(publicRoutes, null);
     renderApp(<RequirementsPage />, { fetchImpl });
-    await userEvent.click(await screen.findByRole('button', { name: 'Why? Cse core' }));
-    const dialog = screen.getByRole('dialog', { name: /Cse core/ });
-    expect(within(dialog).getByText(/Committed implementation roadmap/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/review status: draft/)).toBeInTheDocument();
+    expect(await screen.findByText(/170 credits to graduate/)).toBeInTheDocument();
   });
 });
 
@@ -91,73 +106,96 @@ describe('RequirementsPage — stale record (CP-29)', () => {
 });
 
 describe('RequirementsPage — personal audit (CP-03, CP-13, CP-20)', () => {
-  it('shows server statuses; a full progress bar never turns needs-review into satisfied', async () => {
-    const { fetchImpl } = fakeApi(personalRoutes);
-    renderApp(<RequirementsPage />, { fetchImpl });
-    await screen.findByRole('region', { name: 'Overview' });
-    const list = screen.getByRole('list', { name: 'Requirements' });
-    const electives = (await within(list).findByRole('heading', { name: 'Cse electives' })).closest('li') as HTMLElement;
-    expect(within(electives).getAllByText('Needs review').length).toBeGreaterThan(0);
-    expect(within(electives).queryByText('Satisfied')).not.toBeInTheDocument();
-    const dsa = within(list).getByRole('heading', { name: 'Dsa' }).closest('li') as HTMLElement;
-    expect(within(dsa).getByText('Satisfied')).toBeInTheDocument();
-  });
-
-  it('expands to list counted attempts from the allocation ledger, with explanation', async () => {
-    const { fetchImpl } = fakeApi(personalRoutes);
-    renderApp(<RequirementsPage />, { fetchImpl });
-    await screen.findByRole('region', { name: 'Overview' });
-    const list = screen.getByRole('list', { name: 'Requirements' });
-    const dsa = (await within(list).findByRole('heading', { name: 'Dsa' })).closest('li') as HTMLElement;
-    await userEvent.click(within(dsa).getByRole('button', { name: 'Details for Dsa' }));
-    expect(within(dsa).getByText('ES 242(N)')).toBeInTheDocument();
-    expect(within(dsa).getByText(/allocated once/)).toBeInTheDocument();
-  });
-
-  it('keeps failed/unknown attempts visible as not counted with reasons', async () => {
-    const { fetchImpl } = fakeApi(personalRoutes);
-    renderApp(<RequirementsPage />, { fetchImpl });
-    const excluded = await screen.findByRole('region', { name: 'Attempts not counted' });
-    expect(within(excluded).getByText('ZZ 103')).toBeInTheDocument();
-    expect(within(excluded).getByText(/Not completed/)).toBeInTheDocument();
-    expect(within(excluded).getByText('CS 203')).toBeInTheDocument();
-    expect(within(excluded).getByText(/Learning designation unknown/)).toBeInTheDocument();
-  });
-
-  it('surfaces unresolved CS 203/CS 202 equivalence above the requirement list', async () => {
-    const { fetchImpl } = fakeApi(personalRoutes);
-    renderApp(<RequirementsPage />, { fetchImpl });
-    await screen.findByRole('region', { name: 'Overview' });
-    const decisions = screen.getByRole('region', { name: 'Unresolved decisions and issues' });
-    expect(within(decisions).getByText('CS 203 does not establish CS 202 completion.')).toBeInTheDocument();
-    const order = decisions.compareDocumentPosition(screen.getByRole('list', { name: 'Requirements' }));
-    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('switches between actual, completed+current and projected views explicitly', async () => {
-    const { fetchImpl, calls } = fakeApi(personalRoutes);
-    renderApp(<RequirementsPage />, { fetchImpl });
-    await screen.findByRole('region', { name: 'Overview' });
-    const actual = screen.getByRole('radio', { name: 'Actual completed' });
-    expect(actual).toBeChecked();
-    const core = () => (screen.getByRole('list', { name: 'Requirements' }).querySelector('[data-requirement="cse-core"]') as HTMLElement);
-    expect(within(core()).getAllByText('Pending').length).toBeGreaterThan(0);
-    await userEvent.click(screen.getByRole('radio', { name: 'Completed + current enrolment' }));
-    expect(within(core()).getAllByText('Conditional').length).toBeGreaterThan(0);
-    await userEvent.click(screen.getByRole('radio', { name: 'Projected plan' }));
-    const projectedCall = calls.find((c) => c.path === '/analysis' && (c.body as { plan_id?: string }).plan_id === 'plan-1');
-    expect(projectedCall?.body).toMatchObject({ record_revision: 3, plan_id: 'plan-1', plan_revision: 2 });
-  });
-
-  it('does not add parent and sub-basket totals into a new degree total', async () => {
+  it('shows credits counted against the degree total and the credits remaining, as reported by the server', async () => {
     const { fetchImpl } = fakeApi(personalRoutes);
     renderApp(<RequirementsPage />, { fetchImpl });
     const overview = await screen.findByRole('region', { name: 'Overview' });
-    expect(within(overview).getByText(/Degree-allocated credits/)).toBeInTheDocument();
-    expect(within(overview).getByText(/Unavailable/)).toBeInTheDocument();
-    // 26 (parent) + 8 + 8 + 10 (children) = 52 or 4 + 26 = 30 must not appear as a computed total.
+    expect(within(overview).getByText('Credits counted').parentElement).toHaveTextContent('104 of 170');
+    expect(within(overview).getByText('Credits remaining').parentElement).toHaveTextContent('66');
+    // Parent and sub-basket totals are never added into a new degree total.
     expect(within(overview).queryByText(/^(52|30|56)$/)).not.toBeInTheDocument();
-    expect(within(overview).getByText('104')).toBeInTheDocument();
+  });
+
+  it('says clearly that the student is not yet eligible to graduate, and how many credits to go', async () => {
+    const { fetchImpl } = fakeApi(personalRoutes);
+    renderApp(<RequirementsPage />, { fetchImpl });
+    const overview = await screen.findByRole('region', { name: 'Overview' });
+    expect(within(overview).getByRole('status')).toHaveTextContent('Not yet eligible to graduate — 66 credits to go');
+  });
+
+  it('says graduation requirements are complete only when the server says the audit is complete', async () => {
+    const complete = { ...analysis, audit: { ...analysis.audit, complete: true, degree: { ...analysis.audit.degree!, actual: { total_credits: '170', counted_credits: '170', remaining_credits: '0' } } } };
+    const { fetchImpl } = fakeApi({ ...personalRoutes, 'POST /analysis': () => ({ data: complete }) });
+    renderApp(<RequirementsPage />, { fetchImpl });
+    const overview = await screen.findByRole('region', { name: 'Overview' });
+    expect(within(overview).getByRole('status')).toHaveTextContent('Graduation requirements complete');
+    expect(within(overview).queryByText(/Not yet eligible/)).not.toBeInTheDocument();
+  });
+
+  it('never calls an audit complete just because zero credits remain: the server decides', async () => {
+    const zero = { ...analysis, audit: { ...analysis.audit, complete: false, degree: { ...analysis.audit.degree!, actual: { total_credits: '170', counted_credits: '170', remaining_credits: '0' } } } };
+    const { fetchImpl } = fakeApi({ ...personalRoutes, 'POST /analysis': () => ({ data: zero }) });
+    renderApp(<RequirementsPage />, { fetchImpl });
+    const overview = await screen.findByRole('region', { name: 'Overview' });
+    expect(within(overview).getByRole('status')).not.toHaveTextContent('Graduation requirements complete');
+  });
+
+  it('switches between completed, current and plan views, with plain labels and a plan verdict', async () => {
+    const { fetchImpl, calls } = fakeApi(personalRoutes);
+    renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByRole('region', { name: 'Overview' });
+    expect(screen.getByRole('radio', { name: 'Completed' })).toBeChecked();
+    const core = () => screen.getByRole('list', { name: 'Requirements' }).querySelector('[data-requirement="cse-core"]') as HTMLElement;
+    expect(within(core()).getByText('To do')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'Completed + current courses' }));
+    expect(within(core()).getByText('Planned')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'With my plan' }));
+    const projectedCall = calls.find((c) => c.path === '/analysis' && (c.body as { plan_id?: string }).plan_id === 'plan-1');
+    expect(projectedCall?.body).toMatchObject({ record_revision: 3, plan_id: 'plan-1', plan_revision: 2 });
+    expect(await screen.findByText('Your plan leaves 54 credits uncovered')).toBeInTheDocument();
+  });
+
+  it('shows what was counted for a course: the course taken and its grade', async () => {
+    const { fetchImpl } = fakeApi(personalRoutes);
+    renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByRole('region', { name: 'Overview' });
+    const list = screen.getByRole('list', { name: 'Requirements' });
+    await userEvent.click(await within(list).findByRole('button', { name: /^Cse core/ }));
+    const row = within(list).getByText('ES 242').closest('li') as HTMLElement;
+    expect(row).toHaveTextContent('Done');
+    expect(row).toHaveTextContent('ES 242(N)');
+    expect(row).toHaveTextContent('grade A');
+    expect(within(list).getByText('CS 202').closest('li')).toHaveTextContent('To do');
+  });
+
+  it('shows each group with credits counted of credits required, never above what it asks for', async () => {
+    const { fetchImpl } = fakeApi(personalRoutes);
+    renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByRole('region', { name: 'Overview' });
+    const list = screen.getByRole('list', { name: 'Requirements' });
+    expect(within(list).getByRole('button', { name: /^Cse electives/ })).toHaveTextContent('26 of 26 credits');
+    expect(within(list).getByRole('button', { name: /^Cse core/ })).toHaveTextContent('4 of 36 credits');
+  });
+
+  it('lists only things a student can act on: no codes, no notes, no draft or source wording', async () => {
+    const withNote = { ...analysis, audit: { ...analysis.audit, issues: [...analysis.audit.issues, { ...analysis.audit.issues[0]!, code: 'STANDING_ASSUMED', severity: 'info' as const, message: 'Assuming regular standing (28-credit cap) until you set it (D-31).' }] } };
+    const { fetchImpl } = fakeApi({ ...personalRoutes, 'POST /analysis': () => ({ data: withNote, issues: withNote.audit.issues }) });
+    const { container } = renderApp(<RequirementsPage />, { fetchImpl });
+    const things = await screen.findByRole('region', { name: 'Things to check' });
+    expect(things).toHaveTextContent('CS 203 does not establish CS 202 completion.');
+    expect(container.textContent).not.toMatch(/Assuming regular standing/);
+    expect(container.textContent).not.toMatch(DEVELOPER_TEXT);
+  });
+
+  it('shows no developer text anywhere on the personal page, even with every group open', async () => {
+    const { fetchImpl } = fakeApi(personalRoutes);
+    const { container } = renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByRole('region', { name: 'Overview' });
+    const list = screen.getByRole('list', { name: 'Requirements' });
+    for (const button of within(list).getAllByRole('button', { name: /credits/ })) await userEvent.click(button);
+    expect(container.textContent).not.toMatch(DEVELOPER_TEXT);
+    expect(screen.queryByText(/Degree-allocated|Unavailable|Overall verdict|as reported by the server/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Attempts not counted' })).not.toBeInTheDocument();
   });
 
   it('asks a signed-in student without history to import, while still showing public rules', async () => {

@@ -274,11 +274,12 @@ class InternshipModuleTests(unittest.TestCase):
         self.assertEqual([(m['status'], m['reasons']) for m in shared['modules']], [('proposed', []), ('rejected', ['INTERNSHIP_MODULE_DUPLICATE']), ('proposed', [])])
         self.assertEqual(shared['credits']['proposed'], '8')
 
-    def test_cp34_no_per_quad_limit_and_load_policy_stays_unknown(self):
+    def test_cp34_no_per_quad_limit_and_load_rule_is_stated(self):
         same_quad = self.evaluate([module('m1', 'open_elective', quad_id='Q1'), module('m2', 'open_elective', quad_id='Q1')])
         self.assertEqual(same_quad['credits']['proposed'], '8')  # D-14: quads are not modelled
         self.assertNotIn('QUAD_CREDIT_CAP', codes(same_quad))
-        self.assertIn('INTERNSHIP_LOAD_POLICY_UNKNOWN', codes(same_quad))
+        self.assertIn('INTERNSHIP_LOAD_RULE', codes(same_quad))  # D-34 replaces the old "policy unknown" issue
+        self.assertNotIn('INTERNSHIP_LOAD_POLICY_UNKNOWN', codes(same_quad))
 
     def test_cp34_split_proposals_use_only_remaining_needs(self):
         self.assertEqual(propose_split({'open_project': '4', 'hss': '8', 'open_elective': '16'})['targets'], ['open_project', 'hss', 'hss', 'open_elective'])

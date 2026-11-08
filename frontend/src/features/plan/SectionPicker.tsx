@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import type { CourseOffering, MeetingGroup, PlannedCourse } from '../../api/types';
 import { Badge } from '../../components/StatusBadge';
-import { describeMeeting, kindLabel, refLocators, semantics } from './timetableFormat';
+import { describeMeeting, kindLabel, semantics } from './timetableFormat';
 
 export interface SectionChoice {
   offering_id: string | null;
@@ -47,8 +47,8 @@ export function SectionPicker({
 
   const staleNote = staleId ? (
     <p className="callout" data-tone="warning">
-      Your saved variant <span className="mono">{staleId}</span> is not in the current timetable snapshot, so this course's clashes cannot be checked.
-      {offerings.length > 0 ? ' Choose a variant from the current snapshot.' : ' Clear the saved choice to remove it from your plan.'}
+      Your saved choice for this course is no longer in the timetable.
+      {offerings.length > 0 ? ' Choose again from the current timetable.' : ' Clear it to remove it from your plan.'}
     </p>
   ) : null;
 
@@ -57,13 +57,12 @@ export function SectionPicker({
       <div>
         {staleNote}
         <p>
-          <span className="mono">{course.normalized_code}</span> is not in this term's timetable snapshot, so there are no meetings or sections to choose. Its
-          availability is unknown unless the server says the snapshot is complete and reviewed.
+          <span className="mono">{course.normalized_code}</span> is not in this semester's timetable, so there are no sections to choose.
         </p>
         <div className="panel-row">
           {staleId ? (
             <button type="button" className="btn btn-primary" onClick={() => onSave({ offering_id: null, section_ids: [] })}>
-              Clear saved variant
+              Clear saved choice
             </button>
           ) : null}
           <button type="button" className="btn" onClick={onCancel}>
@@ -84,17 +83,14 @@ export function SectionPicker({
 
   return (
     <form onSubmit={submit} aria-label={`Sections for ${course.normalized_code}`}>
-      <p className="muted">
-        Meetings come from the term's timetable snapshot. Choosing a section records your intention in the plan; it is not a registration. The server checks clashes
-        after the plan is saved.
-      </p>
+      <p className="muted">Choose the sections you attend. They are used to check for clashes; this is not a registration.</p>
       {staleNote}
       {offerings.length > 1 ? (
         <fieldset className="field">
-          <legend>Source variant for {course.normalized_code}</legend>
+          <legend>Which version of {course.normalized_code}</legend>
           {variantRequired && !staleId ? (
             <p className="callout" data-tone="warning">
-              The timetable lists more than one variant of this course. Choose the one you will take before clashes can be checked.
+              More than one version of this course is listed. Choose the one you will take.
             </p>
           ) : null}
           {offerings.map((o) => (
@@ -104,7 +100,6 @@ export function SectionPicker({
                 {o.raw_label ?? o.display_code ?? o.code}
                 {o.title ? ` — ${o.title}` : ''}
                 {o.section_labels?.length ? ` (sections ${o.section_labels.join(', ')})` : ''}
-                {refLocators(o.source_refs).length ? <span className="muted"> · source {refLocators(o.source_refs).join(', ')}</span> : null}
               </label>
             </div>
           ))}
@@ -113,7 +108,7 @@ export function SectionPicker({
       {offering ? (
         offering.meeting_groups.length === 0 ? (
           <p className="callout" data-tone="warning">
-            The snapshot lists no meetings for this course, so clashes cannot be checked.
+            No meeting times are listed for this course.
           </p>
         ) : (
           offering.meeting_groups.map((g) => (
@@ -121,7 +116,7 @@ export function SectionPicker({
           ))
         )
       ) : offerings.length > 1 ? (
-        <p className="muted">Choose a variant to see its meetings.</p>
+        <p className="muted">Choose a version to see its meetings.</p>
       ) : null}
       <div className="panel-row">
         <button type="submit" className="btn btn-primary" disabled={!offering}>
@@ -139,7 +134,6 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
   const kind = kindLabel(group.kind);
   const exam = group.kind === 'exam';
   const mode = semantics(group.selection_semantics);
-  const cells = refLocators(group.source_refs);
   const unresolved = group.unresolved ?? [];
   const header = (
     <>
@@ -150,24 +144,14 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
         <Badge tone="neutral">All listed meetings required</Badge>
       ) : mode === 'choose_one' ? (
         <Badge tone="neutral">Choose one</Badge>
-      ) : (
-        <Badge tone="unknown" symbol="?">
-          Grouping not stated
-        </Badge>
-      )}
+      ) : null}
     </>
   );
-  const sourceLine = (
-    <p className="muted">
-      Source text: {group.raw_text ? <span className="mono">{group.raw_text}</span> : 'not given'}
-      {cells.length ? ` · cells ${cells.join(', ')}` : ''}
-      {group.section_labels?.length ? ` · sections ${group.section_labels.join(', ')}` : ''}
-    </p>
-  );
+  const sourceLine = group.section_labels?.length ? <p className="muted">{`Sections ${group.section_labels.join(', ')}`}</p> : null;
   const clarification =
     unresolved.length > 0 ? (
       <p className="callout" data-tone="warning">
-        Some slots in the source could not be read ({unresolved.join(', ')}). CoursePath cannot check clashes for this {kind} until the timetable owner clarifies them.
+        Some {kind} slots could not be read ({unresolved.join(', ')}), so clashes for this {kind} cannot be checked.
       </p>
     ) : null;
   const notes = group.notes?.length ? <p className="muted">Notes: {group.notes.join('; ')}</p> : null;
@@ -179,6 +163,9 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
           Choose one {kind} meeting for {code} {header}
         </legend>
         {sourceLine}
+        <p className="muted">
+          Each student is assigned to exactly one {kind} slot. Choose yours once you know it; until then any option may clash.
+        </p>
         {clarification}
         {notes}
         <div>
@@ -190,7 +177,6 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
             <input type="radio" id={`${id}-${m.id}`} name={`${id}-pick`} value={m.id} checked={pick === m.id} onChange={() => onPick(m.id)} />{' '}
             <label htmlFor={`${id}-${m.id}`}>
               {describeMeeting(m)}
-              {refLocators(m.source_refs).length ? <span className="muted"> · source {refLocators(m.source_refs).join(', ')}</span> : null}
             </label>
           </div>
         ))}
@@ -202,24 +188,17 @@ function GroupBlock({ id, code, group, pick, onPick }: { id: string; code: strin
       <h4 style={{ margin: 0 }}>{header}</h4>
       {sourceLine}
       {exam ? (
-        <p className="muted">Exam meetings are listed for reference. They are not weekly classes, so the clash check does not include them.</p>
+        <p className="muted">Exam meetings are listed for reference; they are not weekly classes.</p>
       ) : mode === 'unknown' ? (
-        <p className="callout" data-tone="warning">
-          The timetable does not say whether you attend every listed {kind} slot or only one of them. CoursePath does not assume all of them are compulsory, and you cannot
-          pick one until this is clarified. Ask the course office or timetable owner; until then, clashes involving these meetings are only possible clashes.
-        </p>
+        <p className="muted">Check the official timetable for which of these {kind} slots apply to you.</p>
       ) : null}
       {clarification}
       {notes}
-      {group.meetings.length === 0 ? (
-        <p className="muted">No meetings could be read for this group.</p>
-      ) : (
+      {group.meetings.length === 0 ? null : (
         <ul>
           {group.meetings.map((m) => (
             <li key={m.id}>
-              {exam ? <Badge tone="neutral">Exam</Badge> : mode === 'all_required' ? <Badge tone="neutral">Required</Badge> : <Badge tone="unknown">Listed; meaning not stated</Badge>}{' '}
-              {describeMeeting(m)}
-              {refLocators(m.source_refs).length ? <span className="muted"> · source {refLocators(m.source_refs).join(', ')}</span> : null}
+              {exam ? <Badge tone="neutral">Exam</Badge> : mode === 'all_required' ? <Badge tone="neutral">Required</Badge> : null} {describeMeeting(m)}
             </li>
           ))}
         </ul>

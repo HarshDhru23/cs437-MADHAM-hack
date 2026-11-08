@@ -170,12 +170,42 @@ class MeetingTests(Base):
         self.assertEqual(groups["lecture"]["meetings"][0]["source_refs"][0]["locator"], "Time table!K3")
         self.assertEqual(groups["tutorial"]["meetings"][0]["source_refs"][0]["locator"], "Time table!L3")
 
-    def test_multiple_lab_slots_are_unknown_alternatives(self):
+    def group(self, snap, code, kind):
+        return next(g for g in self.offering(snap, code)[0]["meeting_groups"] if g["kind"] == kind)
+
+    def test_multiple_lab_slots_are_alternatives_one_per_student(self):
+        # D-26 (Harsh, 7 Nov 2026): a lab that lists several slots assigns each student to exactly one of them.
         snap, rep = self.build([course_row("CS 202", "OS", 4, "D1", lab="J2,M2")])
-        lab = next(g for g in self.offering(snap, "CS 202")[0]["meeting_groups"] if g["kind"] == "lab")
+        lab = self.group(snap, "CS 202", "lab")
+        self.assertEqual(lab["selection_semantics"], "choose_one")
+        self.assertEqual(sorted(m["original_slot"] for m in lab["meetings"]), ["J2", "M2"])
+        self.assertNotIn("MEETING_SEMANTICS_UNKNOWN", self.codes(rep))
+
+    def test_multiple_tutorial_slots_are_alternatives_one_per_student(self):
+        snap, rep = self.build([course_row("PH 202", "Physics", 4, "B1", "H2,H1")])
+        tutorial = self.group(snap, "PH 202", "tutorial")
+        self.assertEqual(tutorial["selection_semantics"], "choose_one")
+        self.assertEqual(len(tutorial["meetings"]), 2)
+        self.assertNotIn("MEETING_SEMANTICS_UNKNOWN", self.codes(rep))
+
+    def test_multiple_lecture_slots_stay_all_required(self):
+        # A lecture's slots are its weekly meetings: B1 and B2 both happen (D-26 changes labs and tutorials only).
+        snap, rep = self.build([course_row("PH 202", "Physics", 4, "B1,B2")])
+        lecture = self.group(snap, "PH 202", "lecture")
+        self.assertEqual(lecture["selection_semantics"], "all_required")
+        self.assertEqual(len(lecture["meetings"]), 2)
+        self.assertNotIn("MEETING_SEMANTICS_UNKNOWN", self.codes(rep))
+
+    def test_unresolved_lab_stays_unknown_not_alternatives(self):
+        # Z9 is not a slot in the legend, so the group is unresolved: never guessed as alternatives.
+        snap, rep = self.build([course_row("CS 202", "OS", 4, "D1", lab="J2,Z9")])
+        lab = self.group(snap, "CS 202", "lab")
         self.assertEqual(lab["selection_semantics"], "unknown")
-        self.assertEqual(len(lab["meetings"]), 2)
-        self.assertIn("MEETING_SEMANTICS_UNKNOWN", self.codes(rep))
+        self.assertIn("SLOT_UNKNOWN", self.codes(rep))
+
+    def test_single_slot_tutorial_stays_required(self):
+        snap, _ = self.build([course_row("PH 202", "Physics", 4, "B1", "H2")])
+        self.assertEqual(self.group(snap, "PH 202", "tutorial")["selection_semantics"], "all_required")
 
     def test_single_lab_slot_is_required(self):
         snap, _ = self.build([course_row("CS 330", "SW", 4, "B1", lab="H1")])

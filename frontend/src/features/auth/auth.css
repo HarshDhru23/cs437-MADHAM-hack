@@ -1,0 +1,63 @@
+/* Sign in and create account: one centred panel with the wordmark. Colours from tokens.css only. */
+.auth-wrap {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-5);
+}
+.auth-panel {
+  width: 100%;
+  max-width: 30rem;
+  margin-bottom: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.auth-panel > * {
+  margin-block: 0;
+}
+.auth-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-d);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.auth-mark::before {
+  content: '';
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+}
+.auth-panel h1 {
+  font-size: 1.6rem;
+}
+.auth-panel form {
+  display: grid;
+  gap: var(--space-3);
+}
+.auth-panel .field {
+  margin: 0;
+}
+.password-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.password-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.password-row .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.auth-switch {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
-import { accountEndpoints, endpoints, scenarioEndpoints } from '../../api/endpoints';
+import { accountEndpoints, calendarEndpoints, endpoints, scenarioEndpoints } from '../../api/endpoints';
 import { useResource, useResourceCache } from '../../api/resources';
 import type { AcademicPlan, InternshipInput, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
 import { PLAN_TABS, SubNav } from '../../app/AppShell';
@@ -9,14 +9,14 @@ import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ConflictPanel } from '../../components/ConflictPanel';
-import { IssueList } from '../../components/IssueList';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
-import { formatTimestamp } from '../../lib/format';
+import { formatTimestamp, plainMessage } from '../../lib/format';
 import { ChangesEditor } from './ChangesEditor';
 import { CompareView } from './CompareView';
 import { InternshipEditor } from './InternshipEditor';
 import { InternshipPanels } from './InternshipPanels';
-import { describeChange, durationLabel, fitChanges, planItems, PLAN_OPS, splitChanges, type PlanItem, type RefusedChange } from './model';
+import { ProblemList, problemCount } from './ProblemList';
+import { describeChange, describeSkipped, durationLabel, fitChanges, planItems, PLAN_OPS, splitChanges, type PlanItem, type RefusedChange } from './model';
 import { useScenarios } from './ScenariosPage';
 import './scenarios.css';
 
@@ -27,7 +27,7 @@ export function ScenarioPage() {
   const { scenario_id: scenarioId = '' } = useParams();
   const session = useSession();
   const loaded = useResource(session.user ? `scenario:${session.user.id}:${scenarioId}` : null, (signal) => accountEndpoints.scenario(session.api, scenarioId, { signal }));
-  usePublishView({ ruleVersion: loaded.data?.rule_version ?? null, dataMode: 'scenario', recordRevision: loaded.data?.baseline_record_revision ?? null });
+  usePublishView({ dataMode: 'scenario' });
   if (loaded.loading) return <StatePanel kind="loading" title="Loading scenario…" />;
   if (loaded.error || !loaded.data)
     return loaded.error?.kind === 'not_found' ? (
@@ -47,6 +47,14 @@ interface Draft {
 const draftOf = (s: Scenario): Draft => ({ label: s.label, changes: s.changes, internship: s.internship });
 const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 
+/** Unsaved edits kept while the student visits another page and comes back (in this tab only, and only for the revision they were made on). */
+const keptDrafts = new Map<string, { draft: Draft; revision: number }>();
+
+/** Forget every kept draft (used when the account changes, and between tests). */
+export function resetKeptScenarioDrafts(): void {
+  keptDrafts.clear();
+}
+
 type ApplyConflict = { rebase: boolean; message: string; currentRevision: number | null };
 /** Which request a 409 answered, so "Keep my version" repeats that request. */
 type ConflictFrom = 'save' | 'delete' | 'rebase';
@@ -59,8 +67,13 @@ function Workspace({ initial }: { initial: Scenario }) {
   const userId = session.user?.id ?? '';
   const plan = useResource<AcademicPlan>(userId ? `plan:${userId}:${initial.plan_id}` : null, (signal) => endpoints.plan(session.api, initial.plan_id, { signal }));
   const siblings = useScenarios();
+  const calendar = useResource('calendar', (signal) => calendarEndpoints.calendar(session.api, { signal }));
   const [saved, setSaved] = useState<Scenario>(initial);
-  const [draft, setDraft] = useState<Draft>(draftOf(initial));
+  const [draft, setDraft] = useState<Draft>(() => {
+    const kept = keptDrafts.get(`${userId}:${initial.id}`);
+    return kept && kept.revision === initial.revision ? kept.draft : draftOf(initial);
+  });
+  const savingNow = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [conflict, setConflict] = useState<number | null | false>(false);
@@ -85,6 +98,21 @@ function Workspace({ initial }: { initial: Scenario }) {
     return [...known.current.values()];
   }, [items]);
   const dirty = !same(draft, draftOf(saved));
+  // Keep unsaved edits if the student leaves this page, and warn before a reload or closing the tab loses them.
+  useEffect(() => {
+    const key = `${userId}:${saved.id}`;
+    if (dirty) keptDrafts.set(key, { draft, revision: saved.revision });
+    else keptDrafts.delete(key);
+  }, [dirty, draft, saved.id, saved.revision, userId]);
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
   const allScenarios = siblings.data?.scenarios ?? [saved];
   const peers = allScenarios.filter((s) => s.plan_id === saved.plan_id && s.id !== saved.id);
   const compareIds = useMemo(() => [saved.id, ...extra.filter((id) => peers.some((p) => p.id === id))].slice(0, 6), [saved.id, extra, peers]);
@@ -133,10 +161,14 @@ function Workspace({ initial }: { initial: Scenario }) {
 
   const adopt = (fresh: Scenario) => {
     setSaved(fresh);
+    // The cached copy must always carry the newest revision: coming back to this scenario later must not start from an older one (the next save would conflict).
+    if (userId) cache.set(`scenario:${userId}:${fresh.id}`, { data: fresh, issues: [] });
     cache.invalidate('scenarios:');
   };
 
   const save = async (over?: number) => {
+    if (savingNow.current) return; // a double click never sends two saves
+    savingNow.current = true;
     setSaving(true);
     setSaveError(null);
     try {
@@ -149,12 +181,13 @@ function Workspace({ initial }: { initial: Scenario }) {
       setConflict(false);
       adopt(result.data);
       setDraft(draftOf(result.data));
-      setAnnounce(`Scenario saved (revision ${result.data.revision}). Re-evaluating on the server.`);
+      setAnnounce('Scenario saved. Checking it again.');
     } catch (e) {
       const error = asError(e);
       if (error.kind === 'conflict') conflicted(error, 'save');
       else setSaveError(error);
     } finally {
+      savingNow.current = false;
       setSaving(false);
     }
   };
@@ -228,7 +261,7 @@ function Workspace({ initial }: { initial: Scenario }) {
       setApplied(result.data);
       cache.invalidate('plan');
       cache.invalidate('analysis:');
-      setAnnounce(`Plan updated to revision ${result.data.plan.revision}. Your accepted record was not changed.`);
+      setAnnounce('Plan updated. Your record was not changed.');
       void runCompare(saved.revision, compareIds);
     } catch (e) {
       const error = asError(e);
@@ -242,18 +275,25 @@ function Workspace({ initial }: { initial: Scenario }) {
     }
   };
 
+  /** The scenario is gone: forget its cached copy and kept edits, refresh the list and go back to it. */
+  const left = (notice: string) => {
+    keptDrafts.delete(`${userId}:${saved.id}`);
+    cache.invalidate('scenarios:');
+    cache.invalidate(`scenario:${userId}:${saved.id}`);
+    navigate('/scenarios', { state: { notice } });
+  };
+
   const remove = async (over?: number) => {
     setDialog(null);
     setBusy(true);
     setActionError(null);
     try {
       await scenarioEndpoints.remove(session.api, saved.id, over ?? saved.revision);
-      cache.invalidate('scenarios:');
-      cache.invalidate(`scenario:${userId}:${saved.id}`);
-      navigate('/scenarios', { state: { notice: `Scenario “${saved.label || 'Untitled scenario'}” deleted. Your baseline plan and accepted record are unchanged.` } });
+      left(`Scenario “${saved.label || 'Untitled scenario'}” deleted. Your baseline plan and accepted record are unchanged.`);
     } catch (e) {
       const error = asError(e);
       if (error.kind === 'conflict') conflicted(error, 'delete');
+      else if (error.kind === 'not_found') left(`Scenario “${saved.label || 'Untitled scenario'}” was already deleted.`); // gone elsewhere: nothing left to delete
       else setActionError(error);
       setBusy(false);
     }
@@ -269,33 +309,32 @@ function Workspace({ initial }: { initial: Scenario }) {
         <p className="scenario-banner-title" id={headingId}>
           <strong>Scenario (hypothetical)</strong>
         </p>
-        <p>Nothing in this scenario changes your accepted record. Plan edits happen only if you apply them.</p>
+        <p>
+          What-if: <strong>{saved.label || 'Untitled scenario'}</strong>. Your record and plans stay unchanged until you apply it.
+        </p>
         <dl className="facts">
           <div>
-            <dt>Baseline record revision</dt>
-            <dd>{saved.baseline_record_revision}</dd>
+            <dt>Based on plan</dt>
+            <dd>{planLabel}</dd>
           </div>
-          <div>
-            <dt>Baseline plan</dt>
-            <dd>
-              {planLabel}, revision {saved.baseline_plan_revision}
-            </dd>
-          </div>
-          <div>
-            <dt>Rules</dt>
-            <dd>{saved.rule_version}</dd>
-          </div>
-          <div>
-            <dt>Baseline date</dt>
-            <dd>{saved.baseline_captured_at ? formatTimestamp(saved.baseline_captured_at) : 'Not recorded by the server'}</dd>
-          </div>
+          {saved.baseline_captured_at ? (
+            <div>
+              <dt>Created</dt>
+              <dd>{formatTimestamp(saved.baseline_captured_at)}</dd>
+            </div>
+          ) : null}
         </dl>
         <Link className="btn" to={`/plan/${encodeURIComponent(saved.plan_id)}`}>
           Return to baseline
         </Link>
       </section>
 
-      <h1>{saved.label || 'Untitled scenario'}</h1>
+      <div className="panel-row">
+        <h1>{saved.label || 'Untitled scenario'}</h1>
+        <button type="button" className="btn btn-danger" onClick={() => setDialog('delete')} disabled={busy}>
+          Delete scenario
+        </button>
+      </div>
       <p className="visually-hidden" aria-live="polite">
         {announce}
       </p>
@@ -315,7 +354,7 @@ function Workspace({ initial }: { initial: Scenario }) {
       {rebaseRefused ? (
         <div className="callout" data-tone="warning" role="alert" aria-label="Changes that no longer match the plan">
           <p>
-            <strong>Some changes no longer match the current plan.</strong> The server refuses a rebase that keeps them:
+            <strong>Some changes no longer match the current plan.</strong> These changes cannot be kept:
           </p>
           <ul>
             {rebaseRefused.refused.map((r) => (
@@ -362,8 +401,8 @@ function Workspace({ initial }: { initial: Scenario }) {
           }}
         />
       ) : null}
-      {saveError ? <ErrorPanel error={saveError} /> : null}
-      {actionError ? <ErrorPanel error={actionError} /> : null}
+      {saveError ? <ProblemPanel error={saveError} verb="saved" onRetry={() => void save()} /> : null}
+      {actionError ? <ProblemPanel error={actionError} verb="changed" /> : null}
 
       <div className="panel">
         <div className="field">
@@ -378,15 +417,20 @@ function Workspace({ initial }: { initial: Scenario }) {
             Discard unsaved changes
           </button>
           <span role="status" aria-label="Scenario save status">
-            {saving ? 'Saving…' : dirty ? 'Unsaved changes' : `Saved (revision ${saved.revision})`}
+            {saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}
           </span>
         </div>
       </div>
 
       {plan.error ? <ErrorPanel error={plan.error} onRetry={plan.reload} /> : null}
       {plan.loading ? <StatePanel kind="loading" title="Loading the baseline plan…" /> : null}
-      <ChangesEditor plan={plan.data} items={items} changes={draft.changes} onChange={(changes, message) => edit({ changes }, message)} />
-      <InternshipEditor value={draft.internship} onChange={(internship, message) => edit({ internship }, message)} modules={own?.scenario?.internship?.modules ?? null} />
+      <ChangesEditor plan={plan.data} items={items} named={namedItems} changes={draft.changes} onChange={(changes, message) => edit({ changes }, message)} />
+      <InternshipEditor
+        value={draft.internship}
+        onChange={(internship, message) => edit({ internship }, message)}
+        modules={own?.scenario?.internship?.modules ?? null}
+        presets={calendar.data?.internship_presets ?? null}
+      />
 
       <section className="panel" aria-labelledby={`${headingId}-cmp`}>
         <h2 id={`${headingId}-cmp`}>Comparison</h2>
@@ -408,22 +452,24 @@ function Workspace({ initial }: { initial: Scenario }) {
         ) : null}
         <p role="status" className={resultsStale ? 'stale-note' : 'muted'}>
           {comparing
-            ? 'Re-evaluating on the server… the results below are out of date.'
+            ? 'Checking again… the results below are out of date.'
             : dirty
-              ? `You have unsaved changes. The results below are for saved revision ${saved.revision}; save to re-evaluate.`
+              ? 'You have unsaved changes. The results below are for the saved version; save to check again.'
               : compare
-                ? `Evaluated by the server for saved revision ${compare.revision}.`
+                ? 'Results are up to date.'
                 : 'Not evaluated yet.'}
         </p>
         {compareError ? <ErrorPanel error={compareError} onRetry={() => void runCompare(saved.revision, compareIds)} /> : null}
-        {!compare && comparing ? <StatePanel kind="loading" title="Comparing on the server…" /> : null}
+        {!compare && comparing ? <StatePanel kind="loading" title="Comparing…" /> : null}
         {compare ? (
           <>
             <CompareView comparisons={compare.data.comparisons} cases={compare.data.internship_cases} scenarios={allScenarios} items={items} stale={resultsStale} />
-            <details>
-              <summary>{`All issues from the server (${compare.issues.length})`}</summary>
-              <IssueList issues={compare.issues} headingLevel={4} />
-            </details>
+            {problemCount(compare.issues, items) > 0 ? (
+              <details>
+                <summary>{`Things to check (${problemCount(compare.issues, items)})`}</summary>
+                <ProblemList issues={compare.issues} items={items} />
+              </details>
+            ) : null}
           </>
         ) : null}
       </section>
@@ -440,7 +486,7 @@ function Workspace({ initial }: { initial: Scenario }) {
           <div className="callout" data-tone="danger" role="alert">
             <p>
               <strong>Not applied.</strong> {applyConflict.message.replace(/\.$/, '')}
-              {applyConflict.currentRevision !== null ? ` (server revision ${applyConflict.currentRevision})` : ''}. Nothing was written and nothing is retried
+              . Nothing was changed and nothing is retried
               automatically.
             </p>
             {!applyConflict.rebase ? (
@@ -463,18 +509,21 @@ function Workspace({ initial }: { initial: Scenario }) {
         {applied ? (
           <div className="callout" role="status">
             <p>
-              <strong>Plan updated to revision {applied.plan.revision}.</strong> Your accepted record was not changed.
+              <strong>Plan updated.</strong> Your record was not changed.
             </p>
             {applied.not_applied.length > 0 ? (
               <>
-                <p>Not applied (stays hypothetical):</p>
+                <p>These stay in the scenario and were not written to your plan:</p>
                 <ul>
                   {applied.not_applied.map((n, i) => (
-                    <li key={i}>
-                      {n.op === 'internship' ? 'Internship choice' : `${n.op}${n.item_id ? ` — ${items.find((x) => x.id === n.item_id)?.code ?? n.item_id}` : ''}`}: {n.reason}
-                    </li>
+                    <li key={i}>{describeSkipped(n, saved.changes, namedItems)}</li>
                   ))}
                 </ul>
+                {[...new Set(applied.not_applied.map((n) => n.reason))].map((reason) => (
+                  <p key={reason} className="muted">
+                    {reason}
+                  </p>
+                ))}
               </>
             ) : null}
             <p>
@@ -495,7 +544,7 @@ function Workspace({ initial }: { initial: Scenario }) {
 
       <ConfirmDialog open={dialog === 'apply'} title="Apply plan edits" confirmLabel="Apply to plan" onConfirm={apply} onCancel={() => setDialog(null)}>
         <p>
-          These edits will be written to {planLabel} (revision {saved.baseline_plan_revision}). Your accepted record is never changed.
+          These edits will be written to {planLabel}. Your record is never changed.
         </p>
         <h3>Plan edits to write</h3>
         <ul aria-label="Plan edits to write">
@@ -521,6 +570,40 @@ function Workspace({ initial }: { initial: Scenario }) {
         </p>
       </ConfirmDialog>
     </div>
+  );
+}
+
+/** A failed save or action in student words: what happened, that the changes are still here, and what to do. */
+function ProblemPanel({ error, verb, onRetry }: { error: ApiError; verb: 'saved' | 'changed'; onRetry?: () => void }) {
+  if (error.kind === 'not_found')
+    return (
+      <StatePanel
+        kind="error"
+        title="This scenario no longer exists"
+        detail="It was deleted in another tab or on another device, so nothing was saved."
+        action={<Link to="/scenarios">Your scenarios</Link>}
+      />
+    );
+  const title = error.kind === 'network' ? 'CoursePath could not be reached' : error.kind === 'auth' ? 'Sign in to continue' : `The scenario could not be ${verb}`;
+  const detail =
+    error.kind === 'network'
+      ? 'Your changes are still here and have not been saved. Check your connection and try again.'
+      : error.kind === 'auth'
+        ? 'Your session ended. Sign in again; your changes in this tab are kept until you leave the page.'
+        : plainMessage(error.message) || 'Try again in a moment. Your changes are still here.';
+  return (
+    <StatePanel
+      kind="error"
+      title={title}
+      detail={detail}
+      action={
+        onRetry && error.kind !== 'auth' ? (
+          <button type="button" className="btn" onClick={onRetry}>
+            Try again
+          </button>
+        ) : undefined
+      }
+    />
   );
 }
 

@@ -1,11 +1,13 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { CommandBar } from '../components/CommandBar';
 import { useSession } from './session';
+import { useTheme } from './theme';
 import { DATA_MODE_LABEL, useViewInfo } from './viewContext';
 
 const MAIN_NAV = [
   { to: '/', label: 'Requirements', match: (p: string) => p === '/' },
-  { to: '/record', label: 'My record', match: (p: string) => p.startsWith('/record') || p.startsWith('/performance') || p.startsWith('/awards') },
+  { to: '/record', label: 'My record', match: (p: string) => p.startsWith('/record') || p.startsWith('/performance') },
   { to: '/plan', label: 'Plan', match: (p: string) => p.startsWith('/plan') || p.startsWith('/scenarios') || p.startsWith('/report') },
 ];
 
@@ -15,6 +17,8 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   const signOut = async () => {
     setSigningOut(true);
@@ -33,12 +37,13 @@ export function AppShell() {
       </a>
       {session.mock ? (
         <div className="mock-banner" role="note">
-          Development mock data — synthetic responses, not the CoursePath server. Nothing here is saved.
+          Development mock data — synthetic responses. Nothing here is saved.
         </div>
       ) : null}
       <header className="shell-header">
         <div className="shell-bar">
           <NavLink to="/" className="brand">
+            <span className="brand-mark" aria-hidden="true" />
             CoursePath
           </NavLink>
           <nav className="main-nav" aria-label="Main">
@@ -53,6 +58,24 @@ export function AppShell() {
             </ul>
           </nav>
           <div className="shell-user">
+            <button type="button" className="cmd-trigger" aria-haspopup="dialog" onClick={() => setCommandOpen(true)}>
+              Search or jump to…
+              <span className="kbd" aria-hidden="true">
+                /
+              </span>
+            </button>
+            <button type="button" className="icon-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}>
+              {theme === 'dark' ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                </svg>
+              )}
+            </button>
             {session.user ? (
               <>
                 <NavLink to="/account" className="btn btn-quiet" aria-label={`Account (${session.user.username})`}>
@@ -81,21 +104,10 @@ export function AppShell() {
             <dt>Programme:</dt>
             <dd>B.Tech CSE, 2024 entry</dd>
           </div>
-          <div>
-            <dt>Rules:</dt>
-            <dd>
-              {view.ruleVersion ?? 'Not loaded'}
-              {view.reviewStatus ? ` (${view.reviewStatus})` : ''}
-            </dd>
-          </div>
-          <div>
-            <dt>Showing:</dt>
-            <dd>{DATA_MODE_LABEL[view.dataMode]}</dd>
-          </div>
-          {view.recordRevision !== null ? (
+          {view.dataMode !== 'none' && view.dataMode !== 'public' ? (
             <div>
-              <dt>Record revision:</dt>
-              <dd className="num">{view.recordRevision}</dd>
+              <dt>Showing:</dt>
+              <dd>{DATA_MODE_LABEL[view.dataMode]}</dd>
             </div>
           ) : null}
         </dl>
@@ -118,6 +130,7 @@ export function AppShell() {
         ) : null}
         <Outlet />
       </main>
+      <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
     </>
   );
 }
@@ -143,7 +156,6 @@ export const RECORD_TABS = [
   { to: '/record', label: 'Record' },
   { to: '/record/import', label: 'Import' },
   { to: '/performance', label: 'Performance' },
-  { to: '/awards', label: 'Awards' },
 ];
 
 export const PLAN_TABS = [

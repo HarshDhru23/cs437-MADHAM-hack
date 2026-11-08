@@ -1,10 +1,11 @@
 import { useId } from 'react';
-import type { DurationChoice, InternshipInput, InternshipModuleInput, InternshipModuleResult, InternshipPreset, PlacementMode } from '../../api/types';
+import type { DurationChoice, InternshipInput, InternshipModuleInput, InternshipModuleResult, InternshipPreset, InternshipPresetOption, PlacementMode } from '../../api/types';
+import { formatTerm, humanize } from '../../lib/format';
 import { Badge } from '../../components/StatusBadge';
 import { newId } from '../../lib/ids';
-import { DURATION_LABEL, exclusiveToInclusive, inclusiveToExclusive, MODULE_PROGRESS_LABEL, moduleStateLabel, PLACEMENT_LABEL, TARGET_LABEL } from './model';
+import { DURATION_LABEL, exclusiveToInclusive, formatDate, inclusiveToExclusive, MODULE_PROGRESS_LABEL, moduleStateLabel, PLACEMENT_LABEL, TARGET_LABEL } from './model';
 
-/** IN 498 modules are exactly 4 credits each (docs/academic-decisions.md D-14); the server re-checks. */
+/** IN 498 modules are exactly 4 credits each; the server re-checks. */
 const MODULE_CREDITS = '4';
 const MAX_MODULES = 10; // request limit in coursepath/validation.py, not an academic cap
 
@@ -13,15 +14,24 @@ interface InternshipEditorProps {
   onChange: (next: InternshipInput | null, message: string) => void;
   /** Server evaluation of the saved scenario, or null when not evaluated yet. */
   modules: InternshipModuleResult[] | null;
+  /** Ready-made dates from the academic calendar, or null while they load or when they could not be loaded. */
+  presets?: InternshipPresetOption[] | null;
+}
+
+/** "Summer 2027: 1 May 2027 to 31 Jul 2027" or "2027–28 Semester I: 1 Jul 2027 to 31 Dec 2027". */
+function presetLabel(o: InternshipPresetOption): string {
+  const name = o.preset === 'summer' ? `Summer ${o.start_date.slice(0, 4)}` : formatTerm(o.term_id);
+  return `${name}: ${formatDate(o.start_date)} to ${formatDate(exclusiveToInclusive(o.end_date_exclusive))}`;
 }
 
 /** Three equal duration options, presets, exact dates and IN 498 modules. Nothing here awards credit. */
-export function InternshipEditor({ value, onChange, modules }: InternshipEditorProps) {
+export function InternshipEditor({ value, onChange, modules, presets = null }: InternshipEditorProps) {
   const id = useId();
   const choice = value?.duration_choice ?? null;
   const preset: InternshipPreset = value?.preset ?? 'custom';
   const list = value?.modules ?? [];
   const lastDay = exclusiveToInclusive(value?.end_date_exclusive);
+  const readyMade = (presets ?? []).filter((o) => o.preset === preset && o.duration_choice === choice);
 
   const update = (patch: Partial<InternshipInput>, message: string) => {
     if (!value) return;
@@ -37,13 +47,15 @@ export function InternshipEditor({ value, onChange, modules }: InternshipEditorP
       );
       return;
     }
+    // Ready-made dates belong to one duration: a different duration starts without them instead of keeping dates that no longer fit.
+    const keepDates = !value || value.duration_choice === next || (value.preset ?? 'custom') === 'custom';
     onChange(
       {
         duration_choice: next,
         preset: value?.preset ?? 'custom',
         placement_mode: value?.placement_mode ?? 'unknown',
-        start_date: value?.start_date ?? null,
-        end_date_exclusive: value?.end_date_exclusive ?? null,
+        start_date: keepDates ? (value?.start_date ?? null) : null,
+        end_date_exclusive: keepDates ? (value?.end_date_exclusive ?? null) : null,
         modules: list,
       },
       `${DURATION_LABEL[next]} selected. Enter the exact dates; choosing a duration awards no credit.`,
@@ -89,10 +101,28 @@ export function InternshipEditor({ value, onChange, modules }: InternshipEditorP
             ))}
           </fieldset>
           {preset !== 'custom' ? (
-            <p className="callout" data-tone="warning" role="note">
-              The server has not supplied academic calendar dates (GAP-03), so CoursePath cannot fill in {preset === 'summer' ? 'summer' : 'semester'} dates. Enter
-              the exact start date and last day below; nothing is guessed.
-            </p>
+            readyMade.length > 0 ? (
+              <fieldset className="choice-group">
+                <legend>Choose the period</legend>
+                {readyMade.map((o) => (
+                  <label key={`${o.preset}-${o.term_id}-${o.duration_choice}`} className="choice">
+                    <input
+                      type="radio"
+                      name={`${id}-period`}
+                      checked={value.start_date === o.start_date && value.end_date_exclusive === o.end_date_exclusive}
+                      onChange={() => update({ start_date: o.start_date, end_date_exclusive: o.end_date_exclusive }, `${presetLabel(o)} selected.`)}
+                    />
+                    {presetLabel(o)}
+                  </label>
+                ))}
+              </fieldset>
+            ) : (
+              <p className="callout" data-tone="warning" role="note">
+                {presets === null
+                  ? 'Ready-made dates could not be loaded. Choose “Custom dates” and enter the exact start date and last day.'
+                  : `There are no ready-made dates for ${DURATION_LABEL[choice]} in this choice yet. Choose “Custom dates” or enter the exact start date and last day below.`}
+              </p>
+            )
           ) : null}
           <div className="date-row">
             <div className="field">
@@ -120,7 +150,7 @@ export function InternshipEditor({ value, onChange, modules }: InternshipEditorP
           </div>
           {!value.start_date || !value.end_date_exclusive ? (
             <p className="field-error" role="status">
-              Enter both exact dates. The server measures the actual duration from them.
+              Enter both exact dates; the duration is worked out from them.
             </p>
           ) : null}
           <div className="field">
@@ -138,7 +168,7 @@ export function InternshipEditor({ value, onChange, modules }: InternshipEditorP
           <h3>IN 498 modules</h3>
           <p className="muted">
             Choosing a duration awards no credit by itself. Credit can come only from 4-credit IN 498 modules, toward open electives, HSS electives or the open
-            project, and only after recorded institute approval (D-14). Your entries stay proposals; you cannot mark a module approved here.
+            project, and only after recorded institute approval. Your entries stay proposals; you cannot mark a module approved here.
           </p>
           {list.length === 0 ? <p className="muted">No modules in this scenario.</p> : null}
           <ol className="module-list" aria-label="IN 498 modules">
@@ -161,7 +191,7 @@ export function InternshipEditor({ value, onChange, modules }: InternshipEditorP
                         </Badge>
                       )}
                     </legend>
-                    {evaluated && evaluated.reasons.length > 0 ? <p className="field-error">Server reasons: {evaluated.reasons.join(', ')}</p> : null}
+                    {evaluated && evaluated.reasons.length > 0 ? <p className="field-error">Why: {evaluated.reasons.map((r) => humanize(r).toLowerCase()).join(', ')}</p> : null}
                     <div className="date-row">
                       <div className="field">
                         <label htmlFor={`${m.id}-target`}>{`Target basket for ${name}`}</label>

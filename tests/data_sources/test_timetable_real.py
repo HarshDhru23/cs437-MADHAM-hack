@@ -92,7 +92,7 @@ class SuppliedWorkbookControls(unittest.TestCase):
         self.assertEqual(self.groups("PH 202")["lecture"]["selection_semantics"], "all_required")
         self.assertEqual(self.groups("PH 202")["tutorial"]["selection_semantics"], "all_required")
         self.assertEqual(self.groups("CS 330")["lab"]["selection_semantics"], "all_required")
-        self.assertEqual(self.groups("CS 202")["lab"]["selection_semantics"], "unknown")  # J2,M2: alternatives not stated
+        self.assertEqual(self.groups("CS 202")["lab"]["selection_semantics"], "choose_one")  # J2,M2: alternatives, one per student (D-26)
 
 
 if __name__ == "__main__":

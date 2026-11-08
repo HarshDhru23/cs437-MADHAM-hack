@@ -13,7 +13,7 @@ for (const viewport of [
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Graduation requirements' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
     await page.goto('/record/import');
@@ -28,7 +28,7 @@ for (const viewport of [
 test('keyboard focus starts with the skip link and follows reading order', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Graduation requirements' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
   const order: string[] = [];

@@ -44,7 +44,7 @@ describe('status badges', () => {
   it.each([
     ['error', 'Error'],
     ['warning', 'Warning'],
-    ['unknown', 'Unknown'],
+    ['unknown', 'To check'],
     ['approval_required', 'Approval required'],
   ] as const)('severity %s is labelled', (severity, label) => {
     render(<SeverityBadge severity={severity} />);
@@ -53,24 +53,36 @@ describe('status badges', () => {
 });
 
 describe('IssueList', () => {
-  it('groups issues by severity with code, message and suggested action', () => {
-    render(<IssueList issues={[issue('DUPLICATE_COURSE', 'error'), issue('PREREQUISITE_MISSING', 'warning'), issue('OFFERING_UNKNOWN', 'unknown')]} />);
+  it('groups issues by severity and shows the message only: no code, source or suggested action', () => {
+    const { container } = render(<IssueList issues={[issue('DUPLICATE_COURSE', 'error'), issue('PREREQUISITE_MISSING', 'warning'), issue('OFFERING_UNKNOWN', 'unknown')]} />);
     const groups = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
-    expect(groups).toEqual(['Errors (1)', 'Warnings (1)', 'Unknown (1)']);
+    expect(groups).toEqual(['Problems (1)', 'Warnings (1)', 'To check (1)']);
     expect(screen.getByText('PREREQUISITE_MISSING message')).toBeInTheDocument();
-    expect(screen.getByText(/PREREQUISITE_MISSING action/)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/action|committed-roadmap|Source:/);
+    expect(container.querySelector('.issue-code')).toBeNull();
+  });
+
+  it('never shows notes (severity info), and shows the empty message when only notes exist', () => {
+    render(<IssueList issues={[issue('STANDING_ASSUMED', 'info'), issue('PREREQUISITE_UNKNOWN', 'info')]} emptyMessage="Nothing to check." />);
+    expect(screen.getByText('Nothing to check.')).toBeInTheDocument();
+    expect(screen.queryByText(/STANDING_ASSUMED message/)).not.toBeInTheDocument();
+  });
+
+  it('drops a leftover internal decision reference from a message', () => {
+    render(<IssueList issues={[{ ...issue('X', 'warning'), message: 'Assuming regular standing (28-credit cap) until you set it (D-31). Kept as imported (team decision D-03).' }]} />);
+    expect(screen.getByText('Assuming regular standing (28-credit cap) until you set it. Kept as imported.')).toBeInTheDocument();
   });
 
   it('lets the student select an issue to highlight affected items', async () => {
     const onSelect = vi.fn();
     render(<IssueList issues={[issue('PREREQUISITE_MISSING', 'warning', ['item-1'])]} onSelect={onSelect} />);
     await userEvent.click(screen.getByRole('button', { name: /Show affected items/ }));
-    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ code: 'PREREQUISITE_MISSING', entity_refs: ['item-1'] }));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ code: 'PREREQUISITE_MISSING', entity_refs: ['item-1'] }));   // the code stays in the data, never on screen
   });
 
   it('renders an explicit empty message', () => {
-    render(<IssueList issues={[]} emptyMessage="No issues reported by the server." />);
-    expect(screen.getByText('No issues reported by the server.')).toBeInTheDocument();
+    render(<IssueList issues={[]} emptyMessage="Nothing to check." />);
+    expect(screen.getByText('Nothing to check.')).toBeInTheDocument();
   });
 });
 
@@ -188,7 +200,7 @@ describe('CoursePicker', () => {
   it('states that no reviewed catalogue exists and labels manual entries as unverified', async () => {
     const onPick = vi.fn();
     render(<CoursePicker courses={[]} coverage="unknown" onPick={onPick} />);
-    expect(screen.getByText(/No reviewed catalogue/)).toBeInTheDocument();
+    expect(screen.getByText(/No course list is available/)).toBeInTheDocument(); // plain wording: the old text spoke of a 'reviewed catalogue'
     await userEvent.type(screen.getByLabelText('Course code'), 'ZZ 330');
     await userEvent.type(screen.getByLabelText(/Credits/), '4');
     await userEvent.click(screen.getByRole('button', { name: 'Add course' }));

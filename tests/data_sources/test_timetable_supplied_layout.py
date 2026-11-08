@@ -51,7 +51,7 @@ class SuppliedMeetingCellTests(Base):
         self.assertEqual(sorted(meetings), ["J2", "P1"])
         self.assertEqual(meetings["J2"]["room_options"], ["10/103", "10/104"])
         self.assertEqual(meetings["P1"]["room_options"], ["10/104", "Jagdish Patel Learning Theatre"])
-        self.assertEqual(groups(snap, "ES 112")["lab"]["selection_semantics"], "unknown")
+        self.assertEqual(groups(snap, "ES 112")["lab"]["selection_semantics"], "choose_one")  # J2 and P1: one per student (D-26)
         self.assertNotIn("MEETING_TEXT_UNPARSED", self.codes(rep))
 
     def test_room_pool_on_a_single_line_lab(self):

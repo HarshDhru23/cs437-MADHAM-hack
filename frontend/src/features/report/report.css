@@ -1,4 +1,4 @@
-/* A11 printable report: readable on screen at 390px, and on paper. */
+/* A11 printable report: Mission Control on screen (dark tokens, readable at 390px), black on white on paper (tokens.css forces the light tokens when printing). */
 .report-sheet > section {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -32,6 +32,9 @@
 .report-semester {
   margin-bottom: var(--space-3);
 }
+.report-actions {
+  margin-bottom: var(--space-4);
+}
 
 @media print {
   body:has(.report-sheet) .context-bar,
@@ -41,9 +44,21 @@
     display: none !important;
   }
   body:has(.report-sheet) {
-    background: #fff;
-    color: #000;
+    background: white;
+    background-image: none;
+    color: black;
     font-size: 11pt;
+  }
+  .report-sheet,
+  .report-sheet * {
+    color: black !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .report-sheet table,
+  .report-sheet th,
+  .report-sheet td {
+    border-color: color-mix(in srgb, black 35%, white) !important;
   }
   body:has(.report-sheet) main {
     max-width: none;
@@ -67,8 +82,8 @@
     break-after: auto;
   }
   .report-sheet .badge {
-    border: 1px solid #000;
+    border: 1px solid black;
     background: none;
-    color: #000;
+    color: black;
   }
 }

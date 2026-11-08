@@ -8,6 +8,7 @@ import { PLAN_TABS, SubNav } from '../../app/AppShell';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
+import { useDeleteScenario } from './deleteScenario';
 import { durationLabel } from './model';
 import './scenarios.css';
 
@@ -67,6 +68,7 @@ function ScenarioList() {
   const [error, setError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
+  const removal = useDeleteScenario({ onDeleted: () => undefined });
 
   if (plans.loading || scenarios.loading) return <StatePanel kind="loading" title="Loading your scenarios…" />;
   if (plans.error) return <ErrorPanel error={plans.error} onRetry={plans.reload} />;
@@ -98,22 +100,33 @@ function ScenarioList() {
     <>
       <section className="panel" aria-labelledby={`${formId}-list`}>
         <h2 id={`${formId}-list`}>Your scenarios</h2>
+        {removal.notice}
         {list.length === 0 ? (
           <p>You have no scenarios yet.</p>
         ) : (
-          <ul className="issue-list" aria-label="Your scenarios">
+          <ul className="scenario-list" aria-label="Your scenarios">
             {list.map((s) => (
-              <li key={s.id}>
+              <li key={s.id} className="chip scenario-row">
                 <Link to={`/scenarios/${encodeURIComponent(s.id)}`}>{s.label || 'Untitled scenario'}</Link>{' '}
                 <span className="muted">
-                  · copy of {planName(s.plan_id)} (plan revision {s.baseline_plan_revision}, record revision {s.baseline_record_revision}) · {s.changes.length}{' '}
-                  change(s) · internship: {s.internship ? durationLabel(s.internship.duration_choice) : 'not chosen'}
-                </span>
+                  · copy of {planName(s.plan_id)} · {s.changes.length === 1 ? '1 change' : `${s.changes.length} changes`} · internship:{' '}
+                  {s.internship ? durationLabel(s.internship.duration_choice) : 'not chosen'}
+                </span>{' '}
+                <button
+                  type="button"
+                  className="btn btn-small btn-danger"
+                  aria-label={`Delete scenario ${s.label || 'Untitled scenario'}`}
+                  disabled={removal.busyId !== null}
+                  onClick={() => removal.ask({ id: s.id, label: s.label || 'Untitled scenario', revision: s.revision })}
+                >
+                  {removal.busyId === s.id ? 'Deleting…' : 'Delete'}
+                </button>
               </li>
             ))}
           </ul>
         )}
       </section>
+      {removal.confirmation}
       <section className="panel" aria-labelledby={`${formId}-new`}>
         <h2 id={`${formId}-new`}>New scenario</h2>
         {planList.length === 0 ? (
@@ -133,13 +146,13 @@ function ScenarioList() {
                   <option value="">Choose a plan</option>
                   {planList.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.label || 'Untitled plan'} (revision {p.revision})
+                      {p.label || 'Untitled plan'}
                     </option>
                   ))}
                 </select>
               </div>
             ) : (
-              <p className="muted">Copies your saved plan “{planName(chosen)}” at its current revision.</p>
+              <p className="muted">Copies your saved plan “{planName(chosen)}” as it is now.</p>
             )}
             {error ? (
               <p className="field-error" role="alert">
