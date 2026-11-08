@@ -68,9 +68,8 @@ def degree_progress(curriculum, results):
     return {'total_credits': decimal_string(total), 'counted_credits': decimal_string(counted), 'remaining_credits': decimal_string(max(Decimal(0), total - counted))}
 
 
-def requirement_progress(curriculum, results):
-    """One row per credit-bearing requirement of the degree (the part of a group a student works on, such as Open electives or the HSS electives):
-    what it asks for, what is counted so far and what remains. For an either/or group (the Foundation Programme) only the chosen side is listed."""
+def _chosen_leaves(curriculum, results):
+    """(leaf rule, its result node, its top-level group label) for every leaf of the degree; for an either/or group only the chosen side."""
     by_id = {}
 
     def index(nodes):
@@ -78,28 +77,44 @@ def requirement_progress(curriculum, results):
             by_id[node['id']] = node
             index(node.get('children', []))
     index(results)
-    rows = []
 
     def walk(rule, group):
-        node = by_id.get(rule['id'])
         children = rule.get('children', [])
         if not children:
-            required = decimal_value(node['required_credits']) if node else Decimal(0)
-            if required > 0:
-                counted = min(decimal_value(node['counted_credits']), required)
-                rows.append({'id': rule['id'], 'label': rule.get('label', rule['id']), 'group': group, 'required_credits': decimal_string(required),
-                             'counted_credits': decimal_string(counted), 'remaining_credits': decimal_string(required - counted)})
-            return
-        if rule['type'] == 'any_of':
+            yield rule, by_id.get(rule['id']), group
+        elif rule['type'] == 'any_of':
             picks = [c for c in children if c['id'] in by_id]
-            chosen = max(picks, key=lambda c: (by_id[c['id']]['status'] in {'satisfied', 'conditional'}, decimal_value(by_id[c['id']]['counted_credits'])))
-            walk(chosen, group)
-            return
-        for child in children:
-            walk(child, group)
+            yield from walk(max(picks, key=lambda c: (by_id[c['id']]['status'] in {'satisfied', 'conditional'}, decimal_value(by_id[c['id']]['counted_credits']))), group)
+        else:
+            for child in children:
+                yield from walk(child, group)
 
     for rule in curriculum['requirements']:
-        walk(rule, rule.get('label', rule['id']))
+        yield from walk(rule, rule.get('label', rule['id']))
+
+
+def requirement_progress(curriculum, results):
+    """One row per credit-bearing requirement of the degree (the part of a group a student works on, such as Open electives or the HSS electives):
+    what it asks for, what is counted so far and what remains. For an either/or group (the Foundation Programme) only the chosen side is listed."""
+    rows = []
+    for rule, node, group in _chosen_leaves(curriculum, results):
+        required = decimal_value(node['required_credits']) if node else Decimal(0)
+        if required > 0:
+            counted = min(decimal_value(node['counted_credits']), required)
+            rows.append({'id': rule['id'], 'label': rule.get('label', rule['id']), 'group': group, 'required_credits': decimal_string(required),
+                         'counted_credits': decimal_string(counted), 'remaining_credits': decimal_string(required - counted)})
+    return rows
+
+
+def course_shortfalls(curriculum, results):
+    """Requirements still short of the number of courses they ask for (Physical Education: four courses and no credits; the GE basket: two
+    courses), whatever their credits: {'id', 'label', 'remaining_courses'} for each. Same minimum as the allocator's."""
+    rows = []
+    for rule, node, _group in _chosen_leaves(curriculum, results):
+        minimum = rule.get('minimum_courses', 1 if rule['type'] in {'mandatory_course', 'noncredit'} else 0)
+        counted = node['counted_courses'] if node else 0
+        if counted < minimum:
+            rows.append({'id': rule['id'], 'label': rule.get('label', rule['id']), 'remaining_courses': minimum - counted})
     return rows
 
 
