@@ -782,7 +782,11 @@
         "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
-        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_logins_from_one_address_never_lock_it",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_a_success_does_not_wipe_earlier_failures",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_sign_ups_do_not_lock_out_the_network",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_deletion_rechecks_do_not_count"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -1040,7 +1044,9 @@
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_issued_for_another_app_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_an_expired_token_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
-        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused"
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_twelve_students_on_one_network_all_sign_in",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten"
       ],
       "browser_tests": [],
       "frontend_tests": [
