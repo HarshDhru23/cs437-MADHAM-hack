@@ -5,7 +5,7 @@
  */
 
 /** Same as `CODE` in coursepath/imports/normalization.py. */
-const COURSE_CODE = /^[A-Za-z]{2,5}\s*\d{2,4}(?:\s*\([^\n)]{1,20}\))?$/;
+const COURSE_CODE = /^[A-Za-z]{2,5}\s*\d{2,4}(?:-[A-Za-z0-9]{1,6})?(?:\s*\([^\n)]{1,20}\))?$/;
 
 /** Same as the schema `decimal` pattern and serialization.decimal_value bounds. */
 const DECIMAL = /^(0|[1-9][0-9]*)(\.[0-9]{1,4})?$/;

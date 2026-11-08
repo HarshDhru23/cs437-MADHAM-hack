@@ -67,3 +67,10 @@ describe('plainIssues: words for what the server reports about a plan being edit
     expect(shown[0]!.message).toBe('Check this list.');
   });
 });
+
+describe('plainIssues: suffixed special-topics codes', () => {
+  it('names a suffixed course found only in the issue references', () => {
+    const shown = plainIssues([{ ...issue('OFFERING_NOT_IN_SNAPSHOT', 'warning', 'Not offered.'), entity_refs: ['MS 491-VIII'] }], () => undefined);
+    expect(shown.map((i) => i.message)).toEqual(['MS 491-VIII is not offered this semester.']);
+  });
+});

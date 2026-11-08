@@ -28,7 +28,8 @@
       "oct27_target": true,
       "tests": [
         "tests.test_academic_history.AcademicHistoryTests.test_cp02_record_all_supported_attempt_statuses",
-        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history"
+        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp02_manual_entry_accepts_a_suffixed_code_and_still_rejects_malformed_ones"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -132,7 +133,11 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
-        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle"
+        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_pdf_keeps_suffixed_special_topics_rows_and_their_wrapped_titles",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_wrapped_title_never_attaches_to_the_row_above",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_code_as_wide_as_its_column_is_split_from_the_title_it_touches",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -160,7 +165,8 @@
         "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_parser_recovers_every_oracle_row_in_its_term",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_term_credit_sums_and_ims_difference",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp07_ims_paste_accepts_suffixed_codes_in_any_spacing_and_case"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
