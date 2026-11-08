@@ -650,7 +650,8 @@
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing",
+        "server.records.test_apply_noop_regression.ApplyNoPlanEditTests.test_cp28_apply_without_plan_edits_keeps_the_plan_revision"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

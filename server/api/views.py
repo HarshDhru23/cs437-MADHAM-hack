@@ -649,7 +649,9 @@ def scenario_apply(request, scenario_id):
         return response(stale, [issue('SCENARIO_STALE', 'The saved record, plan or rules changed after this scenario was created.', 'error', [str(scenario.pk)],
                                       action='Rebase the scenario on the current record and plan, then compare again.')], 409)
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
-    result = update_plan(plan, expected, plan_payload(edited))
+    payload = plan_payload(edited)
+    # No plan edit (only fail/grade/cap/internship changes) writes nothing, so the revision stays and other scenarios stay current.
+    result = update_plan(plan, expected, payload) if payload != plan.payload else plan_data(plan)
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
 
 
