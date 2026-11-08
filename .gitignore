@@ -28,3 +28,6 @@ Thumbs.db
 
 /Adv13_Norms for BTech Programme_28 Jan 2026.pdf
 # /Timetable*.xlsx
+
+# Azure deployment bundle (scripts/package_azure.py)
+/coursepath-azure.zip

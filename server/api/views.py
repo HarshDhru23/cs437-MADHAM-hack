@@ -8,9 +8,9 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError, RequestDataTooBig
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import F, ProtectedError
-from django.http import JsonResponse, Http404
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse, Http404
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -58,6 +58,27 @@ def endpoint(methods, public=False):
 
 def csrf_failure(request, reason=''):
     return response(issues=[issue('CSRF_REQUIRED', 'Refresh the session and send the CSRF token.', 'error')], status=403)
+
+
+@endpoint({'GET'}, public=True)
+def health(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except DatabaseError:
+        return response(issues=[issue('DATABASE_UNAVAILABLE', 'The database is not reachable.', 'error')], status=503)
+    return response({'status': 'ok', 'database': 'ok'})
+
+
+def spa(request, path=''):
+    if request.method not in ('GET', 'HEAD'):
+        return HttpResponseNotAllowed(['GET', 'HEAD'])
+    index = Path(settings.COURSEPATH_FRONTEND_DIR) / 'index.html'
+    if not index.is_file():
+        raise Http404('The frontend has not been built.')
+    result = HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')
+    result['Cache-Control'] = 'no-cache'
+    return result
 
 
 @endpoint({'GET'}, public=True)

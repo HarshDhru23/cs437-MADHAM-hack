@@ -5,6 +5,7 @@ charset-normalizer==3.5.2
 cryptography==50.0.2
 Django==5.2.18
 et-xmlfile==2.0.0
+gunicorn==26.2.0
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 openpyxl==3.1.5
@@ -22,3 +23,4 @@ rpds-py==2026.9.1
 sqlparse==0.6.0
 tzdata==2026.5
 typing_extensions==4.16.0; python_version < "3.13"
+whitenoise==6.12.0
