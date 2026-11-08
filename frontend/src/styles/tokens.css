@@ -1,32 +1,62 @@
+/*
+ * CoursePath design tokens: "Mission Control". Dark is the default and the only palette; a light variant uses the same roles.
+ * cyan = your progress, amber = limits, violet = what-if, mint = done, red = problem.
+ * Old names (--surface, --border, --text, --success, --warning, --danger, --scenario ...) stay so existing components restyle without edits;
+ * new names (--panel, --line, --grid, --ok, --warn, --bad, --whatif, --font-d/b/m) are for the redesigned screens.
+ * Derived tints use color-mix() on these tokens only: no other colours.
+ */
 :root {
-  --bg: #f7f5f1;
-  --surface: #ffffff;
-  --surface-muted: #efebe4;
-  --border: #c9c2b6;
-  --border-strong: #8a8276;
-  --text: #1d232b;
-  --text-muted: #4c5562;
-  --accent: #0d5c63;
-  --accent-strong: #08434a;
-  --accent-soft: #e0eff0;
-  --on-accent: #ffffff;
-  --success: #1f6b3a;
-  --success-soft: #e3f1e7;
-  --warning: #8a5300;
-  --warning-soft: #fbf0dc;
-  --danger: #a32020;
-  --danger-soft: #fbe6e4;
-  --unknown: #4a4f8c;
-  --unknown-soft: #e9eaf6;
-  --scenario: #6b2e83;
-  --scenario-soft: #f3e8f7;
-  --highlight: #fff3b8;
+  color-scheme: dark;
+  --bg: #0a0e16;
+  --bg2: #0f1520;
+  --panel: #131b29;
+  --line: #243349;
+  --grid: #162133;
+  --fg: #e8eef7;
+  --muted: #8fa2ba;
+  --accent: #52d3f5;
+  --ok: #4be3b5;
+  --warn: #ffb454;
+  --bad: #ff6b85;
+  --whatif: #c99bff;
 
-  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  /* names the existing components already use */
+  --surface: var(--panel);
+  --surface-muted: var(--bg2);
+  --border: var(--line);
+  --border-strong: color-mix(in srgb, var(--muted) 45%, var(--line));
+  --text: var(--fg);
+  --text-muted: var(--muted);
+  --accent-strong: color-mix(in srgb, var(--accent) 70%, var(--fg));
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--panel));
+  --on-accent: #0a0e16;
+  --success: var(--ok);
+  --success-soft: color-mix(in srgb, var(--ok) 14%, var(--panel));
+  --warning: var(--warn);
+  --warning-soft: color-mix(in srgb, var(--warn) 14%, var(--panel));
+  --danger: var(--bad);
+  --danger-soft: color-mix(in srgb, var(--bad) 14%, var(--panel));
+  --unknown: var(--muted);
+  --unknown-soft: color-mix(in srgb, var(--muted) 14%, var(--panel));
+  --scenario: var(--whatif);
+  --scenario-soft: color-mix(in srgb, var(--whatif) 14%, var(--panel));
+  --highlight: color-mix(in srgb, var(--warn) 22%, var(--panel));
+
+  /* text-safe tones: the tone mixed toward the foreground, for coloured TEXT (AA on every surface in both themes); fills and borders use the plain tone */
+  --ok-text: color-mix(in srgb, var(--ok) 70%, var(--fg));
+  --warn-text: color-mix(in srgb, var(--warn) 70%, var(--fg));
+  --bad-text: color-mix(in srgb, var(--bad) 70%, var(--fg));
+  --whatif-text: color-mix(in srgb, var(--whatif) 70%, var(--fg));
+
+  --font-d: 'Chakra Petch', system-ui, sans-serif;
+  --font-b: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-m: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font: var(--font-b);
+  --font-mono: var(--font-m);
   --font-size: 1rem;
-  --line: 1.5;
-  --radius: 6px;
+  --line-height: 1.55;
+  --radius: 4px;
+  --radius-lg: 6px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -35,5 +65,43 @@
   --space-6: 2rem;
   --target: 44px;
   --content: 72rem;
-  --focus: 3px solid var(--accent);
+  --focus: 2px solid var(--accent);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef2f8;
+  --bg2: #e6ecf4;
+  --panel: #ffffff;
+  --line: #cbd6e4;
+  --grid: #dde5f0;
+  --fg: #0f1826;
+  --muted: #4d5f77;
+  --accent: #0b7fa8;
+  --ok: #0b8566;
+  --warn: #a2600a;
+  --bad: #c0304b;
+  --whatif: #6b3dc2;
+  --on-accent: #ffffff;
+}
+
+/* Reports and printouts are black on white whatever the screen theme: the light tokens, forced. */
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg2: #f3f6fa;
+    --panel: #ffffff;
+    --line: #cbd6e4;
+    --grid: #ffffff;
+    --fg: #0f1826;
+    --muted: #4d5f77;
+    --accent: #0b7fa8;
+    --ok: #0b8566;
+    --warn: #a2600a;
+    --bad: #c0304b;
+    --whatif: #6b3dc2;
+    --on-accent: #ffffff;
+  }
 }

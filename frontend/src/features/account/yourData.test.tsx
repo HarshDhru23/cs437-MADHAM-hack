@@ -81,9 +81,9 @@ describe('AccountPage backup and restore (A11, CP-30)', () => {
   it('downloads the backup as a dated JSON file holding the server envelope, with no password', async () => {
     const { fetchImpl, calls } = fakeApi({ 'GET /record': () => ({ data: record }), 'GET /export?kind=json': () => backupEnvelope });
     renderApp(<AccountPage />, { fetchImpl });
-    expect(await screen.findByText(/not an official transcript or institute record/)).toBeInTheDocument();
+    expect(await screen.findByText(/not an official transcript/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Download backup (JSON)' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Saved coursepath-backup-2026-11-03.json (record revision 3)');
+    expect(await screen.findByRole('status')).toHaveTextContent('Saved coursepath-backup-2026-11-03.json. Keep it somewhere private');
     expect(calls.some((c) => c.method === 'GET' && c.path === '/export?kind=json')).toBe(true);
     expect(saved.map((s) => s.name)).toEqual(['coursepath-backup-2026-11-03.json']);
     const text = await saved[0]!.blob.text();
@@ -126,14 +126,16 @@ describe('AccountPage backup and restore (A11, CP-30)', () => {
     expect(row('Plans to create')).toHaveTextContent('1');
     expect(row('Scenarios not restored')).toHaveTextContent('1');
     expect(row('Plans skipped')).toHaveTextContent('2');
-    expect(region).toHaveTextContent('BACKUP_SCENARIOS_NOT_RESTORED');
+    expect(region).toHaveTextContent('Scenarios depend on an exact baseline; recreate them after restoring.');
+    expect(region).not.toHaveTextContent('BACKUP_SCENARIOS_NOT_RESTORED');   // issue codes are not shown
+    expect(region).not.toHaveTextContent(/revision|server/i);
 
     await userEvent.click(within(region).getByRole('button', { name: 'Restore this backup…' }));
     const dialog = await screen.findByRole('dialog', { name: 'Replace your saved record?' });
     expect(calls.some((c) => c.path.endsWith('/commit'))).toBe(false);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Replace record and restore' }));
 
-    expect(await screen.findByText(/Backup restored\. Your record is now at revision 4 with 6 attempts; 1 plan was added\./)).toBeInTheDocument();
+    expect(await screen.findByText(/Backup restored\. Your record now has 6 courses; 1 plan was added\./)).toBeInTheDocument();
     expect(calls.find((c) => c.path.endsWith('/commit'))).toEqual({ method: 'POST', path: `/imports/${preview.id}/commit`, body: { expected_revision: 3, confirm: true } });
     await waitFor(() => expect(calls.filter((c) => c.method === 'GET' && c.path === '/record').length).toBeGreaterThanOrEqual(2));
   });
@@ -151,7 +153,8 @@ describe('AccountPage backup and restore (A11, CP-30)', () => {
     await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Replace record and restore' }));
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('This was saved elsewhere');
-    expect(alert).toHaveTextContent(`server revision ${conflictExample.data.current_revision}`);
+    expect(alert).not.toHaveTextContent(/revision/i);   // the conflict is explained without revision numbers
+    expect(conflictExample.data.current_revision).toBeGreaterThan(0);
     expect(alert).toHaveTextContent('It was not applied');
     expect(screen.queryByText(/Backup restored/)).not.toBeInTheDocument();
     await new Promise((r) => setTimeout(r, 50));
@@ -168,7 +171,7 @@ describe('AccountPage backup and restore (A11, CP-30)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Preview restore' }));
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('This backup cannot be restored. Your saved record was not changed.');
-    expect(alert).toHaveTextContent('BACKUP_INVALID');
+    expect(alert).not.toHaveTextContent('BACKUP_INVALID');   // issue codes are not shown
     expect(alert).toHaveTextContent('The backup attempts are not valid.');
     expect(screen.queryByRole('region', { name: 'Restore preview' })).not.toBeInTheDocument();
   });
@@ -219,7 +222,7 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     await confirmDeletion();
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Your current password was not accepted. Nothing was deleted.');
-    expect(alert).toHaveTextContent('REAUTH_FAILED');
+    expect(alert).not.toHaveTextContent('REAUTH_FAILED');   // error codes are not shown
     expect(alert).not.toHaveTextContent('wrong-synthetic-pass');
     expect(calls.filter((c) => c.method === 'DELETE')).toEqual([
       { method: 'DELETE', path: '/account/data', body: { expected_revision: 3, password: 'wrong-synthetic-pass', confirm: 'delete my data', delete_account: false } },
@@ -259,7 +262,8 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     await confirmDeletion();
     const status = await screen.findByText(/Your data was deleted\./);
     const box = status.closest('[role="status"]')!;
-    expect(box).toHaveTextContent('Your record is now empty at revision 4');
+    expect(box).toHaveTextContent('Your record is now empty. Your account remains.');
+    expect(box).not.toHaveTextContent(/revision/i);
     const counts = within(box as HTMLElement).getByRole('list', { name: 'Deleted items' });
     expect(counts).toHaveTextContent('Attempts: 5');
     expect(counts).toHaveTextContent('Plans: 1');
@@ -289,7 +293,7 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     await requestDeletion(PASSWORD, { account: true });
     await confirmDeletion(true);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'CSE 2024 graduation requirements' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Graduation requirements' })).toBeInTheDocument();
     const notice = screen.getByText(/Your CoursePath account and its data were deleted, and you are signed out\./).closest('[role="status"]') as HTMLElement;
     expect(within(notice).getByRole('list', { name: 'Deleted items' })).toHaveTextContent('Attempts: 5');
     expect(notice).toHaveTextContent(RETENTION);
@@ -297,7 +301,7 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     // Signed out in this tab: no account link or username, no personal requests after the deletion.
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
     expect(screen.queryByText('synthetic-student')).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Data context' })).toHaveTextContent('Public requirements (no personal data)');
+    expect(screen.getByRole('region', { name: 'Data context' })).toHaveTextContent('B.Tech CSE, 2024 entry');
     const after = calls.slice(calls.findIndex((c) => c.method === 'DELETE') + 1);
     expect(after.some((c) => /^\/(record|plans|analysis|logout)/.test(c.path))).toBe(false);
   });

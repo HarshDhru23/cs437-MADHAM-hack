@@ -36,50 +36,50 @@ describe('ReportPage (A11, CP-30)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Printable report' }, wait)).toBeInTheDocument();
     expect(screen.getByRole('note')).toHaveTextContent('Not an official institute approval.');
 
-    // Rules, review status and sources, including what is missing.
-    const rules = screen.getByRole('region', { name: 'Rules and sources' });
-    expect(rules).toHaveTextContent('BTECH_CSE-2024');
-    expect(rules).toHaveTextContent('Review status');
-    expect(rules).toHaveTextContent('draft');
-    expect(rules).toHaveTextContent('committed-roadmap');
-    expect(rules).toHaveTextContent('Reviewed catalogue and basket memberships');
-    expect(screen.getByRole('region', { name: 'Actual, current and projected' })).toHaveTextContent('A projection is not completed history');
+    // A plain summary: the programme and the result, with no rule version, review status, sources or revisions.
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(summary).toHaveTextContent('B.Tech CSE, 2024 entry');
+    await waitFor(() => expect(summary).toHaveTextContent('Not yet complete'));
+    expect(document.body.textContent).not.toMatch(/BTECH_CSE|Review status|committed-roadmap|Missing sources|revision|rule version|\(server\)/i);
+    expect(screen.getByRole('region', { name: 'Completed, current and with this plan' })).toHaveTextContent('A plan is not a promise of completion');
 
     // Requirement status per view, straight from examples/audit.json: CSE core needs review, 0 of 36, remaining not reported.
     const status = screen.getByRole('region', { name: 'Requirement status' });
-    const actual = await within(status).findByRole('table', { name: 'Actual completed history' }, wait);
+    const actual = await within(status).findByRole('table', { name: 'Completed' }, wait);
     const core = within(actual).getByRole('row', { name: /cse core/i });
     expect(core).toHaveTextContent('Needs review');
     expect(within(core).getAllByRole('cell').map((c) => c.textContent)).toEqual(['?Needs review', '0', '36', 'Unknown', 'None']);
-    expect(within(status).getByRole('table', { name: 'Completed + confirmed current enrolment' })).toBeInTheDocument();
-    expect(within(status).getByRole('table', { name: 'Projected with this plan' })).toBeInTheDocument();
+    expect(within(status).getByRole('table', { name: 'Completed + current courses' })).toBeInTheDocument();
+    expect(within(status).getByRole('table', { name: 'With this plan' })).toBeInTheDocument();
     expect(calls.find((c) => c.path === '/analysis')?.body).toEqual({ record_revision: 3, plan_id: 'plan-1', plan_revision: 2, award_ids: [] });
 
     // Semesters with server workload, placeholders as unresolved.
     const semesters = screen.getByRole('region', { name: 'Planned semesters' });
     const first = within(semesters).getByRole('table', { name: /2026–27 Semester I\b/ });
     expect(first).toHaveTextContent('ZZ 330');
-    expect(first).toHaveTextContent('selected 8 credits; placeholders 4 credits (server)');
-    expect(within(semesters).getByRole('table', { name: /2026–27 Semester II/ })).toHaveTextContent('Placeholder: HSS elective');
+    expect(first).toHaveTextContent('selected 8 credits; to arrange 4 credits');
+    expect(within(semesters).getByRole('table', { name: /2026–27 Semester II/ })).toHaveTextContent('HSS elective');
     expect(within(semesters).getByRole('table', { name: /2027–28 Semester I\b/ })).toHaveTextContent('Nothing planned.');
 
     expect(screen.getByRole('region', { name: 'Scenario assumptions' })).toHaveTextContent('None. This report shows the saved plan without any what-if scenario.');
-    const issues = screen.getByRole('region', { name: 'Unresolved issues' });
-    expect(issues).toHaveTextContent('EQUIVALENCE_UNCONFIRMED');
+    const issues = screen.getByRole('region', { name: 'Things to check' });
+    expect(issues).not.toHaveTextContent('EQUIVALENCE_UNCONFIRMED');   // issue codes are not shown
+    expect(issues).toHaveTextContent('CS 203 does not establish CS 202 completion.');
     expect(issues).toHaveTextContent('Synthetic required lectures overlap.');
   });
 
   it('lists counted courses from the server ledger without adding anything up', async () => {
     const { fetchImpl } = fakeApi(routes(analysis));
     renderApp(<ReportPage />, { fetchImpl, route: '/report/plan-1', path: '/report/:plan_id' });
-    const actual = await screen.findByRole('table', { name: 'Actual completed history' }, wait);
+    const actual = await screen.findByRole('table', { name: 'Completed' }, wait);
     const dsa = within(actual).getByRole('row', { name: /^Dsa\b/ });
     expect(dsa).toHaveTextContent('Satisfied');
-    expect(dsa).toHaveTextContent('ES 242(N) · 4 credits · base');
+    expect(dsa).toHaveTextContent('ES 242(N) · 4 credits');
+    expect(dsa).not.toHaveTextContent('base');
     // The parent shows the server's own values, not anything the browser added up from its children.
     const core = within(actual).getByRole('row', { name: /^Cse core/ });
     expect(within(core).getAllByRole('cell').map((c) => c.textContent)).toEqual(['○Pending', '4', '36', '32', 'None']);
-    expect(screen.getByRole('region', { name: 'Requirement status' })).toHaveTextContent('ZZ 103 — Not completed');
+    expect(screen.getByRole('region', { name: 'Requirement status' })).not.toHaveTextContent('Attempts not counted');
   });
 
   it('lists the chosen scenario\'s assumptions and prints on request', async () => {
@@ -111,6 +111,22 @@ describe('ReportPage (A11, CP-30)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
     expect(print).toHaveBeenCalledTimes(1);
     print.mockRestore();
+  });
+
+  it('prints plan problems in plain words: no team or rule wording, no notes that need no action', async () => {
+    const validation = {
+      ...(exampleResult.validation as PlanValidation),
+      issues: [
+        { code: 'LOAD_GUIDANCE', severity: 'warning', message: 'Normal regular-term guidance is 20-24 credits.', entity_refs: [], source_refs: [], suggested_action: '' },
+        { code: 'PLACEHOLDER_UNRESOLVED', severity: 'unknown', message: 'Select actual courses before eligibility can be established.', entity_refs: [], source_refs: [], suggested_action: '' },
+        { code: 'PREREQUISITE_MISSING', severity: 'warning', message: 'Recommended preparation (CoursePath team) missing: ES 112', entity_refs: [], source_refs: [], suggested_action: '' },
+      ],
+    } as PlanValidation;
+    const { fetchImpl } = fakeApi(routes({ ...exampleResult, validation }, []));
+    renderApp(<ReportPage />, { fetchImpl, route: '/report/plan-1', path: '/report/:plan_id' });
+    const issues = await screen.findByRole('region', { name: 'Things to check' }, wait);
+    await waitFor(() => expect(issues).toHaveTextContent('Recommended earlier course not completed or planned: ES 112'));
+    expect(issues).not.toHaveTextContent(/guidance is 20-24|CoursePath team|Select actual courses/);
   });
 
   it('a plan that is missing or belongs to someone else shows not found, not data', async () => {

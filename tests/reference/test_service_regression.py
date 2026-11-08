@@ -56,9 +56,15 @@ class ExamplePlanThroughServices(unittest.TestCase):
         self.assertNotIn("LOAD_LIMIT", [i["code"] for i in self.result["issues"]])
         self.assertEqual(sum(Decimal(v["target_credits"]) for v in self.result["workload"].values()), Decimal(52))
 
-    def test_unknown_standing_is_reported_not_assumed(self):
-        codes = [i["code"] for i in validate_plan({}, example_plan())["issues"]]
-        self.assertIn("STANDING_UNKNOWN", codes)
+    def test_unset_standing_assumes_regular_and_says_so(self):
+        # D-31: replaces "unknown standing": regular (28-credit cap) is assumed, visibly, until the profile says otherwise.
+        issues = validate_plan({}, example_plan())["issues"]
+        assumed = [i for i in issues if i["code"] == "STANDING_ASSUMED"]
+        self.assertTrue(assumed)
+        self.assertEqual({i["severity"] for i in assumed}, {"info"})
+        self.assertNotIn("STANDING_UNKNOWN", [i["code"] for i in issues])
+        gps = validate_plan({"standing": "GPS"}, example_plan())["issues"]
+        self.assertNotIn("STANDING_ASSUMED", [i["code"] for i in gps])  # a stated standing needs no assumption
 
     def test_meetings_never_reported_clear_even_when_a_snapshot_is_supplied(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -107,10 +113,13 @@ class SampleRecordThroughAudit(unittest.TestCase):
         self.assertEqual(len(flagged), 1)
         self.assertNotIn("CS 202", [a["normalized_code"] for a in self.record["attempts"]])
 
-    def test_sc372_is_unmatched_not_dropped_or_graduation_counted_by_credit_value(self):
+    def test_sc372_is_kept_and_explained_not_dropped_or_graduation_counted_by_credit_value(self):
         sc = next(a for a in self.record["attempts"] if a["normalized_code"] == "SC 372")
         self.assertEqual((sc["credits"], sc["grade"]), ("1", "P"))
-        self.assertIn(sc["id"], [e for i in self.preview["issues"] if i["code"] == "UNMATCHED_COURSE" for e in i["entity_refs"]])
+        # D-08/D-29: decided by rule, so it is an explanatory note rather than an unmatched unknown.
+        noted = [i for i in self.preview["issues"] if i["code"] == "COURSE_NOT_COUNTED" and sc["id"] in i["entity_refs"]]
+        self.assertEqual([i["severity"] for i in noted], ["info"])
+        self.assertNotIn(sc["id"], [e for i in self.preview["issues"] if i["code"] == "UNMATCHED_COURSE" for e in i["entity_refs"]])
 
     def test_audit_is_deterministic_under_row_order(self):
         reversed_record = {**self.record, "attempts": list(reversed(self.record["attempts"]))}

@@ -9,7 +9,7 @@
 export const SCHEMA_VERSION = '1';
 
 export type DecimalString = string;
-export type Severity = 'error' | 'warning' | 'unknown' | 'approval_required';
+export type Severity = 'error' | 'warning' | 'info' | 'unknown' | 'approval_required';
 
 export interface Issue {
   code: string;
@@ -31,9 +31,19 @@ export interface SessionUser {
   username: string;
 }
 
+/** What the sign-in page offers (D-46). With a Google client ID only IITGN Google accounts sign in and the password forms are off. */
+export interface SignInOptions {
+  /** The public OAuth client ID for Google sign-in, or null when it is not configured. */
+  google_client_id: string | null;
+  google_domain: string;
+  /** Whether username and password sign-up and sign-in are offered. */
+  password: boolean;
+}
+
 export interface SessionData {
   csrf_token: string;
   user: SessionUser | null;
+  sign_in?: SignInOptions;
 }
 
 export interface SourceReference {
@@ -139,9 +149,11 @@ export interface ExtractedControls {
 }
 
 export interface DiffEntry {
-  candidate_id: string;
+  /** null for a saved imported course the new import no longer has (status 'removed'). */
+  candidate_id: string | null;
   attempt_id?: string | null;
-  status: 'new' | 'unchanged' | 'conflicting' | string;
+  /** 'replaced': a saved imported course the new import changes; the new import replaces it. 'removed': it is not in the new import. */
+  status: 'new' | 'unchanged' | 'conflicting' | 'replaced' | 'removed' | string;
   existing?: Partial<CourseAttempt>;
   fields?: string[];
 }
@@ -185,6 +197,10 @@ export interface RequirementDefinition {
   minimum_courses?: number | null;
   course_id?: string;
   course_ids?: string[] | null;
+  /** Any course not needed elsewhere can fill this requirement (open electives). */
+  any_course?: boolean;
+  course_prefixes?: string[];
+  course_patterns?: string[];
   source_refs: string[];
   /** Where in the source the rule sits, e.g. "p. 14; codes from p. 23". */
   source_locator?: string;
@@ -269,7 +285,15 @@ export interface Allocation {
   explanation: string;
 }
 
+export interface DegreeProgress {
+  total_credits: DecimalString;
+  counted_credits: DecimalString;
+  remaining_credits: DecimalString;
+}
+
 export interface AuditResult {
+  /** Credits counted toward the degree total (170 for CSE 2024) in each view; the server computes them. */
+  degree?: { actual: DegreeProgress; current: DegreeProgress; projected: DegreeProgress };
   actual: RequirementResult[];
   current: RequirementResult[];
   projected: RequirementResult[];
@@ -333,6 +357,8 @@ export interface RequirementPlaceholder {
   requirement_id: string;
   desired_credits: DecimalString;
   label?: string;
+  /** An online course (taken in a semester or a break): it counts against the pool of 16 online credits. */
+  online?: boolean;
 }
 
 export interface PlannedSemester {
@@ -346,9 +372,20 @@ export interface PlanPayload {
   semesters: PlannedSemester[];
 }
 
+/** D-45: a plan is valid when its check finds no error and no degree requirement is left uncovered. The server decides; a plan that is not valid can still be saved. */
+export interface PlanStatus {
+  valid: boolean;
+  /** Error-severity problems in the plan's check. */
+  problems: number;
+  /** Degree credits the plan leaves uncovered. */
+  uncovered_credits: DecimalString;
+}
+
 export interface AcademicPlan extends PlanPayload {
   id: string;
   revision: number;
+  /** Computed by the server from the plan and the current record whenever plans are read or saved. */
+  status?: PlanStatus;
 }
 
 export interface PerCourseValidation {
@@ -511,6 +548,20 @@ export type ScenarioOp = ScenarioChange['op'];
 export type DurationChoice = 'none' | 'three_months' | 'six_months';
 export type InternshipPreset = 'summer' | 'semester' | 'custom';
 export type PlacementMode = 'onsite_full_time' | 'remote_or_part_time' | 'unknown';
+
+/** Ready-made internship dates from the academic calendar (GET /calendar): the student picks one instead of typing dates. */
+export interface InternshipPresetOption {
+  duration_choice: Exclude<DurationChoice, 'none'>;
+  preset: Exclude<InternshipPreset, 'custom'>;
+  term_id: string;
+  start_date: string;
+  end_date_exclusive: string;
+}
+
+export interface CalendarData {
+  terms: { id: string }[];
+  internship_presets: InternshipPresetOption[];
+}
 
 /** What the student enters for one IN 498 module. It never carries an approval status. */
 export interface InternshipModuleInput {
@@ -746,3 +797,121 @@ export interface ScenarioStaleData {
 
 /** 409 body: `reload_compare` for a stale scenario or plan revision, `rebase` for a stale baseline. */
 export type ScenarioConflictData = RevisionConflictData | ScenarioStaleData;
+
+// D-35 / CP-35 — POST /plans/generate (schemas `plan_generation`, examples/plan-generation.json).
+// A draft plan for the remaining degree. Nothing is saved by generating; the client saves `semesters` through POST /plans.
+
+export type PlacementBasis = 'confirmed_offering' | 'expected_pattern' | 'student_choice' | string;
+
+export interface GeneratedPlacement {
+  item_id: string;
+  kind: 'course' | 'placeholder' | string;
+  term_id: string;
+  normalized_code?: string | null;
+  title?: string | null;
+  credits: DecimalString;
+  requirement_id: string;
+  requirement_label: string;
+  basis: PlacementBasis;
+  reason: string;
+  offering_ids?: string[];
+}
+
+export interface GeneratedUnmet {
+  requirement_id: string;
+  label: string;
+  remaining_credits: DecimalString;
+  remaining_courses?: number;
+  reason_code: string;
+  reason: string;
+  placeholder_ids?: string[];
+}
+
+export interface GenerationOptions {
+  terms?: string[];
+  target_credits_per_term?: DecimalString;
+  max_credits_per_term?: DecimalString;
+  skip_terms?: string[];
+  /** A term spent on an internship: it holds internship modules and online courses, and may allow finishing a semester early. */
+  internship_term?: string | null;
+  /** Spread the work evenly over the same semesters and use online credits in the breaks to lower each semester's load. */
+  lighten_with_online?: boolean;
+}
+
+/** What online courses in the breaks and the internship semester could do for a plan. */
+export interface OnlinePotential {
+  /** Online credits still available to this plan (at most 16). */
+  credits_available: DecimalString;
+  break_terms: string[];
+  /** The plan's busiest regular semester. */
+  busiest_semester_credits: DecimalString;
+  /** The busiest semester before the plan was lightened with online credits, when it was. */
+  busiest_before: DecimalString | null;
+  lightened: boolean;
+}
+
+export interface PlanGraduation {
+  internship_term: string | null;
+  /** true: finishes a semester early; false: tried and not possible; null: not tried. */
+  early: boolean | null;
+  last_term: string | null;
+  /** The last semester of the usual eight-semester horizon; `early` means the plan ends before it. */
+  usual_last_term: string | null;
+  /** Credits of online courses the plan uses (taken in the breaks) to end earlier; '0' when none. */
+  online_credits: DecimalString;
+  message: string | null;
+}
+
+/** POST /plans/check: an unsaved plan checked like a saved one. Saves nothing. */
+export interface PlanCheckRequirement {
+  id: string;
+  label: string;
+  /** The top-level group it belongs to, for example 'Humanities and Social Sciences (GE included)'. */
+  group: string;
+  required_credits: DecimalString;
+  counted_credits: DecimalString;
+  remaining_credits: DecimalString;
+  /** Credits placeholders hold for it, never more than it still needs. */
+  held_credits: DecimalString;
+  /** Still needed after the plan's courses and placeholders. */
+  uncovered_credits: DecimalString;
+}
+
+export interface PlanCheck {
+  status: PlanStatus;
+  validation: PlanValidation;
+  degree: DegreeProgress;
+  placeholder_credits: DecimalString;
+  /** Credits still needed after courses and placeholders: the 'credits left for graduation'. */
+  uncovered_credits: DecimalString;
+  requirements: PlanCheckRequirement[];
+  /** Online courses in the plan: credits planned and how many count toward the degree. */
+  online: { planned_credits: DecimalString; counted_credits: DecimalString };
+  /** Per semester: planned credits (courses and placeholders), the limit (28) and how many more fit. */
+  load: Record<string, { planned_credits: DecimalString; limit_credits: DecimalString; available_credits: DecimalString }>;
+}
+
+export interface PlanGeneration {
+  record_revision: number;
+  rule_version: string;
+  semesters: PlannedSemester[];
+  placements: GeneratedPlacement[];
+  unmet: GeneratedUnmet[];
+  summary: {
+    terms: string[];
+    total_credits: DecimalString;
+    remaining_before: DecimalString;
+    remaining_after: DecimalString;
+    placed_credits: DecimalString;
+    placeholder_credits: DecimalString;
+    credits_by_term: Record<string, DecimalString>;
+    busiest_semester_credits: DecimalString;
+    complete: boolean;
+  };
+  assumptions: string[];
+  options: GenerationOptions;
+  graduation: PlanGraduation;
+  online_potential: OnlinePotential;
+  notice: string;
+  validation: PlanValidation;
+}

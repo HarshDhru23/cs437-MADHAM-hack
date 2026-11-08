@@ -1,0 +1,169 @@
+<title>CoursePath Mission Control</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one scroll of five working panels (degree ring, plan builder, prerequisite map, command bar, what-if diff) on a faint engineering grid. Dark first. Cyan = your progress, amber = limits, violet = what-if. */
+:root{--bg:#0a0e16;--bg2:#0f1520;--panel:#131b29;--line:#243349;--grid:#162133;--fg:#e8eef7;--muted:#8fa2ba;--accent:#52d3f5;--ok:#4be3b5;--warn:#ffb454;--bad:#ff6b85;--whatif:#c99bff;--font-d:'Chakra Petch',system-ui,sans-serif;--font-b:'IBM Plex Sans',system-ui,sans-serif;--font-m:'JetBrains Mono',ui-monospace,Consolas,monospace;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef2f8;--bg2:#e6ecf4;--panel:#ffffff;--line:#cbd6e4;--grid:#dde5f0;--fg:#0f1826;--muted:#4d5f77;--accent:#0b7fa8;--ok:#0b8566;--warn:#a2600a;--bad:#c0304b;--whatif:#6b3dc2;color-scheme:light}}
+:root[data-theme="light"]{--bg:#eef2f8;--bg2:#e6ecf4;--panel:#ffffff;--line:#cbd6e4;--grid:#dde5f0;--fg:#0f1826;--muted:#4d5f77;--accent:#0b7fa8;--ok:#0b8566;--warn:#a2600a;--bad:#c0304b;--whatif:#6b3dc2;color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font-b);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;background-attachment:fixed}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font:600 28px/1.1 var(--font-d);letter-spacing:.02em;margin:0;text-wrap:balance}
+h2{font:600 15px/1.2 var(--font-d);letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--accent)}
+.sub{color:var(--muted);margin:4px 0 0;max-width:62ch}
+.tag{font:500 11px var(--font-m);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:3px}
+button,input{font:inherit;color:inherit}
+button{background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:6px 12px;cursor:pointer;transition:border-color .15s,transform .15s}
+button:hover{border-color:var(--accent)}button:active{transform:translateY(1px)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px;min-width:0}
+.panel>header{align-items:baseline}
+.mono{font-family:var(--font-m)}
+.hud{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:20px;align-items:center}
+.ring{position:relative;width:100%;max-width:340px;margin:0 auto}
+.ring svg{display:block;width:100%;height:auto}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .big{font:600 44px/1 var(--font-d);font-variant-numeric:tabular-nums}
+.ring .of{color:var(--muted);font:400 12px var(--font-m);letter-spacing:.1em}
+.stats{display:grid;gap:12px;min-width:0}
+.verdict{border:1px solid var(--warn);border-left-width:4px;border-radius:3px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.verdict b{font:600 13px var(--font-m);color:var(--warn);letter-spacing:.06em}
+.grp{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:13px}
+.grp .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}.grp .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.grp.done .bar i{background:var(--ok)}.grp span:last-child{text-align:right;font-family:var(--font-m);font-variant-numeric:tabular-nums;color:var(--muted)}
+.spark{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13px}.spark b{font:600 22px var(--font-d);color:var(--fg)}
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.col{border:1px solid var(--line);border-radius:4px;padding:12px;display:grid;gap:8px;align-content:start;background:var(--bg2);min-width:0}
+.col h3{margin:0;display:flex;justify-content:space-between;gap:8px;font:500 13px var(--font-m)}
+.meter{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.meter i{display:block;height:100%;background:var(--accent);transition:width .3s,background .3s}
+.chip{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:3px;padding:6px 8px;background:var(--panel);font-size:13px}
+.chip .code{font:500 12px var(--font-m);color:var(--accent)}.chip .cr{font:400 12px var(--font-m);color:var(--muted)}
+.chip.ph{border-style:dashed}.chip.ph .code{color:var(--whatif)}.chip.on{border-color:var(--ok)}
+.chip button{border:0;background:none;padding:0 4px;color:var(--muted)}.chip button:hover{color:var(--bad)}
+.add{border-style:dashed;color:var(--muted);font-size:12px}
+.problems{border:1px solid var(--line);border-radius:4px;background:var(--bg2);padding:10px 12px;display:grid;gap:6px;font-size:13px;min-height:68px}
+.problems div{display:flex;gap:8px;align-items:baseline}.sev{font:500 11px var(--font-m);padding:1px 6px;border-radius:2px;border:1px solid}
+.sev.w{color:var(--warn);border-color:var(--warn)}.sev.e{color:var(--bad);border-color:var(--bad)}.sev.ok{color:var(--ok);border-color:var(--ok)}
+.readout{display:flex;flex-wrap:wrap;gap:20px;font-size:13px;color:var(--muted)}.readout b{font:600 20px var(--font-d);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+.tree{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--bg2)}
+.tree svg{display:block;min-width:640px;width:100%;height:auto}
+.node rect{fill:var(--panel);stroke:var(--line);stroke-width:1.2;transition:stroke .15s}.node text{font:500 12px var(--font-m);fill:var(--fg)}.node .t{fill:var(--muted);font-size:10px}
+.node.done rect{stroke:var(--ok)}.node.open rect{stroke:var(--accent)}.node.lock{opacity:.55}.node:hover rect,.node.hot rect{stroke:var(--whatif);stroke-width:2}
+.edge{fill:none;stroke:var(--line);stroke-width:1.4;transition:stroke .15s}.edge.hot{stroke:var(--whatif);stroke-width:2}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font:400 12px var(--font-m);color:var(--muted)}.legend i{display:inline-block;width:10px;height:10px;border:2px solid;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.cmd{border:1px solid var(--accent);border-radius:6px;background:var(--bg2);overflow:hidden}
+.cmd input{width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px;font:400 15px var(--font-m);outline:none}
+.cmd ul{list-style:none;margin:0;padding:6px;display:grid;gap:2px}
+.cmd li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:3px;cursor:pointer;font-size:14px}
+.cmd li:hover,.cmd li.sel{background:var(--line)}.cmd kbd{font:400 11px var(--font-m);color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:1px 6px;white-space:nowrap}
+.echo{font:400 13px var(--font-m);color:var(--ok);min-height:20px}
+.diff{font:400 13px/1.7 var(--font-m);border:1px solid var(--line);border-radius:4px;background:var(--bg2);padding:10px 0;overflow-x:auto}
+.diff div{padding:0 14px;white-space:pre}.diff .a{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}.diff .r{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}.diff .h{color:var(--whatif)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.notes div{border-top:2px solid var(--line);padding-top:8px;font-size:13px;color:var(--muted)}.notes b{display:block;color:var(--fg);font:500 13px var(--font-m);margin-bottom:2px}
+@media(max-width:760px){.hud{grid-template-columns:1fr}.board{grid-template-columns:1fr}.grp{grid-template-columns:minmax(0,120px) minmax(0,1fr) 56px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div class="wrap">
+<header><div><h1>CoursePath Mission Control</h1><p class="sub">A design concept for the student view. Dark first, keyboard first, every number alive. The figures here are example data, not a real record.</p></div><div style="display:flex;gap:8px;align-items:center"><span class="tag">concept</span><button id="theme" type="button">Light / dark</button></div></header>
+
+<section class="panel" aria-labelledby="h-ring"><header><h2 id="h-ring">Degree ring</h2><span class="tag">170 credits</span></header>
+<div class="hud"><div class="ring"><svg id="ring" viewBox="0 0 300 300" role="img" aria-label="Credits counted toward the degree, by requirement group"></svg><div class="mid"><div class="big" id="ringnum">0</div><div class="of">OF 170 CREDITS</div></div></div>
+<div class="stats"><div class="verdict"><b>NOT YET ELIGIBLE</b><span>66 credits to go. Plan covers all of it by 2026–27 Summer.</span></div><div id="groups" style="display:grid;gap:8px"></div><div class="spark"><svg width="120" height="34" viewBox="0 0 120 34" aria-hidden="true"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="2,26 22,18 42,22 62,12 82,14 118,5"/><circle cx="118" cy="5" r="3" fill="var(--accent)"/></svg><span>CPI <b class="mono">9.23</b> across 4 semesters</span></div></div></div></section>
+
+<section class="panel" aria-labelledby="h-plan"><header><h2 id="h-plan">Plan builder</h2><button id="reset" type="button">Reset to generated plan</button></header>
+<div class="board" id="board"></div>
+<div class="readout"><span><b id="left">66</b>credits left for graduation</span><span><b id="planned">66</b>credits in the plan</span><span id="endnote"></span></div>
+<div class="problems" id="problems" aria-live="polite"></div></section>
+
+<section class="panel" aria-labelledby="h-map"><header><h2 id="h-map">Prerequisite map</h2><div class="legend"><span><i style="color:var(--ok)"></i>done</span><span><i style="color:var(--accent)"></i>ready</span><span><i style="color:var(--muted)"></i>waiting</span></div></header>
+<div class="tree"><svg id="map" viewBox="0 0 660 270" role="img" aria-label="Which courses lead to which"></svg></div></section>
+
+<section class="panel" aria-labelledby="h-cmd"><header><h2 id="h-cmd">Command bar</h2><span class="tag">press / to focus</span></header>
+<div class="cmd"><input id="q" type="text" autocomplete="off" placeholder="add CS 330 to semester II" aria-label="Command"><ul id="cmds"></ul></div><div class="echo" id="echo" aria-live="polite"></div></section>
+
+<section class="panel" aria-labelledby="h-diff"><header><h2 id="h-diff">What-if branches</h2><span class="tag" style="color:var(--whatif);border-color:var(--whatif)">branch: drop-cs331</span></header>
+<div class="diff" role="img" aria-label="Difference between your plan and the what-if branch"><div class="h">@@ plan main → what-if/drop-cs331 @@</div><div class="r">- 2026–27 Semester I   CS 331  Computer Networks        4</div><div class="a">+ 2027–28 Semester I   CS 331  Computer Networks        4</div><div class="r">- last semester        2026–27 Summer</div><div class="a">+ last semester        2027–28 Semester I</div><div class="a">+ busiest semester     28 → 24 credits</div></div></section>
+
+<section class="notes" aria-label="Feel"><div><b>Everything answers in 100 ms</b>Counters tick, bars slide, problems appear where you touched.</div><div><b>Keyboard first</b>Slash opens the command bar, j and k move, Enter commits.</div><div><b>Motion with a job</b>Rings fill once, edges light up on hover, nothing loops.</div><div><b>Plain words</b>Codes and ids stay in monospace, sentences stay human.</div></section>
+</div>
+<script>
+(function(){
+var root=document.documentElement;
+document.getElementById('theme').addEventListener('click',function(){var dark=root.getAttribute('data-theme')?root.getAttribute('data-theme')==='dark':!matchMedia('(prefers-color-scheme: light)').matches;root.setAttribute('data-theme',dark?'light':'dark')});
+
+var G=[['Foundation',4,4],['Institute core',31,31],['Materials',3,3],['HSS',20,28],['Mathematics',10,10],['Science',8,12],['CSE core',20,36],['CSE electives',4,26],['Open electives',0,16],['Open project',4,4]];
+var NS='http://www.w3.org/2000/svg',ring=document.getElementById('ring'),groups=document.getElementById('groups');
+function pt(a,r){var t=(a-90)*Math.PI/180;return [150+r*Math.cos(t),150+r*Math.sin(t)]}
+function arc(a0,a1,r){var p=pt(a0,r),q=pt(a1,r);return 'M'+p[0].toFixed(2)+' '+p[1].toFixed(2)+' A'+r+' '+r+' 0 '+((a1-a0)>180?1:0)+' 1 '+q[0].toFixed(2)+' '+q[1].toFixed(2)}
+var at=0,total=0;
+G.forEach(function(g,i){
+ var sweep=g[2]/170*360,a0=at+1.2,a1=at+sweep-1.2;at+=sweep;total+=g[1];
+ var track=document.createElementNS(NS,'path');track.setAttribute('d',arc(a0,a1,122));track.setAttribute('stroke','var(--line)');track.setAttribute('stroke-width','14');track.setAttribute('fill','none');ring.appendChild(track);
+ var fill=document.createElementNS(NS,'path');fill.setAttribute('d',arc(a0,a1,122));fill.setAttribute('pathLength','1');fill.setAttribute('fill','none');fill.setAttribute('stroke-width','14');fill.setAttribute('stroke',g[1]===g[2]?'var(--ok)':'var(--accent)');fill.setAttribute('stroke-dasharray','1 1');fill.setAttribute('stroke-dashoffset','1');fill.style.transition='stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1) '+(i*70)+'ms';ring.appendChild(fill);
+ requestAnimationFrame(function(){requestAnimationFrame(function(){fill.setAttribute('stroke-dashoffset',String(1-g[1]/g[2]))})});
+ var row=document.createElement('div');row.className='grp'+(g[1]===g[2]?' done':'');row.innerHTML='<span>'+g[0]+'</span><div class="bar"><i></i></div><span>'+g[1]+' / '+g[2]+'</span>';groups.appendChild(row);
+ var bar=row.querySelector('i');setTimeout(function(){bar.style.width=(g[1]/g[2]*100)+'%'},60+i*70);
+});
+var num=document.getElementById('ringnum'),t0=null;
+function tick(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/900);num.textContent=Math.round(total*p);if(p<1)requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+
+var BASE={ 'Semester I':{limit:28,items:[['CS 202',4],['CS 329',4],['CS 330',4],['CS 331',4],['HS 151',4],['HSS elective',8,1]]},
+ 'Semester II':{limit:28,items:[['ES 301',4],['PH 201',4],['CS 431',4],['Basic Science elective',4,1],['Open elective',12,1]]},
+ 'Summer break':{limit:10,items:[['Online · CSE elective',2,1],['Online · Open elective',8,1]]}};
+var S=JSON.parse(JSON.stringify(BASE)),board=document.getElementById('board');
+function sum(s){return s.items.reduce(function(a,b){return a+b[1]},0)}
+function render(){
+ board.innerHTML='';var planned=0,problems=[];
+ Object.keys(S).forEach(function(name){
+  var s=S[name],used=sum(s);planned+=used;
+  var col=document.createElement('div');col.className='col';
+  var pct=Math.min(100,used/s.limit*100),color=used>s.limit?'var(--bad)':used/s.limit>=.85?'var(--warn)':'var(--accent)';
+  col.innerHTML='<h3><span>'+name+'</span><span>'+used+' / '+s.limit+'</span></h3><div class="meter"><i style="width:'+pct+'%;background:'+color+'"></i></div>';
+  s.items.forEach(function(it,i){
+   var c=document.createElement('div');c.className='chip'+(it[2]?' ph':'');
+   c.innerHTML='<span><span class="code">'+it[0]+'</span></span><span class="cr">'+it[1]+' <button type="button" aria-label="Remove '+it[0]+'">✕</button></span>';
+   c.querySelector('button').addEventListener('click',function(){s.items.splice(i,1);render()});col.appendChild(c)});
+  var add=document.createElement('button');add.type='button';add.className='add';add.textContent='+ Open elective, 4 credits';
+  add.addEventListener('click',function(){s.items.push(['Open elective',4,1]);render()});col.appendChild(add);
+  board.appendChild(col);
+  if(used>s.limit)problems.push(['e',name+' is '+(used-s.limit)+' credits over its '+s.limit+'-credit limit.']);
+ });
+ var has=function(n,code){return S[n].items.some(function(i){return i[0]===code})};
+ if(has('Semester I','CS 331')&&!has('Semester I','CS 330'))problems.push(['w','CS 331 is best taken after CS 330.']);
+ var left=Math.max(0,66-planned);
+ document.getElementById('planned').textContent=planned;document.getElementById('left').textContent=left;
+ document.getElementById('endnote').textContent=left===0?'Every requirement is covered.':left+' credits still need a home.';
+ if(left>0)problems.push(['w',left+' credits are not covered yet. Add courses or elective credits.']);
+ var p=document.getElementById('problems');p.innerHTML='';
+ if(!problems.length)problems.push(['ok','No problems. Ready to save.']);
+ problems.forEach(function(x){var d=document.createElement('div');d.innerHTML='<span class="sev '+x[0]+'">'+(x[0]==='e'?'ERROR':x[0]==='w'?'CHECK':'OK')+'</span><span>'+x[1]+'</span>';p.appendChild(d)});
+}
+document.getElementById('reset').addEventListener('click',function(){S=JSON.parse(JSON.stringify(BASE));render()});
+render();
+
+var N=[['es214','ES 214','Discrete maths',20,10,'done'],['cs202','CS 202','Software tools',20,85,'done'],['es242','ES 242','DSA I',20,160,'done'],['cs201','CS 201','Theory of computing',240,10,'open'],['cs330','CS 330','Operating systems',240,75,'open'],['cs331','CS 331','Networks',240,140,'open'],['es301','ES 301','DSA II',240,205,'open'],['cs431','CS 431','Network security',460,108,'lock'],['cs329','CS 329','AI: multiagent',460,190,'lock']];
+var E=[['es214','cs201'],['cs202','cs330'],['cs330','cs431'],['cs331','cs431'],['es242','es301'],['es242','cs329'],['es301','cs329']];
+var map=document.getElementById('map'),W=150,H=46,pos={};
+N.forEach(function(n){pos[n[0]]=n});
+E.forEach(function(e){var a=pos[e[0]],b=pos[e[1]],x1=a[3]+W,y1=a[4]+H/2,x2=b[3],y2=b[4]+H/2,mx=(x1+x2)/2;
+ var p=document.createElementNS(NS,'path');p.setAttribute('d','M'+x1+' '+y1+' C'+mx+' '+y1+' '+mx+' '+y2+' '+x2+' '+y2);p.setAttribute('class','edge');p.dataset.a=e[0];p.dataset.b=e[1];map.appendChild(p)});
+N.forEach(function(n){var g=document.createElementNS(NS,'g');g.setAttribute('class','node '+n[5]);g.setAttribute('tabindex','0');g.dataset.id=n[0];
+ g.innerHTML='<rect x="'+n[3]+'" y="'+n[4]+'" width="'+W+'" height="'+H+'" rx="4"/><text x="'+(n[3]+10)+'" y="'+(n[4]+19)+'">'+n[1]+'</text><text class="t" x="'+(n[3]+10)+'" y="'+(n[4]+35)+'">'+n[2]+'</text>';
+ function hot(on){g.classList.toggle('hot',on);map.querySelectorAll('.edge').forEach(function(e){if(e.dataset.a===n[0]||e.dataset.b===n[0])e.classList.toggle('hot',on)})}
+ g.addEventListener('mouseenter',function(){hot(true)});g.addEventListener('mouseleave',function(){hot(false)});g.addEventListener('focus',function(){hot(true)});g.addEventListener('blur',function(){hot(false)});
+ map.appendChild(g)});
+
+var C=[['add CS 330 to semester II','Enter'],['lighten my semesters with online credits','L'],['new what-if branch from this plan','B'],['reset to generated plan','R'],['internship in 2027–28 Semester I','I'],['show Systems basket courses in semester II','S'],['save plan as…','Ctrl S']];
+var q=document.getElementById('q'),ul=document.getElementById('cmds'),echo=document.getElementById('echo'),sel=0;
+function list(){var v=q.value.trim().toLowerCase();var m=C.filter(function(c){return !v||c[0].indexOf(v)>-1||v.split(/\s+/).every(function(w){return c[0].indexOf(w)>-1})});if(!m.length)m=[['create a command called “'+q.value.trim()+'”','']];
+ sel=Math.min(sel,m.length-1);ul.innerHTML='';m.forEach(function(c,i){var li=document.createElement('li');li.className=i===sel?'sel':'';li.innerHTML='<span>'+c[0]+'</span><kbd>'+(c[1]||'new')+'</kbd>';li.addEventListener('click',function(){run(c[0])});ul.appendChild(li)});return m}
+function run(t){echo.textContent='> '+t+'  ✓ queued (concept: nothing is changed)'}
+q.addEventListener('input',function(){sel=0;list()});
+q.addEventListener('keydown',function(e){var m=list();if(e.key==='ArrowDown'){sel=(sel+1)%m.length;list();e.preventDefault()}else if(e.key==='ArrowUp'){sel=(sel-1+m.length)%m.length;list();e.preventDefault()}else if(e.key==='Enter'){run(m[sel][0]);e.preventDefault()}});
+document.addEventListener('keydown',function(e){if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();q.focus()}});
+list();
+})();
+</script>

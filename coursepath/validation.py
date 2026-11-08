@@ -57,8 +57,10 @@ def plan_payload(payload):
                     if item.get('instance_id') is not None:
                         text(item['instance_id'])
                 else:
-                    if set(item) - {'id', 'requirement_id', 'desired_credits', 'label'}:
+                    if set(item) - {'id', 'requirement_id', 'desired_credits', 'label', 'online'}:
                         raise ValueError('Unsupported placeholder field')
+                    if 'online' in item and not isinstance(item['online'], bool):
+                        raise ValueError('online must be true or false')
                     text(item['requirement_id'])
                     item['desired_credits'] = decimal_string(decimal_value(item['desired_credits']))
     return result

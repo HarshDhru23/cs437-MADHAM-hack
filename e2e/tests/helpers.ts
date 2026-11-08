@@ -64,6 +64,27 @@ export async function login(page: Page, username: string, next?: string) {
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 }
 
+/** The four terms a student who finished 2025-26 plans next (semesters 5 to 8). */
+export const LATER_TERMS = ['2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II'];
+
+/**
+ * An empty saved plan, made through the API in the page's own session, then opened. The Plans page no longer has a button that makes one
+ * (plans start from Generate plan), but the plan editor still works on any saved plan, and these flows need one that starts empty.
+ */
+export async function createBlankPlan(page: Page, label = 'My plan', terms: string[] = LATER_TERMS): Promise<string> {
+  const session = await page.request.get('/api/v1/session');
+  const token = ((await session.json()) as { data: { csrf_token: string } }).data.csrf_token;
+  const created = await page.request.post('/api/v1/plans', {
+    headers: { 'X-CSRFToken': token },
+    data: { label, semesters: terms.map((term_id) => ({ term_id, courses: [], placeholders: [] })) },
+  });
+  expect(created.status(), await created.text()).toBe(201);
+  const id = ((await created.json()) as { data: { id: string } }).data.id;
+  await page.goto(`/plan/${id}`);
+  await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+  return id;
+}
+
 export function semester(page: Page, label: string) {
   return page.getByRole('region', { name: label, exact: true });
 }

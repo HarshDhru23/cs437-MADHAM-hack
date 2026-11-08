@@ -110,23 +110,55 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 
 | Method / path | Payload and response |
 | --- | --- |
-| GET `/session` | CSRF bootstrap and authenticated user summary or null. |
+| GET `/session` | CSRF bootstrap and authenticated user summary or null, plus `sign_in: {google_client_id, google_domain, password}` (D-46): what the sign-in page offers. |
+| POST `/auth/google` | `{credential}` (D-46). Public. Sign in with a Google ID token: accepted only for a verified `@iitgn.ac.in` address that matches Google's domain claim. 201 on a first sign-in (account created), 200 after; 401 token not accepted, 403 `NOT_IITGN_ACCOUNT` / `ACCOUNT_CONFLICT`, 429 throttled, 503 Google unreachable, 404 when no client ID is configured. While it is configured `POST /auth/signup` and `/auth/login` answer 403 `PASSWORD_SIGN_IN_DISABLED`. |
 | POST `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/password` | Django-backed account actions. Standard password validation; throttle attempts; no plaintext password persistence/logging. |
 | GET `/curricula/cse-2024`, `/catalogue` | Reviewed requirements/catalogue with source and data-gap status. Catalogue supports code/title/basket/department query. |
 | GET/PATCH `/record` | Return current owned record / accept validated edits with `expected_revision`. Profile/cohort remains supported. |
 | POST `/imports/preview` | Multipart file for PDF or JSON `{kind:"ims", text:..., expected_revision:N}`; creates owned expiring preview, no accepted-record change. |
 | POST `/imports/{id}/commit` | `{expected_revision, resolutions, accepted_candidate_ids}`; recompute/validate proposed record and commit transactionally; return new revision. Server rejects foreign/expired previews and unresolved blocking fields. |
 | POST `/analysis` | `{record_revision, plan_id?, plan_revision?, award_ids}`; server loads owned state and reviewed rules. Return audit, performance and validations. No client-supplied calculated totals are trusted. |
-| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. |
+| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. Every plan read or saved carries `status: {valid, problems, uncovered_credits}` (D-45), computed from the plan and the current record. |
 | GET `/offerings?term_id=...` | Snapshot coverage/evidence, offerings, section/meeting groups and unknown state when absent. Committed official snapshots are served without a load step (D-22). |
 | GET `/calendar` | Published academic calendar terms (classes, quads, exams, recess, events; end-exclusive) and D-25 internship presets; `CALENDAR_MISSING` for unpublished years. |
 | POST `/plans/{id}/validate` | Evaluate persisted plan at supplied revisions, with no state change. |
+| POST `/plans/check` | `{record_revision, semesters}`; D-36. Validate an unsaved plan (for example an edited draft) and report the degree credits it covers; no state change. Returns `plan_check` (see below). 409 on a stale `record_revision`. |
+| POST `/plans/generate` | `{record_revision, options?}`; D-35. Build a draft plan for the remaining degree from the owner's record: no state change, nothing is saved (the client saves it through `POST /plans`). Returns `plan_generation` (see below). 409 on a stale `record_revision`. |
 | GET/POST `/scenarios`; GET/PATCH/DELETE `/scenarios/{id}` | Owned isolated scenario operations, including internship choice/date/module data and baseline revisions. |
 | POST `/scenarios/compare` | Compare selected owned scenarios to the exact common baseline; return table/deltas. |
 | POST `/scenarios/{id}/apply-plan` | Explicit plan-only apply with expected revisions. Does not apply hypothetical grades/failures to accepted actual history. |
 | GET `/export?kind=json` | Owned versioned structured backup; no password/session secrets. Print-ready report uses the analysis response and frontend print view. |
 | POST `/imports/backup-preview` | Validate versioned JSON backup as a candidate; review before transactional restore through the normal commit path. This is backup restore, not general XLSX import. |
 | DELETE `/account/data` | Authenticated explicit confirmation/re-auth as appropriate; delete owned personal state and previews; return documented retention/backup behavior. Account/session deletion semantics must be stated in UI. |
+
+### Plan generation (`POST /plans/generate`, D-35, CP-35)
+
+Request `options` (all optional, unknown keys are a 400): `terms` (regular or summer term IDs, in order; default: the next regular terms after the latest term in the record or current enrolment, up to eight semesters in total), `target_credits_per_term` (default 22), `max_credits_per_term` (default and limit 28 for a regular semester, 10 for summer; D-36), `internship_term` (one of the planned terms; D-37), `skip_terms` (for example a term spent on an internship).
+
+Response `data` is the `plan_generation` definition in `schemas/coursepath-v1.schema.json` (example: `examples/plan-generation.json`):
+
+- Open-ended electives (HSS, Basic Science, CSE, open) are placeholders labelled `HSS elective`, `Basic Science elective`, `CSE elective`, `Open elective`; semesters are packed to the 28-credit limit (D-40).
+- `semesters`: ready to send as the `semesters` of `POST /plans`. Courses use only fields the plan accepts (`intended_allocation` carries the requirement ID); placeholders use the existing placeholder shape.
+- `placements`: one row per course or placeholder with its `requirement_id`, `basis` (`confirmed_offering` from an official snapshot, `expected_pattern` from the same-parity hint of D-23, or `student_choice` for placeholders) and a one-sentence `reason`. Show these so the student can verify each placement.
+- `unmet`: every requirement the plan does not fully cover, with `reason_code` `NO_OFFERED_COURSE`, `NO_CAPACITY`, `STUDENT_CHOICE` (projects and external exposure) or `ALLOCATION_UNRESOLVED`. Nothing is dropped silently.
+- `summary` (with `complete`: every requirement placed or held by something the student arranges), `assumptions`, `options` (the options actually used, including `internship_term`), `graduation` (`{internship_term, early, last_term, usual_last_term, online_credits, message}`; `last_term` may be a summer (`YYYY-YY-SUMMER`) when online courses taken in the breaks save a semester, D-41; `early` is true when the plan ends before the usual last semester, false when it does not, null when the plan could not cover every requirement; `message` is set only when early; D-40), `notice` and `validation` (the same shape as plan validation, with no `error` issue).
+- The internship term holds placeholders only: `Internship module (IN 498)` (4 credits each, 16 at most) and `Online course` placeholders; their `requirement_id` names the requirement they would fill. They are proposals, never earned credit.
+
+Placeholders may carry `online: true` (an online course the student adds or the generator proposes; D-42). Generation `options` also accept `lighten_with_online` (boolean). The response has `online_potential` (`credits_available`, `break_terms`, `busiest_semester_credits`, `busiest_before`, `lightened`) and `summary.busiest_semester_credits`.
+
+### Plan check (`POST /plans/check`, D-36)
+
+Body `{record_revision, semesters}` (the `semesters` of a plan, saved or not). Returns the `plan_check` definition: `validation` (as for a saved plan, but with one load rule: more than 28 credits in a regular semester is a `LOAD_LIMIT` error, with no overload path and no 20-24 guidance), `degree` (`total_credits`, `counted_credits`, `remaining_credits` covered by the plan's courses against the record), `placeholder_credits`, `uncovered_credits` (still needed after courses and placeholders), `requirements` (one row per credit-bearing requirement: `required`, `counted`, `remaining`, `held` by placeholders and `uncovered`, with its top-level `group`) `load` (per semester: `planned_credits`, `limit_credits` 28, `available_credits`) and `online` (`planned_credits`, `counted_credits` of the plan's online courses: the allocator decides how many count, D-42). When some online credits do not count the validation carries a `warning` issue `ONLINE_CREDIT_LIMIT` and `requirements[].held_credits` counts only the online credits that count. It saves nothing, is owner-scoped and revision-checked (409 when `record_revision` is stale).
+
+### Degree totals (`audit.degree`)
+
+`POST /analysis` returns `audit.degree.{actual,current,projected}` as `{total_credits, counted_credits, remaining_credits}`: the degree total (170 for CSE 2024), the credits counted toward it (each requirement counts at most what it asks for) and the credits left. The UI shows these numbers and never computes them.
+
+### Later terms (`GET /offerings`, D-38)
+
+A semester the institute has not published returns the carried-forward timetable of the same semester (`derived_from` names the source term; meetings are the same slots with active dates moved by whole years), up to five years after the latest official one.
+
+Top-level `issues` are generation issues only (`REQUIREMENT_UNMET`, `warning`). The server never places a course in a term whose complete official snapshot lacks it, never invents a course for a requirement that nothing offered fills, and returns the same result for the same input.
 
 Use HTTP 400 invalid payload, 401 unauthenticated, 403 CSRF/forbidden action, 404 missing or foreign-owned object (avoid leaking existence), 409 stale revision, 413 file limit, 422 semantically uncommittable import and 429 throttled account requests. Use stable codes such as `UNMATCHED_COURSE`, `EQUIVALENCE_UNCONFIRMED`, `IMPORT_TOTAL_MISMATCH`, `SOURCE_CONFLICT`, `PREREQUISITE_MISSING`, `OFFERING_UNKNOWN`, `MEETINGS_UNKNOWN`, `TIMETABLE_CONFLICT`, `INTERNSHIP_ATTENDANCE_CONFLICT`, `INTERNSHIP_APPROVAL_REQUIRED`, `QUAD_CREDIT_CAP`, `ALLOCATION_UNRESOLVED`, `REVISION_CONFLICT`.
 

@@ -38,10 +38,10 @@ def offering_availability(snapshot, term_id, code):
             # The hint names the earlier term but never lends its offering IDs or meetings to this term.
             return {'status': 'historical', 'offering_ids': [], 'source_refs': [ref for o in matches for ref in o.get('source_refs', [])],
                     'pattern_term_id': pattern['term_id'],
-                    'issues': [issue('OFFERING_HISTORICAL_ONLY', f"{code} was offered in {pattern['term_id']}; the same semester usually repeats it (D-23), "
-                                     f'but no {term_id} timetable is published, so this is a planning hint, not a confirmed offering.', entities=[code])]}
+                    'issues': [issue('OFFERING_HISTORICAL_ONLY', f"Expected: {code} was offered in {pattern['term_id']} and the same semester usually repeats it, "
+                                     f'but no {term_id} timetable is published, so this is unconfirmed.', 'info', [code])]}
         return {'status': 'unknown', 'offering_ids': [], 'source_refs': [],
-                'issues': [issue('OFFERING_UNKNOWN', f'No offering snapshot exists for {term_id}; availability is unknown.', entities=[code])]}
+                'issues': [issue('OFFERING_UNKNOWN', f'No {term_id} timetable is published yet, and {code} is not in the earlier same-semester list, so its availability cannot be confirmed.', 'info', [code])]}
     matches = matching_offerings(snapshot, code)
     reviewed = snapshot.get('review_status') == 'reviewed'
     refs = [ref for o in matches for ref in o.get('source_refs', [])]
@@ -56,8 +56,52 @@ def offering_availability(snapshot, term_id, code):
     # A current variant outranks a historical pattern; only all-historical matches stay a hint.
     if all(o.get('availability_status') == 'historical' for o in matches):
         return {**result, 'status': 'historical',
-                'issues': [issue('OFFERING_HISTORICAL_ONLY', 'A historical pattern is a planning hint, not a confirmed offering.', entities=[code])]}
+                'issues': [issue('OFFERING_HISTORICAL_ONLY', 'Expected from an earlier timetable; not a confirmed offering.', 'info', [code])]}
     if not reviewed:
         return {**result, 'status': 'tentative',
                 'issues': [issue('OFFERING_SNAPSHOT_UNREVIEWED', f'The {term_id} timetable snapshot has not been reviewed.', 'warning', [code], [r['id'] for r in refs[:1]])]}
     return {**result, 'status': 'confirmed_in_snapshot'}
+
+
+FOLLOWING_YEARS = 5   # academic years after the latest official one that follow its timetables
+
+
+def _shift_year(text, years):
+    return f'{int(text[:4]) + years}{text[4:]}'
+
+
+def derive_snapshot(snapshot, term_id):
+    """A copy of an official snapshot for a later term of the same semester (I or II): the same courses, slots and weekday times, with
+    the term in every ID and each active date moved by whole years. Used where the institute has not yet published that term, so
+    the odd-semester and even-semester timetables stay the one source for every year."""
+    source_year, part = term_key(snapshot['term_id'])
+    delta = term_key(term_id)[0] - source_year
+    if term_key(term_id)[1] != part or delta <= 0:
+        raise ValueError('A derived snapshot must be a later year of the same semester')
+
+    def walk(value, key=None):
+        if isinstance(value, dict):
+            return {k: walk(v, k) for k, v in value.items()}
+        if isinstance(value, list):
+            return [walk(v, key) for v in value]
+        if isinstance(value, str):
+            if key in {'active_start_date', 'active_end_date'} and len(value) == 10:
+                return _shift_year(value, delta)
+            return value.replace(snapshot['term_id'], term_id)
+        return value
+    derived = walk(snapshot)
+    derived['derived_from'] = snapshot['term_id']
+    return derived
+
+
+def with_following_terms(snapshots):
+    """The given snapshots plus, for each semester (I and II) that has an official snapshot, a derived one for every year up to FOLLOWING_YEARS later."""
+    by_term = {s['term_id']: s for s in snapshots if s.get('term_id')}
+    for snapshot in list(by_term.values()):
+        year, part = term_key(snapshot['term_id'])
+        if part == 2 or snapshot.get('review_status') != 'reviewed' or snapshot.get('derived_from'):
+            continue
+        for later in range(year + 1, year + 1 + FOLLOWING_YEARS):
+            term = f'{later}-{(later + 1) % 100:02d}-{"I" if part == 0 else "II"}'
+            by_term.setdefault(term, derive_snapshot(snapshot, term))
+    return list(by_term.values())

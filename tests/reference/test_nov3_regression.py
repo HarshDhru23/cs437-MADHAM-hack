@@ -72,7 +72,7 @@ class DocumentedClashTests(unittest.TestCase):
         self.assertEqual(len({c["id"] for c in result["conflicts"]}), len(result["conflicts"]))
 
     def test_unknown_lab_alternatives_give_a_possible_clash_never_clear(self):
-        # CS 202 lab J2,M2 has unknown semantics (AMB-12); a lecture in J2 may clash with one alternative.
+        # CS 202 lab J2,M2 are alternatives, one per student (D-26); a lecture in J2 may clash with whichever slot is assigned.
         place = {**documented_rows(), 300: course_row("ZZ 101", "Synthetic J2 lecture", 4, "J2")}
         result = check_meetings([item("CS 202"), item("ZZ 101")], snapshot_from(place=place))
         self.assertEqual(overlaps(result), [(4, 840, 920)])

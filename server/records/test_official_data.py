@@ -43,7 +43,9 @@ class OfficialTimetableAPITests(AccountAPIMixin, TestCase):
         self.assertEqual(self.served('2026-27-II')['data']['id'], 'timetable-2026-27-II')  # a draft never replaces the official list
         self.load('2026-27-II', '--reviewed')
         self.assertEqual(self.served('2026-27-II')['data']['id'], 'synthetic-2026-27-II')
-        self.assertEqual(self.served('2027-28-I')['data']['offerings'], [])  # nothing is published for later terms
+        later = self.served('2027-28-I')['data']  # D-36 (7 Nov): later years follow the odd- and even-semester timetables
+        self.assertEqual(later['derived_from'], '2026-27-I')
+        self.assertEqual({o['code'] for o in later['offerings']}, {o['code'] for o in self.served('2026-27-I')['data']['offerings']})
 
     @override_settings(COURSEPATH_OFFERINGS_DIR=None)
     def test_cp23_switching_the_committed_data_off_leaves_availability_unknown(self):
@@ -60,8 +62,8 @@ class OfficialTimetableAPITests(AccountAPIMixin, TestCase):
         self.assertEqual(result['meeting_checks']['2026-27-II']['status'], 'conflicts')
         self.assertEqual([c['certain'] for c in result['meeting_checks']['2026-27-II']['conflicts']], [True, True])
         rows = {row['id']: row['offering_status'] for row in result['per_course']}
-        self.assertEqual(rows, {'db': 'confirmed_in_snapshot', 'bio': 'confirmed_in_snapshot', 'again': 'historical'})
-        self.assertEqual(result['meeting_checks']['2027-28-II']['status'], 'not_checked')
+        self.assertEqual(rows, {'db': 'confirmed_in_snapshot', 'bio': 'confirmed_in_snapshot', 'again': 'confirmed_in_snapshot'})  # D-36: later years follow the semester timetable
+        self.assertEqual(result['meeting_checks']['2027-28-II']['status'], 'clear')
 
 
 class CalendarAPITests(AccountAPIMixin, TestCase):
@@ -73,7 +75,7 @@ class CalendarAPITests(AccountAPIMixin, TestCase):
         self.assertEqual([(p['duration_choice'], p['preset'], p['start_date']) for p in data['internship_presets']],
                          [('three_months', 'summer', '2027-05-01'), ('six_months', 'summer', '2027-05-01'), ('six_months', 'semester', '2027-07-01')])
         # Later years are not published, and the response says so instead of implying no overlap.
-        self.assertEqual([(i['code'], i['severity']) for i in body['issues']], [('CALENDAR_MISSING', 'unknown')])
+        self.assertEqual([(i['code'], i['severity']) for i in body['issues']], [('CALENDAR_MISSING', 'info')])  # D-33: later years are not published yet; stated, not an unknown
 
     @override_settings(COURSEPATH_CALENDAR_DIR=None)
     def test_cp33_without_a_calendar_there_are_no_presets(self):

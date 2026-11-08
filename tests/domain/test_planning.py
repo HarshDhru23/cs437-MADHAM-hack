@@ -49,3 +49,27 @@ class PlanningTests(unittest.TestCase):
         dropped = edit_semester_plan(plan, 3, remove_course_ids=['ZZ 100'])
         self.assertTrue(any(i['code'] == 'PREREQUISITE_MISSING' and 'b' in i['entity_refs'] for i in validate_plan({'catalogue': catalogue}, dropped)['issues']))
         self.assertEqual(plan, before)
+
+
+class SimpleLoadLimit(unittest.TestCase):
+    """D-36: a plan being edited in the product has one load rule, 28 credits, with no overload approval path and no 20-24 guidance."""
+
+    @staticmethod
+    def codes(credits, **context):
+        plan = {'semesters': [{'term_id': '2026-27-I', 'courses': [{'id': 'p', 'normalized_code': 'ZZ 100', 'credits': credits}]}]}
+        return [i['code'] for i in validate_plan({'standing': 'normal', **context}, plan)['issues']]
+
+    def test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request(self):
+        codes = self.codes('29', simple_load=True)
+        self.assertIn('LOAD_LIMIT', codes)
+        self.assertNotIn('OVERLOAD_APPROVAL_REQUIRED', codes)
+
+    def test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing(self):
+        for credits in ('28', '16'):
+            codes = self.codes(credits, simple_load=True)
+            self.assertNotIn('LOAD_LIMIT', codes)
+            self.assertNotIn('LOAD_GUIDANCE', codes)
+
+    def test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged(self):
+        self.assertIn('OVERLOAD_APPROVAL_REQUIRED', self.codes('29'))
+        self.assertIn('LOAD_GUIDANCE', self.codes('16'))

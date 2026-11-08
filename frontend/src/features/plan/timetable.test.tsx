@@ -1,5 +1,7 @@
 /**
- * A08 (CP-23, CP-24): term offerings, section choice and clashes in the planner.
+ * A08 (CP-23, CP-24): term offerings, section choice and clashes in the planner. The panel shows only what a student can act on
+ * (clashes, courses that are not offered, section choices); it never shows snapshot facts, review/coverage status, "not checked"
+ * reasons, issue codes or source cells. Later years follow the supplied odd/even-semester timetables (D-36).
  *
  * Snapshot data comes from examples/offerings.json (PH 202 and ES 667 with B1/B2
  * lectures and the H2 tutorial). Where a test needs a shape the example lacks
@@ -125,10 +127,12 @@ function server(opts: { terms: Record<string, TermResult>; snapshots: Record<str
 }
 
 const render = (s: ReturnType<typeof server>) => renderApp(<PlanPage />, { fetchImpl: s.fetchImpl, route: '/plan/plan-1', path: '/plan/:plan_id' });
-const panel = (label: string) => screen.findByRole('region', { name: `Timetable check for ${label}` });
+const panel = (label: string) => screen.findByRole('region', { name: `Timetable for ${label}` }, { timeout: 5000 });
+/** Words a student must never read in the timetable panel. */
+const DEVELOPER_TEXT = /snapshot|Not checked|Not published|Expected \(unconfirmed\)|Confirmed in|Tentative|Coverage|registration guarantee|MEETINGS_UNKNOWN|OFFERING_[A-Z_]+|D-\d\d/;
 
 describe('Term timetable panel (A08, CP-23/24)', () => {
-  it('shows "Not checked" with the server\'s reasons, never a green check, and the snapshot label, date, review and coverage', async () => {
+  it('shows only what the student can act on: sections to choose, and none of the snapshot facts, review status, coverage or "not checked" reasons', async () => {
     const s = server({
       terms: { [TERM]: { status: 'not_checked', offering: 'confirmed_in_snapshot' } },
       snapshots: { [TERM]: snapshot() },
@@ -136,34 +140,27 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     });
     render(s);
     const p = await panel('2026–27 Semester I');
-    await waitFor(() => expect(within(p).getByRole('note', { name: 'Why 2026–27 Semester I is not checked' })).toHaveTextContent('Some tutorial meetings could not be resolved'));
-    expect(within(p).getAllByText('Not checked').length).toBeGreaterThan(0);
-    expect(within(p).queryByText('No clashes found')).not.toBeInTheDocument();
-    expect(p.querySelector('.badge-success')?.textContent ?? '').not.toMatch(/clash/i);
-    expect(within(p).getByRole('note', { name: /not checked/ })).toHaveTextContent('MEETINGS_UNKNOWN');
-    // Snapshot facts from the example file.
-    expect(p).toHaveTextContent('timetable-2026-27-I');
-    expect(p).toHaveTextContent('synthetic-timetable.xlsx');
-    expect(p).toHaveTextContent('Not stated by the source');
-    // The review line follows examples/offerings.json (draft once the #10 follow-up lands).
-    expect(p).toHaveTextContent(offeringsExample.data.review_status === 'reviewed' ? 'Reviewed against its source by staff' : 'Draft, not reviewed: offerings are tentative');
-    expect(p).toHaveTextContent(/Coverage\s*Partial/);
-    expect(p).toHaveTextContent('not a registration guarantee');
-    expect(p).toHaveTextContent('A course absent from it is unknown, not unavailable');
-    expect(p).toHaveTextContent('OFFERING_COVERAGE_PARTIAL');
-    expect(within(p).getAllByText('Confirmed in snapshot').length).toBe(2);
+    await waitFor(() => expect(within(p).getByRole('button', { name: 'Choose sections for PH 202' })).toBeInTheDocument());
+    await waitFor(() => expect(s.calls.some((c) => c.path.endsWith('/validate'))).toBe(true));
+    expect(p).not.toHaveTextContent(DEVELOPER_TEXT);
+    expect(p).not.toHaveTextContent(/timetable-2026-27-I|synthetic-timetable\.xlsx|Reviewed against|not reviewed/);
+    expect(within(p).queryByRole('note')).not.toBeInTheDocument();
+    expect(within(p).queryByText(/No clashes found|Clash check/)).not.toBeInTheDocument();
+    expect(within(p).queryByRole('columnheader', { name: /Offering status|Clash check/ })).not.toBeInTheDocument();
   });
 
-  it('shows "No clashes found" only when the server reports the term clear', async () => {
+  it('a term the server reports clear lists no clashes and says nothing about clashes at all', async () => {
     const s = server({ terms: { [TERM]: { status: 'clear', offering: 'tentative' } }, snapshots: { [TERM]: snapshot() } });
     render(s);
     const p = await panel('2026–27 Semester I');
-    await waitFor(() => expect(within(p).getAllByText('No clashes found').length).toBeGreaterThan(0));
-    expect(within(p).queryByRole('note', { name: /not checked/ })).not.toBeInTheDocument();
-    expect(within(p).getAllByText('Tentative (draft snapshot)').length).toBe(2);
+    await waitFor(() => expect(s.calls.some((c) => c.path.endsWith('/validate'))).toBe(true));
+    expect(within(p).queryByRole('heading', { name: /^Clashes/ })).not.toBeInTheDocument();
+    expect(p.querySelector('li[data-severity]')).toBeNull();
+    expect(p).not.toHaveTextContent(DEVELOPER_TEXT);
+    expect(p).not.toHaveTextContent(/No clashes/i);
   });
 
-  it('marks a certain clash as an error and a possible one as a warning with the server\'s assumptions and source cells', async () => {
+  it('marks a certain clash as an error and a possible one as a warning, without source cells or the assumptions text', async () => {
     const assumption = 'Active dates are not stated; both meetings are assumed to run all term.';
     const s = server({
       terms: {
@@ -177,26 +174,23 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     });
     render(s);
     const p = await panel('2026–27 Semester I');
-    await waitFor(() => expect(within(p).getByRole('heading', { name: 'Clashes reported by the server (2)' })).toBeInTheDocument());
-    expect(within(p).getAllByText('Clashes').length).toBeGreaterThan(0);
+    await waitFor(() => expect(within(p).getByRole('heading', { name: 'Clashes (2)' })).toBeInTheDocument());
     const certain = p.querySelector('li[data-severity="error"]') as HTMLElement;
     const possible = p.querySelector('li[data-severity="warning"]') as HTMLElement;
     // B1 is Tuesday 08:30-09:50 and B2 Friday 08:30-09:50 (source-findings).
     expect(certain).toHaveTextContent('Error');
     expect(certain).toHaveTextContent(/PH 202\s*lecture and\s*ES 667\s*lecture overlap on Tuesday 08:30–09:50/);
-    expect(certain).toHaveTextContent('Time table!K3');
-    expect(certain).toHaveTextContent('Time table!K4');
+    expect(certain).not.toHaveTextContent(/Time table!K\d|room not stated|active \d{4}/); // no source cells, no placeholder wording
     expect(certain).toHaveTextContent('slot B1');
-    expect(certain).toHaveTextContent('room not stated');
     expect(certain).not.toHaveTextContent('Possible clash');
     expect(possible).toHaveTextContent('Warning');
     expect(possible).toHaveTextContent('Possible clash');
     expect(possible).toHaveTextContent('Friday 08:30–09:50');
-    expect(possible).toHaveTextContent(assumption);
-    expect(p).toHaveTextContent('Different rooms do not resolve a clash');
+    expect(possible).not.toHaveTextContent(assumption);
+    expect(p).not.toHaveTextContent(/Different rooms|Why it is only possible|Source cells/);
     // Weekly detail supplements the list and has a text alternative.
     const list = within(p).getByRole('list', { name: 'Weekly meetings for 2026–27 Semester I (list)' });
-    expect(list).toHaveTextContent(/Tuesday:.*08:30–09:50 PH 202 lecture, slot B1 \(required; room not stated\) — in a reported clash/);
+    expect(list).toHaveTextContent(/Tuesday:.*08:30–09:50 PH 202 lecture, slot B1 — clash/);
     expect(list).toHaveTextContent(/Wednesday:.*11:30–12:50 PH 202 tutorial, slot H2/);
     expect(within(p).getByRole('table', { name: /Weekly meetings for 2026–27 Semester I \(grid\)/ })).toBeInTheDocument();
   });
@@ -216,6 +210,8 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     expect(within(dialog).getByRole('region', { name: 'PH 202 lecture meetings' })).toHaveTextContent('All listed meetings required');
     const group = within(dialog).getByRole('group', { name: /Choose one tutorial meeting for PH 202/ });
     expect(within(group).getByRole('radio', { name: /Not chosen yet/ })).toBeChecked();
+    expect(group).toHaveTextContent('Each student is assigned to exactly one tutorial slot');
+    expect(group).not.toHaveTextContent(/Source text|cells|source /);
     expect(within(group).getByRole('radio', { name: /Wednesday 11:30–12:50 · slot H2/ })).toBeInTheDocument();
     await userEvent.click(within(group).getByRole('radio', { name: /Monday 17:00–18:20 · slot H1/ }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save section choice' }));
@@ -237,7 +233,7 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     expect(s.patches).toHaveLength(1);
   });
 
-  it('a group with unstated semantics gets a clarification, not radio buttons or "required"', async () => {
+  it('a group with unstated semantics gets a plain pointer to the official timetable, not radio buttons or "required"', async () => {
     // Derived from the example: ES 667's lecture group with semantics the source does not state.
     const unknown = snapshot((x) => {
       offering(x, 'ES 667').meeting_groups[0]!.selection_semantics = 'unknown';
@@ -248,35 +244,59 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     await userEvent.click(await within(p).findByRole('button', { name: 'Choose sections for ES 667' }));
     const dialog = screen.getByRole('dialog', { name: 'Sections for ES 667 in 2026–27 Semester I' });
     const group = within(dialog).getByRole('region', { name: 'ES 667 lecture meetings' });
-    expect(group).toHaveTextContent('Grouping not stated');
-    expect(group).toHaveTextContent('does not say whether you attend every listed lecture slot or only one of them');
-    expect(group).toHaveTextContent('does not assume all of them are compulsory');
+    expect(group).toHaveTextContent('Check the official timetable for which of these lecture slots apply to you.');
+    expect(group).not.toHaveTextContent(/Grouping not stated|Listed; meaning not stated|compulsory/);
     expect(group).not.toHaveTextContent('All listed meetings required');
-    expect(within(group).getAllByText('Listed; meaning not stated')).toHaveLength(2);
+    expect(group).not.toHaveTextContent('assigned to exactly one'); // the alternatives explanation belongs to choose_one groups only
     expect(within(dialog).queryAllByRole('radio')).toHaveLength(0);
   });
 
-  it('a future term with no snapshot is "Not checked" and its offering unknown, never clear', async () => {
+  it('a term the server has no timetable for shows no panel and no apology; it never claims "no clashes"', async () => {
     const s = server({
       terms: { [TERM]: { status: 'conflicts', offering: 'confirmed_in_snapshot' }, [LATER]: { status: 'not_checked', offering: 'unknown' } },
       snapshots: { [TERM]: snapshot() },
       issues: [issue('MEETINGS_UNKNOWN', 'unknown', ['c-net'], 'No timetable snapshot exists for this term; clashes were not checked.')],
     });
     render(s);
-    const p = await panel('2027–28 Semester I');
-    await waitFor(() => expect(within(p).getByRole('note', { name: 'Why 2027–28 Semester I is not checked' })).toHaveTextContent('No timetable snapshot is stored for 2027–28 Semester I'));
-    expect(p).toHaveTextContent('This does not mean there are none.');
-    expect(within(p).getAllByText('Not checked').length).toBeGreaterThan(0);
-    expect(within(p).getByText('No timetable snapshot')).toBeInTheDocument();
-    expect(within(p).getByText('Unknown')).toBeInTheDocument();
-    expect(within(p).queryByText('No clashes found')).not.toBeInTheDocument();
-    expect(within(p).queryByText(/Confirmed in snapshot|Tentative/)).not.toBeInTheDocument();
-    expect(within(p).queryByRole('button', { name: /Choose sections/ })).not.toBeInTheDocument();
-    // The current term's snapshot is not reused for the later term.
-    expect(p).not.toHaveTextContent('timetable-2026-27-I');
+    await panel('2026–27 Semester I'); // the term that has a timetable still gets its panel
+    await waitFor(() => expect(s.calls.some((c) => c.path.endsWith('/validate'))).toBe(true));
+    await waitFor(() => expect(s.calls.some((c) => c.path === '/offerings?term_id=2027-28-I')).toBe(true));
+    expect(screen.queryByRole('region', { name: 'Timetable for 2027–28 Semester I' })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/No timetable|not published|Not published|snapshot|Not checked|No clashes/i);
   });
 
-  it('offers the variant choice the server asks for and renders unfamiliar issue codes generically', async () => {
+  it('a later year follows the semester timetable like any other term: clashes and sections appear with no "expected" or "not published" wording', async () => {
+    // The server carries the 2026-27 timetables forward (D-36): the later snapshot has the same courses under the later term.
+    const later = snapshot((x) => {
+      x.term_id = LATER;
+      x.id = 'derived-2027-28-I';
+    });
+    const plan = basePlan();
+    plan.semesters[1]!.courses = [
+      { id: 'c-ph', normalized_code: 'PH 202', credits: '4' },
+      { id: 'c-es', normalized_code: 'ES 667', credits: '4' },
+    ];
+    const s = server({
+      plan,
+      terms: { [TERM]: { status: 'clear', offering: 'confirmed_in_snapshot' }, [LATER]: { status: 'conflicts', offering: 'confirmed_in_snapshot', conflicts: [conflict(lecture('PH 202', 'B1'), lecture('ES 667', 'B1'), true)] } },
+      snapshots: { [TERM]: snapshot(), [LATER]: later },
+    });
+    render(s);
+    const p = await panel('2027–28 Semester I');
+    await waitFor(() => expect(within(p).getByRole('heading', { name: 'Clashes (1)' })).toBeInTheDocument());
+    expect(within(p).getByRole('button', { name: 'Choose sections for PH 202' })).toBeInTheDocument();
+    expect(p).not.toHaveTextContent(DEVELOPER_TEXT);
+  });
+
+  it('says a course is not offered this semester when the server says so, and nothing else about offerings', async () => {
+    const s = server({ terms: { [TERM]: { status: 'clear', offering: 'not_offered' } }, snapshots: { [TERM]: snapshot() } });
+    render(s);
+    const p = await panel('2026–27 Semester I');
+    await waitFor(() => expect(within(p).getAllByText(/is not offered this semester\./)).toHaveLength(2));
+    expect(p).not.toHaveTextContent(DEVELOPER_TEXT);
+  });
+
+  it('offers the version choice the server asks for, without showing issue codes or "not checked" reasons', async () => {
     // Derived from the example: a second PH 202 variant (an (E) label) in the same snapshot.
     const variants = snapshot((x) => {
       const ph = offering(x, 'PH 202');
@@ -293,15 +313,15 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     });
     render(s);
     const p = await panel('2026–27 Semester I');
-    const why = await within(p).findByRole('note', { name: 'Why 2026–27 Semester I is not checked' });
-    // The note first says the plan is not validated yet; wait for the server's reasons.
-    await waitFor(() => expect(why).toHaveTextContent('Several source variants exist'));
-    expect(why).toHaveTextContent('OFFERING_VARIANT_UNKNOWN');
-    expect(why).toHaveTextContent('The chosen offering variant is not in this snapshot.');
-    await userEvent.click(within(p).getByRole('button', { name: 'Choose sections for PH 202' }));
+    const button = await within(p).findByRole('button', { name: 'Choose sections for PH 202' });
+    await waitFor(() => expect(button).toHaveTextContent('Choose version and sections')); // the server's validation asked for a version
+    expect(p).not.toHaveTextContent(DEVELOPER_TEXT);
+    expect(p).not.toHaveTextContent(/Why it is not checked|variant/i);
+    await userEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Sections for PH 202 in 2026–27 Semester I' });
-    const variant = within(dialog).getByRole('group', { name: 'Source variant for PH 202' });
+    const variant = within(dialog).getByRole('group', { name: 'Which version of PH 202' });
     expect(variant).toHaveTextContent('Choose the one you will take');
+    expect(dialog).not.toHaveTextContent(/snapshot|source |variant/i);
     expect(within(dialog).getByRole('button', { name: 'Save section choice' })).toBeDisabled();
     await userEvent.click(within(variant).getByRole('radio', { name: /PH 202 \(E\)/ }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save section choice' }));
@@ -311,17 +331,16 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     expect(ph.section_ids).toEqual([]);
   });
 
-  it('an empty term shows the server\'s "Not checked" next to "No courses are planned", never "No clashes found"', async () => {
+  it('an empty term has no timetable panel at all', async () => {
     const plan = basePlan();
     plan.semesters[1]!.courses = [];
     // Main's server reports every empty term as not_checked (coursepath/timetable.py).
     const s = server({ plan, terms: { [TERM]: { status: 'conflicts' }, [LATER]: { status: 'not_checked' } }, snapshots: { [TERM]: snapshot() } });
     render(s);
-    const p = await panel('2027–28 Semester I');
-    await waitFor(() => expect(within(p).getByText('No courses are planned for this term.', { exact: false })).toBeInTheDocument());
-    expect(within(p).getByText('Not checked')).toBeInTheDocument();
-    expect(within(p).queryByText('No clashes found')).not.toBeInTheDocument();
-    expect(within(p).queryByText('Nothing to check')).not.toBeInTheDocument();
+    await panel('2026–27 Semester I');
+    await screen.findByRole('region', { name: '2027–28 Semester I' }); // the semester itself is still listed
+    expect(screen.queryByRole('region', { name: 'Timetable for 2027–28 Semester I' })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/No courses are planned|Not checked|No clashes/);
   });
 
   it('a saved variant that is no longer in the snapshot can be fixed in the picker and is never sent back', async () => {
@@ -340,11 +359,13 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     const p = await panel('2026–27 Semester I');
     const button = await within(p).findByRole('button', { name: 'Choose sections for PH 202' });
     // The label changes once the server's validation arrives.
-    await waitFor(() => expect(button).toHaveTextContent('Choose variant and sections'));
-    expect(p).toHaveTextContent(`Saved variant ${stale} (not in snapshot)`);
+    await waitFor(() => expect(button).toHaveTextContent('Choose version and sections'));
+    expect(p).toHaveTextContent('Your saved choice is no longer listed');
+    expect(p).not.toHaveTextContent(stale); // the internal id is never shown
     await userEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Sections for PH 202 in 2026–27 Semester I' });
-    expect(dialog).toHaveTextContent(`Your saved variant ${stale} is not in the current timetable snapshot`);
+    expect(dialog).toHaveTextContent('Your saved choice for this course is no longer in the timetable.');
+    expect(dialog).not.toHaveTextContent(stale);
     // The current offering's meetings are shown and the save is possible.
     expect(within(dialog).getByRole('region', { name: 'PH 202 lecture meetings' })).toBeInTheDocument();
     const save = within(dialog).getByRole('button', { name: 'Save section choice' });
@@ -373,11 +394,11 @@ describe('Term timetable panel (A08, CP-23/24)', () => {
     render(s);
     const p = await panel('2026–27 Semester I');
     const button = await within(p).findByRole('button', { name: 'Choose sections for ES 667' });
-    await waitFor(() => expect(button).toHaveTextContent('Clear saved variant'));
+    await waitFor(() => expect(button).toHaveTextContent('Clear saved choice'));
     await userEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Sections for ES 667 in 2026–27 Semester I' });
-    expect(dialog).toHaveTextContent("is not in this term's timetable snapshot");
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Clear saved variant' }));
+    expect(dialog).toHaveTextContent("is not in this semester's timetable");
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Clear saved choice' }));
     await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
     const es = s.patches[0]!.semesters.find((x) => x.term_id === TERM)!.courses.find((c) => c.id === 'c-es')!;
     expect(es.offering_id ?? null).toBeNull();

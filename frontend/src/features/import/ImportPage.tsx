@@ -11,6 +11,7 @@ import { IssueList } from '../../components/IssueList';
 import { Tabs } from '../../components/Tabs';
 import { importDraftStore, useImportDraft } from './draftStore';
 import { previewStore } from './previewStore';
+import './import.css';
 
 /** Synthetic sample in the IMS table layout. No real student data. */
 export const SYNTHETIC_SAMPLE = [
@@ -30,9 +31,9 @@ export function Steps({ current }: { current: 'import' | 'review' | 'analyze' })
     ['analyze', 'Analyze'],
   ] as const;
   return (
-    <ol className="steps" aria-label="Steps">
+    <ol className="steps mc-steps" aria-label="Steps">
       {steps.map(([id, label], i) => (
-        <li key={id} aria-current={id === current ? 'step' : undefined}>
+        <li key={id} aria-current={id === current ? 'step' : undefined} data-state={id === current ? 'current' : i < steps.findIndex(([s]) => s === current) ? 'done' : 'next'}>
           {i + 1}. {label}
         </li>
       ))}
@@ -101,7 +102,7 @@ export function ImportPage() {
             : e.kind === 'uncommittable'
               ? 'No course rows could be read from this input.'
               : e.kind === 'invalid'
-                ? 'The server could not read this input.'
+                ? 'This input could not be read.'
                 : e.message;
       setFailure({ kind: e.kind, message, issues: e.issues });
       if (e.kind === 'conflict') record.reload();
@@ -214,7 +215,7 @@ export function ImportPage() {
   );
 
   return (
-    <div>
+    <div className="import-flow">
       {session.user ? <SubNav label="My record" items={RECORD_TABS} /> : null}
       <h1>Add your academic record</h1>
       <Steps current="import" />

@@ -1,7 +1,7 @@
 /** Resource hooks. Keys encode owner + revisions so stale responses are discarded. */
 import { useCallback } from 'react';
 import { useSession } from '../app/session';
-import { endpoints } from './endpoints';
+import { endpoints, offeringEndpoints } from './endpoints';
 import { useResource, useResourceCache } from './resources';
 import type { AcademicPlan, AcademicRecord } from './types';
 
@@ -13,6 +13,12 @@ export function useCurriculum() {
 export function useCatalogue() {
   const { api } = useSession();
   return useResource('public:catalogue', (signal) => endpoints.catalogue(api, { signal }));
+}
+
+/** The public timetable of one semester: the courses offered in it, with their slots. */
+export function useTermOfferings(termId: string) {
+  const { api } = useSession();
+  return useResource(`public:offerings:${termId}`, (signal) => offeringEndpoints.offerings(api, termId, { signal }));
 }
 
 export function useRecord() {

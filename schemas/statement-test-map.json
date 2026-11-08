@@ -15,13 +15,12 @@
       },
       "academic_data": "reviewed_adv13",
       "browser_tests": [
-        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, with review status and sources"
+        "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, each group opening to its courses"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement grouped by basket before any history or sign-in",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows zero-credit PE/viva obligations with unknown completion policy, not as complete",
-        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > labels TEAM decisions and shows where each rule sits in the source",
-        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > shows the viva with its own label, a readable reviewed policy and its decision"
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement group before any history or sign-in, each as a button that opens it",
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > opens a group to list its courses with titles: Institute core, HSS and Mathematics",
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > lists physical education and the viva in plain words, with no policy codes"
       ]
     },
     {
@@ -29,7 +28,8 @@
       "oct27_target": true,
       "tests": [
         "tests.test_academic_history.AcademicHistoryTests.test_cp02_record_all_supported_attempt_statuses",
-        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history"
+        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp02_manual_entry_accepts_a_suffixed_code_and_still_rejects_malformed_ones"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -52,7 +52,15 @@
       "oct27_target": true,
       "tests": [
         "tests.test_degree_audit.DegreeAuditTests.test_cp03_show_counted_completed_courses_and_credits_per_requirement",
-        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp03_record_following_the_p23_path_is_complete"
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp03_record_following_the_p23_path_is_complete",
+        "tests.domain.test_degree_totals.DegreeTotals.test_empty_record_counts_nothing_of_170",
+        "tests.domain.test_degree_totals.DegreeTotals.test_hand_counted_record_counts_92_with_78_remaining",
+        "tests.domain.test_degree_totals.DegreeTotals.test_surplus_in_one_basket_does_not_hide_a_shortfall_in_another",
+        "tests.domain.test_degree_totals.DegreeTotals.test_a_failed_course_counts_nothing",
+        "tests.domain.test_degree_totals.DegreeTotals.test_a_planned_course_counts_only_in_the_projected_view",
+        "tests.domain.test_degree_totals.RequirementRows.test_an_empty_record_lists_38_requirements_asking_for_170_credits",
+        "tests.domain.test_degree_totals.RequirementRows.test_the_hand_counted_record_leaves_exactly_the_open_requirements",
+        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -65,11 +73,11 @@
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows server statuses; a full progress bar never turns needs-review into satisfied",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > expands to list counted attempts from the allocation ledger, with explanation",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > keeps failed/unknown attempts visible as not counted with reasons",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",
         "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json",
-        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > shows the server surplus and the semesters still missing a viva P, without computing either"
+        "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > names the semesters still missing a viva pass from the server result, and never shows surplus jargon"
       ]
     },
     {
@@ -115,7 +123,7 @@
       "frontend_tests": [
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > shows the server explanation of a nested unmet prerequisite and a duplicate on every affected item",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > groups validation issues; selecting one highlights the affected item and shows the remedy",
-        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows show \"Not checked\" instead of the previous revision's eligibility and issues",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows drop the previous version's problems and the panel says it is checking",
         "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > shows missing preparation as a warning, never a red \"not eligible\"",
         "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > keeps an unlisted course unknown, not \"none needed\""
       ]
@@ -125,7 +133,11 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
-        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle"
+        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_pdf_keeps_suffixed_special_topics_rows_and_their_wrapped_titles",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_wrapped_title_never_attaches_to_the_row_above",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_code_as_wide_as_its_column_is_split_from_the_title_it_touches",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -153,7 +165,8 @@
         "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_parser_recovers_every_oracle_row_in_its_term",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_term_credit_sums_and_ims_difference",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp07_ims_paste_accepts_suffixed_codes_in_any_spacing_and_case"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -235,7 +248,7 @@
         "e2e/tests/student-flow.spec.ts::student flow > accepted record keeps repeats, failed attempts and the correction (CP-02/10)"
       ],
       "frontend_tests": [
-        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > keeps both repeated registrations and shows unresolved classification"
+        "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > keeps both repeated registrations and no longer calls rule-matched rows unmatched"
       ]
     },
     {
@@ -244,7 +257,11 @@
       "tests": [
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_idempotent_reimport_correction_and_conflict",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_reimport_of_same_source_does_not_duplicate_or_double_credit",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_changed_grade_on_reimport_is_a_conflict_not_a_silent_overwrite"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_changed_grade_on_reimport_is_a_conflict_not_a_silent_overwrite",
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_swaps_earlier_imported_rows_for_the_new_import",
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_keeps_a_row_left_out_of_the_review_and_a_changed_manual_row_still_conflicts",
+        "server.records.test_imports.ReimportReplacesTests.test_changed_grade_and_a_dropped_row_need_no_resolution",
+        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -254,7 +271,7 @@
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
-        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a changed grade must be resolved explicitly and never duplicates the attempt (CP-11)",
+        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > importing again replaces the earlier import and never duplicates an attempt (CP-11)",
         "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent"
       ],
       "frontend_tests": [
@@ -285,7 +302,7 @@
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
       "frontend_tests": [
-        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > shows steps, row count, term groups and source-reported vs extracted totals"
+        "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > shows steps and term groups, with no row counts, totals table or other developer detail"
       ]
     },
     {
@@ -293,7 +310,14 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_ims.IMSTests.test_cp13_ambiguous_codes_are_preserved_with_review_issues",
-        "tests.domain.test_identity.CourseIdentityTests.test_cp13_d04_groups_map_old_and_variant_codes_to_the_current_course"
+        "tests.domain.test_identity.CourseIdentityTests.test_cp13_d04_groups_map_old_and_variant_codes_to_the_current_course",
+        "tests.imports.test_rule_matching.RuleMatchingTests.test_courses_a_rule_can_place_are_not_flagged_unmatched",
+        "tests.imports.test_rule_matching.RuleMatchingTests.test_a_course_no_rule_can_place_is_still_flagged_for_review",
+        "tests.imports.test_rule_matching.RuleMatchingTests.test_short_course_is_recorded_but_explained_not_unknown",
+        "tests.imports.test_rule_matching.RuleMatchingTests.test_team_decided_equivalences_are_notes_not_unknowns",
+        "tests.domain.test_catalogue.CatalogueTests.test_core_course_fills_only_its_core_slot_never_an_elective_too",
+        "tests.domain.test_catalogue.CatalogueTests.test_basket_course_lists_every_requirement_it_can_fill",
+        "tests.domain.test_catalogue.CatalogueTests.test_identity_variants_resolve_before_matching"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -307,7 +331,6 @@
       ],
       "frontend_tests": [
         "frontend/src/features/import/review.test.tsx::ReviewPage (A03, CP-08/11/12/13) > shows equivalence warnings that cannot be dismissed by editing",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > surfaces unresolved CS 203/CS 202 equivalence above the requirement list",
         "frontend/src/features/record/record.test.tsx::RecordPage (CP-02, A04) > the correction dialog keeps an unknown status unknown and says a code change is not an equivalence"
       ]
     },
@@ -358,9 +381,9 @@
         "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)"
       ],
       "frontend_tests": [
-        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows the server CPI with its points and performance-credit denominator",
-        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows Unavailable with the reason when the server has no display value, never 0",
-        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows missing points or denominator as Unavailable, never Unknown or 0"
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows the CPI with its points and graded-credit denominator",
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows a dash with a plain reason when there is no display value, never 0",
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > shows missing points or denominator as a dash, never Unknown or 0"
       ]
     },
     {
@@ -380,7 +403,7 @@
         "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)"
       ],
       "frontend_tests": [
-        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > lists per-term SPI; a zero denominator is Unavailable with a reason"
+        "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > lists per-term SPI; a zero denominator shows a dash with a reason"
       ]
     },
     {
@@ -409,7 +432,15 @@
       "tests": [
         "tests.domain.test_audit.AuditTests.test_cp18_caps_enforced_in_search_and_project_instances_survive",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_project_caps_and_two_cs299_registrations",
-        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_external_exposure_counts_only_toward_allowed_buckets"
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp18_external_exposure_counts_only_toward_allowed_buckets",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_a_plan_without_online_courses_counts_nothing_and_says_nothing",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_online_credits_within_the_limits_all_count",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_an_online_course_can_count_toward_the_hss_electives",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_no_more_than_16_online_credits_count_and_the_student_is_told",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_a_pass_fail_conversion_on_the_record_shrinks_the_pool",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_discipline_electives_take_at_most_8_online_credits_the_rest_count_as_open_electives",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_online_courses_already_on_the_record_use_up_the_pool",
+        "tests.domain.test_online_credits.OnlineCreditsCount.test_which_placeholders_fell_short_is_reported"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -445,7 +476,15 @@
       "tests": [
         "tests.domain.test_audit.AuditTests.test_cp20_failed_current_planned_unknown_and_budget",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_hss_ge_and_bs_membership_follow_d19_d20",
-        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_allocation_stays_interactive_for_partial_and_full_records"
+        "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp20_allocation_stays_interactive_for_partial_and_full_records",
+        "tests.domain.test_degree_totals.DegreeTotals.test_empty_record_counts_nothing_of_170",
+        "tests.domain.test_degree_totals.DegreeTotals.test_hand_counted_record_counts_92_with_78_remaining",
+        "tests.domain.test_degree_totals.DegreeTotals.test_surplus_in_one_basket_does_not_hide_a_shortfall_in_another",
+        "tests.domain.test_degree_totals.DegreeTotals.test_a_failed_course_counts_nothing",
+        "tests.domain.test_degree_totals.DegreeTotals.test_a_planned_course_counts_only_in_the_projected_view",
+        "tests.domain.test_degree_totals.RequirementRows.test_an_empty_record_lists_38_requirements_asking_for_170_credits",
+        "tests.domain.test_degree_totals.RequirementRows.test_the_hand_counted_record_leaves_exactly_the_open_requirements",
+        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -461,7 +500,10 @@
       "id": "CP-21",
       "oct27_target": false,
       "tests": [
-        "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves"
+        "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -510,7 +552,15 @@
         "tests.domain.test_official_timetables.OfficialSnapshotTests.test_cp23_a_course_missing_from_a_complete_official_list_is_not_offered",
         "tests.domain.test_official_timetables.SameParityHintTests.test_cp23_later_terms_get_a_historical_hint_never_a_confirmation",
         "server.records.test_official_data.OfficialTimetableAPITests.test_cp23_committed_official_timetables_are_served_until_staff_load_a_reviewed_one",
-        "server.records.test_official_data.OfficialTimetableAPITests.test_cp23_switching_the_committed_data_off_leaves_availability_unknown"
+        "server.records.test_official_data.OfficialTimetableAPITests.test_cp23_switching_the_committed_data_off_leaves_availability_unknown",
+        "tests.domain.test_following_terms.FollowingTerms.test_every_later_year_has_a_snapshot_of_the_same_semester",
+        "tests.domain.test_following_terms.FollowingTerms.test_the_published_terms_are_kept_unchanged",
+        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_term_lists_the_same_courses_credits_and_slots",
+        "tests.domain.test_following_terms.FollowingTerms.test_active_dates_move_by_whole_years",
+        "tests.domain.test_following_terms.FollowingTerms.test_a_course_is_confirmed_in_a_later_term_and_never_borrowed_across_semesters",
+        "tests.domain.test_following_terms.FollowingTerms.test_clash_checking_works_in_a_derived_term_and_is_not_reported_as_unchecked",
+        "tests.domain.test_following_terms.FollowingTerms.test_an_unreviewed_snapshot_is_not_carried_forward",
+        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_snapshot_must_be_a_later_year_of_the_same_semester"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -520,12 +570,12 @@
       },
       "academic_data": "draft_or_incomplete",
       "browser_tests": [
-        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
-        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no timetable is \"Not checked\", never clear (CP-23/24)"
+        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures (CP-24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later year follows the semester timetable, with no \"expected\" or \"not published\" wording (CP-23/24)"
       ],
       "frontend_tests": [
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"Not checked\" with the server's reasons, never a green check, and the snapshot label, date, review and coverage",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a future term with no snapshot is \"Not checked\" and its offering unknown, never clear"
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a term the server reports clear lists no clashes and says nothing about clashes at all",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a term the server has no timetable for shows no panel and no apology; it never claims \"no clashes\""
       ]
     },
     {
@@ -571,21 +621,20 @@
       },
       "academic_data": "draft_or_incomplete",
       "browser_tests": [
-        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and ES 667 clash on their Tuesday and Friday lectures (CP-24)",
         "e2e/tests/clashes.spec.ts::timetable clashes > PH 202 and CS 331 clash on the Wednesday H2 tutorial even though their lectures differ (CP-24)",
-        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later term with no timetable is \"Not checked\", never clear (CP-23/24)",
+        "e2e/tests/clashes.spec.ts::timetable clashes > a course in a later year follows the semester timetable, with no \"expected\" or \"not published\" wording (CP-23/24)",
         "e2e/tests/clashes.spec.ts::timetable clashes > the planner and timetable panel fit a 390px phone"
       ],
       "frontend_tests": [
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"Not checked\" with the server's reasons, never a green check, and the snapshot label, date, review and coverage",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > shows \"No clashes found\" only when the server reports the term clear",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > marks a certain clash as an error and a possible one as a warning with the server's assumptions and source cells",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a term the server reports clear lists no clashes and says nothing about clashes at all",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > marks a certain clash as an error and a possible one as a warning, without source cells or the assumptions text",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a choose-one tutorial is picked with radio buttons and saved as section_ids through the plan save path",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a stale section save gets the 409 reload/compare panel and is not retried",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a group with unstated semantics gets a clarification, not radio buttons or \"required\"",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a future term with no snapshot is \"Not checked\" and its offering unknown, never clear",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > offers the variant choice the server asks for and renders unfamiliar issue codes generically",
-        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > an empty term shows the server's \"Not checked\" next to \"No courses are planned\", never \"No clashes found\"",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a group with unstated semantics gets a plain pointer to the official timetable, not radio buttons or \"required\"",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a term the server has no timetable for shows no panel and no apology; it never claims \"no clashes\"",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > offers the version choice the server asks for, without showing issue codes or \"not checked\" reasons",
+        "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > an empty term has no timetable panel at all",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a saved variant that is no longer in the snapshot can be fixed in the picker and is never sent back",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > a saved variant for a course no longer in the snapshot can be cleared",
         "frontend/src/features/plan/timetable.test.tsx::Term timetable panel (A08, CP-23/24) > exam groups are not shown as required weekly meetings"
@@ -656,7 +705,7 @@
       "browser_tests": [
         "e2e/tests/student-flow.spec.ts::student flow > a second browser context sees the acknowledged save; a stale edit gets a 409 (CP-29)",
         "e2e/tests/save-states.spec.ts::save states across devices > an offline plan edit is kept as an unsaved draft and saved on retry (CP-29)",
-        "e2e/tests/save-states.spec.ts::save states across devices > current enrolment confirmed on one device is loaded on another with the same revision (A04, CP-29)",
+        "e2e/tests/save-states.spec.ts::save states across devices > current enrolment confirmed on one device is loaded on another (A04, CP-29)",
         "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
       ],
       "frontend_tests": [
@@ -829,7 +878,7 @@
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_completed_module_without_registration_may_already_be_on_the_record",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_cap_keeps_earned_and_approved_before_proposed",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_one_registration_counts_once_across_modules",
-        "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_policy_stays_unknown",
+        "tests.domain.test_internships.InternshipModuleTests.test_cp34_no_per_quad_limit_and_load_rule_is_stated",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_split_proposals_use_only_remaining_needs",
         "server.records.test_scenarios.ScenarioAPITests.test_cp33_cp34_internship_cases_compare_on_one_baseline_without_a_calendar",
         "tests.domain.test_internships.InternshipModuleTests.test_cp34_missing_remaining_bucket_is_unknown_not_zero",
@@ -852,6 +901,159 @@
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > awards no credit for choosing a duration: zero from the server and an explicit statement",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > labels proposed modules \"proposed, pending approval\", never earned",
         "frontend/src/features/scenarios/scenarios.test.tsx::ScenarioPage (A09, CP-28/33/34) > renders an unrecognised module state and issue code generically"
+      ]
+    },
+    {
+      "id": "CP-35",
+      "oct27_target": false,
+      "tests": [
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_remaining_credits_match_the_hand_count",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_default_terms_are_the_next_regular_terms_up_to_eight_semesters",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_every_pending_core_course_is_placed_once_in_a_term_that_offers_it",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_basket_minimums_hold_for_theory_and_systems",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_nothing_is_silently_dropped",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_placed_courses_are_new_unique_and_never_cross_a_complete_snapshot",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_load_never_exceeds_the_default_maximum",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_summary_arithmetic_is_consistent",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_the_plan_validates_without_an_error",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_same_input_gives_the_same_plan_and_never_mutates_the_input",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_semesters_are_ready_for_the_plan_save_path",
+        "tests.domain.test_plan_generation.PlanGenerationTests.test_cp35_every_placement_is_explained",
+        "tests.domain.test_plan_generation.RecommendedPreparationOrderTests.test_cp35_a_recommended_course_is_planned_before_its_dependent_when_both_are_pending",
+        "tests.domain.test_plan_generation.OfferingBasisTests.test_cp35_later_terms_are_expected_patterns_and_official_terms_are_confirmed",
+        "tests.domain.test_plan_generation.OfferingBasisTests.test_cp35_current_enrolment_counts_and_moves_the_start",
+        "tests.domain.test_plan_generation.OfferingBasisTests.test_cp35_skipped_terms_get_nothing_and_the_horizon_extends",
+        "tests.domain.test_plan_generation.OfferingBasisTests.test_cp35_an_invalid_option_is_rejected",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_excluded_zero_credit_project_and_exposure_courses_are_never_suggested",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_a_missing_project_becomes_a_placeholder_with_a_reason_never_an_invented_course",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_missing_physical_education_is_scheduled_one_per_term_from_the_timetables",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_a_requirement_nothing_offers_is_reported_with_its_reason",
+        "tests.domain.test_plan_generation.NarrowBasketTests.test_cp35_a_course_that_fits_two_baskets_goes_to_the_one_nothing_else_can_fill",
+        "tests.domain.test_plan_generation.NarrowBasketTests.test_cp35_a_full_term_spends_its_credits_on_the_narrower_requirement",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_requires_sign_in",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_csrf_is_enforced_like_every_mutation",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_the_response_follows_the_published_contract_and_the_hand_count",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_generating_saves_nothing",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_the_generated_semesters_save_through_the_normal_plan_path",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_a_stale_record_revision_is_a_409_never_an_overwrite_or_a_silent_retry",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_invalid_options_and_fields_are_a_400",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_each_account_is_planned_from_its_own_record_only",
+        "server.records.test_plan_generation.PlanGenerationAPITests.test_cp35_an_empty_record_still_gets_an_honest_plan_with_every_gap_listed",
+        "tests.domain.test_plan_generation.OfferingBasisTests.test_cp35_the_load_limit_is_28_whatever_the_standing",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_requires_sign_in",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_an_edited_plan_is_validated_and_its_degree_credits_reported_without_saving",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_a_term_over_28_credits_is_reported_as_an_error",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_a_stale_record_revision_is_a_409",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_another_accounts_record_is_never_used",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_preparatory_courses_are_not_suggested_as_electives",
+        "tests.domain.test_plan_generation.NeverInventTests.test_cp35_an_open_ended_elective_is_held_as_credits_even_when_no_course_is_listed",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_a_placeholder_covers_a_requirement_only_up_to_what_it_still_needs",
+        "server.records.test_plan_generation.PlanCheckAPITests.test_cp35_a_semester_over_28_has_no_room_left_and_is_an_error",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_without_an_internship_semesters_are_packed_to_28_and_the_plan_ends_early",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_no_semester_is_ever_above_28",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_a_lower_target_spreads_the_work_and_ends_later",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_open_ended_electives_are_held_as_labelled_credits_that_add_up_to_what_remains",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_an_internship_in_2027_28_I_ends_the_plan_with_that_semester",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_the_16_internship_credits_go_to_the_narrowest_requirements_that_still_need_them",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_a_missing_open_project_takes_a_module_first",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_internship_modules_never_exceed_16_credits_or_what_is_still_open",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_online_credits_in_the_summer_break_save_a_semester",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_online_courses_follow_the_rules_for_online_credit",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_online_credits_are_not_used_when_they_would_not_save_a_semester",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_the_online_pool_is_never_exceeded_even_for_a_long_plan",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_the_options_still_list_only_regular_semesters",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_an_internship_in_the_last_term_does_not_end_the_plan_early",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_too_few_semesters_leave_the_rest_uncovered_and_say_so",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_an_internship_term_outside_the_plan_is_rejected",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_later_terms_follow_the_semester_timetable_with_no_unconfirmed_course",
+        "tests.domain.test_early_graduation.PackedPlanTests.test_cp35_the_plan_never_places_credits_in_a_semester_beyond_the_requirement_it_names",
+        "server.records.test_plan_generation.OnlineBreakAPITests.test_cp35_a_plan_ending_in_a_summer_saves_and_is_checked_against_the_summer_limit",
+        "server.records.test_plan_generation.OnlineBreakAPITests.test_cp35_more_than_10_credits_in_a_summer_is_an_error",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_without_the_option_the_plan_reports_what_online_credits_could_do",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_lightening_keeps_the_last_semester_and_lowers_the_busiest_one",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_a_lightened_plan_still_covers_every_credit_once",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_online_courses_are_marked_online_and_only_in_the_breaks",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_with_an_internship_the_online_credits_still_lighten_the_semesters",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_a_plan_that_could_not_cover_everything_is_returned_as_it_is",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_the_option_must_be_true_or_false",
+        "tests.domain.test_early_graduation.LightenWithOnlineTests.test_cp35_online_credits_used_by_the_plan_are_not_offered_again",
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_online_placeholders_are_accepted_by_the_plan_save_path_and_must_be_true_or_false",
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_the_check_reports_how_many_online_credits_count_and_warns_when_some_do_not",
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_generation_with_lighten_returns_a_lighter_plan_and_what_it_replaced",
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400"
+      ],
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "reviewed_adv13",
+      "browser_tests": [],
+      "frontend_tests": []
+    },
+    {
+      "id": "CP-36",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": true,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "reviewed_adv13",
+      "tests": [
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_covers_every_remaining_requirement_is_valid",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_removing_a_course_leaves_credits_uncovered_and_the_plan_not_valid",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_an_error_makes_the_plan_not_valid_even_when_nothing_is_uncovered",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_is_not_valid_is_still_saved_and_listed_with_its_status",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving"
+      ],
+      "browser_tests": [
+        "e2e/tests/saved-plans.spec.ts::saved plans > each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/plan/generate.test.tsx::Saving > a valid plan says so beside Save, and the status follows each change the server checks",
+        "frontend/src/features/plan/generate.test.tsx::Saving > a plan that is not valid (credits still uncovered) can still be saved, and says why before it is",
+        "frontend/src/features/plan/generate.test.tsx::Problems are shown where they belong, as soon as the check answers > a semester that is over 28 credits is explained in plain words and the plan is marked not valid",
+        "frontend/src/features/plan/plan.test.tsx::PlanIndexPage > shows \"Valid\" or \"Not valid\" beside each saved plan name, as the server says"
+      ]
+    },
+    {
+      "id": "CP-37",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_session_tells_the_page_what_sign_in_offers",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_iitgn_account_signs_in_and_gets_its_own_record",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_signing_in_again_reaches_the_same_account",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_account_outside_iitgn_is_refused_and_nothing_is_created",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_a_token_that_fails_google_verification_is_a_401",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_google_being_unreachable_is_a_503_not_a_sign_in",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_a_missing_or_malformed_credential_is_a_400",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_password_sign_up_and_sign_in_are_off",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_older_password_account_with_the_same_name_is_never_taken_over",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_endpoint_does_not_exist_without_a_client_id",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_sign_in_attempts_are_throttled_like_password_ones",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_pop_up_sign_in_is_not_cut_off_by_the_opener_policy",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_for_this_app_verifies",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_issued_for_another_app_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_an_expired_token_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > shows only the Google button, and says it is for IITGN accounts, when Google is configured",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > sends the Google credential to the server, then leaves the sign-in page",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > says only IITGN accounts can sign in when the server refuses the account, and stays on the page",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > keeps the username and password form, and no Google button, when Google is not configured"
       ]
     }
   ],

@@ -14,7 +14,7 @@ import { ReportPage } from '../features/report/ReportPage';
 import { ScenarioPage } from '../features/scenarios/ScenarioPage';
 import { ScenariosPage } from '../features/scenarios/ScenariosPage';
 import { StatePanel } from '../components/StatePanel';
-import { AppShell, RECORD_TABS, SubNav } from './AppShell';
+import { AppShell } from './AppShell';
 import { SessionProvider, useSession } from './session';
 import { usePublishView, ViewContextProvider } from './viewContext';
 
@@ -38,7 +38,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
       <NoData>
         <StatePanel
           kind="error"
-          title="The CoursePath server could not be reached"
+          title="CoursePath could not be reached"
           detail={session.error.message}
           action={
             <button type="button" className="btn" onClick={session.retryBootstrap}>
@@ -70,22 +70,6 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }
   // The protected page publishes its own data context; publishing here too would overwrite it.
   return <>{children}</>;
-}
-
-function NotInRelease({ title, detail, tabs }: { title: string; detail: string; tabs?: { to: string; label: string }[] }) {
-  usePublishView({ dataMode: 'none' });
-  return (
-    <div>
-      {tabs ? <SubNav label="Section" items={tabs} /> : null}
-      <h1>{title}</h1>
-      <div className="callout">
-        <p>
-          <strong>Not part of this release.</strong> {detail}
-        </p>
-        <p className="muted">No results are simulated here.</p>
-      </div>
-    </div>
-  );
 }
 
 function NotFound() {
@@ -130,16 +114,6 @@ export const routes: RouteObject[] = [
           <RequireAuth>
             <PerformancePage />
           </RequireAuth>
-        ),
-      },
-      {
-        path: '/awards',
-        element: (
-          <NotInRelease
-            title="Awards"
-            tabs={RECORD_TABS}
-            detail="CSE honours and the AI minor were withdrawn on 3 November (decision D-18): no official honours list or AI minor document exists, and CoursePath does not invent award rules, so it does not evaluate them."
-          />
         ),
       },
       {

@@ -30,15 +30,17 @@ function setup(p: ImportPreview = preview, commit?: (body: ImportCommitPayload) 
 describe('ReviewPage (A03, CP-08/11/12/13)', () => {
   beforeEach(() => previewStore.clear());
 
-  it('shows steps, row count, term groups and source-reported vs extracted totals', async () => {
+  it('shows steps and term groups, with no row counts, totals table or other developer detail', async () => {
     setup({ ...preview, reported_controls: { earned_credits: '10' } });
     expect(await screen.findByRole('heading', { level: 1, name: 'Review imported rows' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Steps' }).querySelector('[aria-current="step"]')).toHaveTextContent('Review');
-    expect(screen.getByText(/3 rows found in 3 terms/)).toBeInTheDocument();
-    const totals = screen.getByRole('table', { name: 'Totals: source-reported vs extracted' });
-    expect(within(totals).getByRole('row', { name: /Credits \(raw sum of rows\)/ })).toHaveTextContent(/Extracted from rows\s*9$/);
-    expect(within(totals).getByRole('row', { name: /Earned credits/ })).toHaveTextContent(/Source-reported\s*10$/);
-    expect(screen.getByText(/arithmetic only/i)).toBeInTheDocument();
+    expect(screen.getByText(/Check the courses below/)).toBeInTheDocument();
+    // The student is never told how many rows were read, shown a reconciliation table, or shown a preview expiry.
+    expect(screen.queryByText(/rows found/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: /Totals/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Server audit|Degree-allocated|arithmetic only|Preview expires|Extracted for this term/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Matched to CSE 2024 rules/)).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\bD-\d\d\b|[A-Z]{3,}_[A-Z_]{3,}/);
     expect(screen.getAllByRole('table').map((t) => t.querySelector('caption')?.textContent)).toEqual(
       expect.arrayContaining(['2024–25 Semester I', '2024–25 Semester II', '2025–26 Semester II']),
     );
@@ -127,7 +129,7 @@ describe('ReviewPage (A03, CP-08/11/12/13)', () => {
     };
     const s = setup(conflicting);
     await screen.findByRole('heading', { level: 1, name: 'Review imported rows' });
-    expect(screen.getByText(/1 new, 1 unchanged, 1 conflicting/)).toBeInTheDocument();
+    expect(screen.getByText(/1 new, 1 already saved, 1 changed/)).toBeInTheDocument();
     expect(screen.getByText(/Corrected earlier/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm record' })).toBeDisabled();
     const group = screen.getByRole('radiogroup', { name: 'Resolve conflict for ZZ 372' });

@@ -150,8 +150,8 @@ def _modules(context, modules, issues):
         issues.append(issue('INTERNSHIP_APPROVAL_REQUIRED', 'Proposed modules earn credit only after recorded institute approval.', 'approval_required',
                             [r['id'] for r in rows if r['status'] == 'proposed'], [DECISION], 'Record the approval evidence for each module.'))
     if any(r['status'] in TIERS for r in rows):
-        issues.append(issue('INTERNSHIP_LOAD_POLICY_UNKNOWN', 'No reviewed rule says whether exposure credits count toward the term credit load.',
-                            entities=[r['id'] for r in rows if r['status'] in TIERS]))
+        issues.append(issue('INTERNSHIP_LOAD_RULE', 'External-exposure credits count toward the credit load of the term they are registered in.', 'info',
+                            [r['id'] for r in rows if r['status'] in TIERS]))
     return rows
 
 
@@ -218,7 +218,7 @@ def evaluate_internship(context, internship, plan, calendar):
         issues.append(issue('INTERNSHIP_DURATION_DIFFERS', f'These dates span {(end - start).days} days, not {MONTHS[choice]} calendar months.', 'warning'))
     plan_items = _items(context, plan)
     if not (calendar or {}).get('terms'):
-        issues.append(issue('CALENDAR_MISSING', 'No academic calendar is available, so affected terms and courses were not checked.'))
+        issues.append(issue('CALENDAR_MISSING', 'No academic calendar is published, so affected terms and courses were not checked.', 'info'))
         result['unchecked_courses'] = [row['id'] for row in plan_items]
     else:
         severity = ATTENDANCE_SEVERITY.get(result['placement_mode'], 'unknown')
@@ -242,7 +242,7 @@ def evaluate_internship(context, internship, plan, calendar):
         known = {t['id'] for t in calendar['terms'] if term_dates(calendar, t['id'])}
         result['unchecked_courses'] = [row['id'] for row in plan_items if row['term_id'] not in known]
         if result['unchecked_courses']:
-            issues.append(issue('CALENDAR_MISSING', 'Some planned terms have no calendar dates; their overlap is unknown.', entities=result['unchecked_courses']))
+            issues.append(issue('CALENDAR_MISSING', 'Some planned terms have no published calendar dates yet; their overlap is not checked.', 'info', result['unchecked_courses']))
         result['downstream_courses'] = _downstream(context, plan_items, set(result['affected_courses']))
         if result['downstream_courses']:
             issues.append(issue('INTERNSHIP_DOWNSTREAM_AFFECTED', 'Later courses rely on courses this internship overlaps.', 'warning', result['downstream_courses']))

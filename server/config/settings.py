@@ -68,3 +68,11 @@ SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 CSRF_FAILURE_VIEW = 'server.api.views.csrf_failure'
+# Sign-in (D-46). With a Google OAuth client ID set, only IITGN Google accounts sign in and password sign-up and sign-in are off.
+# Without one (local development, tests) the username and password forms work as before. The domain is fixed on purpose.
+COURSEPATH_GOOGLE_CLIENT_ID = os.getenv('COURSEPATH_GOOGLE_CLIENT_ID', '').strip()
+COURSEPATH_GOOGLE_DOMAIN = 'iitgn.ac.in'
+# Keeps password sign-in for accounts made before Google sign-in (never sign-up). Off unless asked for.
+COURSEPATH_ALLOW_PASSWORD_LOGIN = os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+# Google's sign-in button opens a pop-up that talks back to this page; Django's default 'same-origin' would cut that link.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'

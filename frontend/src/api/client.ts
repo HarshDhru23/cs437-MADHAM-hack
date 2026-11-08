@@ -142,7 +142,7 @@ export class ApiClient {
       });
     } catch (error) {
       if (isAbort(error) || options.signal?.aborted) throw new ApiError('aborted', 0, 'Request cancelled.', []);
-      throw new ApiError('network', 0, 'The CoursePath server could not be reached. Check your connection.', []);
+      throw new ApiError('network', 0, 'CoursePath could not be reached. Check your connection.', []);
     }
 
     let parsed: Envelope<T> | null = null;

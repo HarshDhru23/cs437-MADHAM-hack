@@ -12,7 +12,7 @@ interface ConflictPanelProps {
 }
 
 /** Shown after a 409. Nothing is retried until the student chooses. */
-export function ConflictPanel({ conflictRevision, onReload, onKeepMine, onCompare, draftSummary }: ConflictPanelProps) {
+export function ConflictPanel({ onReload, onKeepMine, onCompare, draftSummary }: ConflictPanelProps) {
   const [busy, setBusy] = useState(false);
   const [server, setServer] = useState<ReactNode>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function ConflictPanel({ conflictRevision, onReload, onKeepMine, onCompar
     <div className="callout" data-tone="danger" role="alert">
       <p>
         <strong>This was saved elsewhere</strong>
-        {conflictRevision !== null ? ` (server revision ${conflictRevision})` : ''}. Your unsaved changes are still here and have not been sent again.
+        . Your unsaved changes are still here and have not been sent again.
       </p>
       <div className="grid-2">
         <div>

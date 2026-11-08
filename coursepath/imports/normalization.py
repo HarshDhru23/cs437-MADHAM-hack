@@ -2,6 +2,7 @@ import hashlib
 import re
 import unicodedata
 from collections import defaultdict
+from functools import lru_cache
 from decimal import Decimal
 from coursepath.models import validate_term_id
 from coursepath.serialization import decimal_value, decimal_string
@@ -12,7 +13,8 @@ from coursepath.issues import issue
 # The learning designation every imported row starts with (D-21). Restore checks read it too, so change it only here.
 IMPORTED_LEARNING_DESIGNATION = 'degree'
 
-CODE = r'[A-Za-z]{2,5}\s*\d{2,4}(?:\s*\([^\n)]{1,20}\))?'
+# Special-topics sections carry a suffix ("CS 392-I", "MS 491-VIII"); the full code is the identity (D-01, D-06).
+CODE = r'[A-Za-z]{2,5}\s*\d{2,4}(?:-[A-Za-z0-9]{1,6})?(?:\s*\([^\n)]{1,20}\))?'
 TERM = r'20\d{2}\s*-\s*(?:20)?\d{2}\s*(?:-\s*)?(?:(?:Semester|Sem)\s*[-:]?\s*)?(?:SUMMER|II|I)\b'
 
 
@@ -53,10 +55,32 @@ def candidate(term, code, title, credits, grade, source_ref, locator, occurrence
             'original': {'code': code, 'title': title, 'credits': credits, 'grade': grade}}
 
 
+@lru_cache(maxsize=1)
+def _curriculum():
+    from coursepath.rules.loader import load_curriculum
+    return load_curriculum()
+
+
+EQUIVALENCE_NOTES = {
+    'CS 203': 'CS 203 is kept as imported and counts as a CS-coded discipline elective; the CS 202 core stays pending.',
+    'CS 421': 'CS 421 is its own CS-coded discipline elective, not CS 431.',
+}
+
+
 def candidate_issues(row):
-    issues = [issue('UNMATCHED_COURSE', 'Catalogue classification has not been reviewed.', entities=[row['id']])]
-    if row['normalized_code'] in {'CS 203', 'CS 421'}:
-        issues.append(issue('EQUIVALENCE_UNCONFIRMED', 'Keep the reported code; no equivalence is approved.', entities=[row['id']]))
+    """Rows are matched by the approved rules (D-29); only a row no rule can place needs human review."""
+    from coursepath.catalogue import classify_code
+    from coursepath.identity import canonical_code, identity_map
+    curriculum = _curriculum()
+    issues = []
+    excluded = {canonical_code(e['course_id'], identity_map(curriculum.get('identity_groups'))) for e in curriculum.get('excluded_courses', [])}
+    canonical = canonical_code(row['normalized_code'], identity_map(curriculum.get('identity_groups')))
+    if canonical in excluded:
+        issues.append(issue('COURSE_NOT_COUNTED', 'Kept on your record but never counted toward the 170 degree credits (one-credit short course).', 'info', [row['id']]))
+    elif not classify_code(curriculum, row['normalized_code'], row['credits']):
+        issues.append(issue('UNMATCHED_COURSE', 'No approved rule places this course in a requirement; check the code and credits.', entities=[row['id']]))
+    if row['normalized_code'] in EQUIVALENCE_NOTES:
+        issues.append(issue('EQUIVALENCE_UNCONFIRMED', EQUIVALENCE_NOTES[row['normalized_code']], 'info', [row['id']]))
     if row['completion_status'] == 'unknown':
         issues.append(issue('GRADE_UNKNOWN', 'Blank or unsupported grade needs correction or policy evidence.', 'error', [row['id']]))
     return issues

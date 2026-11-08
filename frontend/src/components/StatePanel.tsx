@@ -24,7 +24,7 @@ export function StatePanel({ kind, title, detail, action }: StatePanelProps) {
 export function errorTitle(error: ApiError): string {
   switch (error.kind) {
     case 'network':
-      return 'The server could not be reached';
+      return 'CoursePath could not be reached';
     case 'auth':
       return 'Sign in to continue';
     case 'not_found':
@@ -43,12 +43,7 @@ export function ErrorPanel({ error, onRetry }: { error: ApiError; onRetry?: () =
     <StatePanel
       kind="error"
       title={errorTitle(error)}
-      detail={
-        <>
-          <p>{error.message}</p>
-          {error.code ? <p className="issue-code">{error.code}</p> : null}
-        </>
-      }
+      detail={<p>{error.message}</p>}
       action={
         onRetry ? (
           <button type="button" className="btn" onClick={onRetry}>

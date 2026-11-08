@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
+import { GoogleSignIn } from './GoogleSignIn';
+import './auth.css';
 
 /** Only same-app relative paths are allowed as a post-login destination. */
 export function safeNext(next: string | null): string {
@@ -35,7 +37,7 @@ function PasswordField({
           {hint}
         </span>
       ) : null}
-      <div className="panel-row" style={{ flexWrap: 'nowrap' }}>
+      <div className="password-row">
         <input
           id={id}
           type={visible ? 'text' : 'password'}
@@ -46,7 +48,7 @@ function PasswordField({
           aria-describedby={[hint ? `${id}-hint` : '', error ? `${id}-err` : ''].filter(Boolean).join(' ') || undefined}
           spellCheck={false}
         />
-        <button type="button" className="btn" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>
+        <button type="button" className="btn btn-small" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>
           {visible ? 'Hide password' : 'Show password'}
         </button>
       </div>
@@ -88,10 +90,64 @@ function TextField({ label, value, onChange, autoComplete, error }: { label: str
 function failureMessage(error: unknown, action: 'login' | 'signup' | 'password'): string {
   if (!(error instanceof ApiError)) return 'Something went wrong. Try again.';
   if (error.kind === 'throttled') return 'Too many attempts. Wait 15 minutes, then try again.';
-  if (error.kind === 'network') return 'The CoursePath server could not be reached.';
+  if (error.kind === 'network') return 'CoursePath could not be reached.';
   if (action === 'login') return 'Sign-in details were not accepted.';
   if (action === 'signup') return 'The username or password was not accepted. Choose a different username, or a longer, less common password that is not all numbers.';
   return 'The password change was not accepted. Check your current password and choose a longer, less common new password.';
+}
+
+/** What went wrong with a Google sign-in, in the student's words. */
+export function googleFailureMessage(error: unknown, domain: string): string {
+  if (!(error instanceof ApiError)) return 'Something went wrong. Try again.';
+  if (error.kind === 'forbidden') {
+    if (error.issues.some((i) => i.code === 'ACCOUNT_CONFLICT')) return 'An older CoursePath account already uses this address. Ask the CoursePath team to move it.';
+    return `Only IITGN Google accounts can sign in. Choose your name@${domain} account in the Google window.`;
+  }
+  if (error.kind === 'throttled') return 'Too many attempts. Wait 15 minutes, then try again.';
+  if (error.kind === 'network') return 'CoursePath could not be reached.';
+  if (error.kind === 'auth') return 'Google sign-in was not accepted. Try again.';
+  return 'Google sign-in is not available right now. Try again in a moment.';
+}
+
+/** The Google button with its explanation and its failure message, shared by the sign-in and the create-account pages. */
+function GoogleSection({ defaultNext }: { defaultNext: string }) {
+  const session = useSession();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [failure, setFailure] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const { google_client_id: clientId, google_domain: domain } = session.signIn;
+  if (!clientId) return null;
+  const done = async (credential: string) => {
+    setPending(true);
+    setFailure(null);
+    try {
+      await session.loginWithGoogle(credential);
+      navigate(safeNext(params.get('next') ?? defaultNext), { replace: true });
+    } catch (error) {
+      setFailure(googleFailureMessage(error, domain));
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <div className="stack" aria-busy={pending}>
+      <p className="muted">
+        Use your IITGN Google account (name@{domain}). Other Google accounts are not accepted. CoursePath never sees your Google password.
+      </p>
+      {failure ? (
+        <p className="callout" data-tone="danger" role="alert">
+          {failure}
+        </p>
+      ) : null}
+      <GoogleSignIn clientId={clientId} onCredential={(credential) => void done(credential)} />
+      {pending ? (
+        <p role="status" className="muted">
+          Signing in…
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function LoginPage() {
@@ -123,25 +179,35 @@ export function LoginPage() {
   };
 
   return (
-    <section className="panel" style={{ maxWidth: '32rem' }}>
+    <div className="auth-wrap">
+    <section className="panel auth-panel">
+      <p className="auth-mark" aria-hidden="true">
+        CoursePath
+      </p>
       <h1>Sign in</h1>
       <p className="muted">Sign in to your CoursePath account to save and load your record and plans on any device.</p>
-      {failure ? (
-        <p className="callout" data-tone="danger" role="alert">
-          {failure}
-        </p>
+      <GoogleSection defaultNext="/record" />
+      {session.signIn.password ? (
+        <>
+          {failure ? (
+            <p className="callout" data-tone="danger" role="alert">
+              {failure}
+            </p>
+          ) : null}
+          <form onSubmit={submit} noValidate>
+            <TextField label="Username" value={username} onChange={setUsername} autoComplete="username" error={errors.username} />
+            <PasswordField label="Password" value={password} onChange={setPassword} autoComplete="current-password" error={errors.password} />
+            <button type="submit" className="btn btn-primary" disabled={pending}>
+              {pending ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+          <p className="auth-switch">
+            New here? <Link to={`/signup${params.get('next') ? `?next=${encodeURIComponent(safeNext(params.get('next')))}` : ''}`}>Create an account</Link>
+          </p>
+        </>
       ) : null}
-      <form onSubmit={submit} noValidate>
-        <TextField label="Username" value={username} onChange={setUsername} autoComplete="username" error={errors.username} />
-        <PasswordField label="Password" value={password} onChange={setPassword} autoComplete="current-password" error={errors.password} />
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      <p style={{ marginTop: '1rem' }}>
-        New here? <Link to={`/signup${params.get('next') ? `?next=${encodeURIComponent(safeNext(params.get('next')))}` : ''}`}>Create an account</Link>
-      </p>
     </section>
+    </div>
   );
 }
 
@@ -179,36 +245,53 @@ export function SignupPage() {
   };
 
   return (
-    <section className="panel" style={{ maxWidth: '32rem' }}>
-      <h1>Create account</h1>
-      <p className="muted">
-        A CoursePath account stores your record and plans so they follow you across devices. It does not verify your IITGN identity, and CoursePath
-        never asks for your IMS password.
+    <div className="auth-wrap">
+    <section className="panel auth-panel">
+      <p className="auth-mark" aria-hidden="true">
+        CoursePath
       </p>
-      {failure ? (
-        <p className="callout" data-tone="danger" role="alert">
-          {failure}
+      <h1>Create account</h1>
+      {session.signIn.google_client_id ? (
+        <p className="muted">
+          Your account is created the first time you sign in with your IITGN Google account. It stores your record and plans so they follow you across
+          devices. CoursePath never asks for your IMS password.
         </p>
+      ) : (
+        <p className="muted">
+          A CoursePath account stores your record and plans so they follow you across devices. It does not verify your IITGN identity, and CoursePath
+          never asks for your IMS password.
+        </p>
+      )}
+      <GoogleSection defaultNext="/record/import" />
+      {session.signIn.password ? (
+        <>
+          {failure ? (
+            <p className="callout" data-tone="danger" role="alert">
+              {failure}
+            </p>
+          ) : null}
+        <form onSubmit={submit} noValidate>
+          <TextField label="Username" value={username} onChange={setUsername} autoComplete="username" error={errors.username} />
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+            error={errors.password}
+            hint="At least 8 characters; avoid common passwords and all-number passwords."
+          />
+          <PasswordField label="Confirm password" value={confirm} onChange={setConfirm} autoComplete="new-password" error={errors.confirm} />
+          <button type="submit" className="btn btn-primary" disabled={pending}>
+            {pending ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+        </>
       ) : null}
-      <form onSubmit={submit} noValidate>
-        <TextField label="Username" value={username} onChange={setUsername} autoComplete="username" error={errors.username} />
-        <PasswordField
-          label="Password"
-          value={password}
-          onChange={setPassword}
-          autoComplete="new-password"
-          error={errors.password}
-          hint="At least 8 characters; avoid common passwords and all-number passwords."
-        />
-        <PasswordField label="Confirm password" value={confirm} onChange={setConfirm} autoComplete="new-password" error={errors.confirm} />
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
-      <p style={{ marginTop: '1rem' }}>
+      <p className="auth-switch">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>
     </section>
+    </div>
   );
 }
 

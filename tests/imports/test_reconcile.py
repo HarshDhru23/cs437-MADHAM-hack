@@ -35,6 +35,41 @@ class ReconcileTests(unittest.TestCase):
         conflict = reconcile_import(first, changed, {})
         self.assertTrue(any(i['code'] == 'IMPORT_CONFLICT' for i in conflict['issues']))
 
+    def test_cp11_replace_mode_swaps_earlier_imported_rows_for_the_new_import(self):
+        first = reconcile_import(self.record, self.preview, {}, replace_imported=True)['record']
+        manual = {**deepcopy(first['attempts'][0]), 'id': 'manual-1', 'source_key': None, 'source_refs': [], 'term_id': '2024-25-I', 'normalized_code': 'ZZ 900', 'instance_id': None}
+        saved = {**first, 'attempts': first['attempts'] + [manual]}
+        # A different paste of the same transcript: other source ids, one grade changed, one row gone.
+        again = parse_ims(TABLE.replace('\tA\n', '\tB\n', 1), 'another-paste')
+        dropped = again['candidate_attempts'].pop()
+        result = reconcile_import(saved, again, {}, replace_imported=True)
+        self.assertEqual([i for i in result['issues'] if i['severity'] == 'error'], [])  # no IMPORT_CONFLICT, no ambiguous identity
+        ids = [a['id'] for a in result['record']['attempts']]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(len(result['record']['attempts']), 4 + 1)  # four imported rows + the student's own row
+        self.assertIn(manual, result['record']['attempts'])
+        statuses = sorted(d['status'] for d in result['diff'])
+        self.assertEqual(statuses, ['removed', 'replaced', 'unchanged', 'unchanged', 'unchanged'])
+        removed = next(d for d in result['diff'] if d['status'] == 'removed')
+        self.assertNotIn(removed['attempt_id'], ids)
+        self.assertEqual(dropped['normalized_code'], removed['existing']['normalized_code'])
+        changed = next(a for a in result['record']['attempts'] if a['grade'] == 'B' and a['normalized_code'] == again['candidate_attempts'][0]['normalized_code'])
+        self.assertEqual(changed['user_corrections'][-1]['field'], 'reimport')
+        self.assertEqual(saved['attempts'], first['attempts'] + [manual])  # the input record is not mutated
+
+    def test_cp11_replace_mode_keeps_a_row_left_out_of_the_review_and_a_changed_manual_row_still_conflicts(self):
+        first = reconcile_import(self.record, self.preview, {}, replace_imported=True)['record']
+        again = deepcopy(self.preview)
+        left_out = again['candidate_attempts'].pop(0)
+        again['excluded_attempts'] = [left_out]
+        result = reconcile_import(first, again, {}, replace_imported=True)
+        self.assertEqual(len(result['record']['attempts']), 5)
+        self.assertFalse(any(d['status'] == 'removed' for d in result['diff']))
+        typed = {**deepcopy(first['attempts'][1]), 'id': 'typed', 'source_key': None, 'source_refs': [], 'user_corrections': [], 'original': None, 'grade': 'C'}
+        record = {'attempts': [typed]}
+        conflict = reconcile_import(record, self.preview, {}, replace_imported=True)
+        self.assertTrue(any(i['code'] == 'IMPORT_CONFLICT' for i in conflict['issues']))
+
     def test_cp12_totals_mismatch_and_unknown_grade_blocked(self):
         self.preview['reported_controls']['earned_credits'] = '999'
         result = reconcile_import(self.record, self.preview, {})

@@ -33,13 +33,13 @@ Updated per docs/academic-decisions.md (D-01 to D-25, last entries 3 Nov).
 | AMB-03 | decided: each CS 299 is a separate attempt; first is the open project, second a discipline elective; at most 16 project credits | D-01, D-09, D-10 |
 | AMB-04 | decided: ES 242(N) is DSA I by identity group; credits actually taken are earned | D-02, D-04 |
 | AMB-05 | decided: SC 372 is a one-credit short course, kept on the record, never counted toward 170 | D-08 |
-| AMB-06 | partly decided: repeats count the best grade (TEAM); withdrawal/incomplete policy, rounding (round or truncate) and SPI of a later-repeated term remain open | D-15; decisions "Still open" |
+| AMB-06 | partly decided: repeats count the best grade (TEAM, D-15); rounding is half up to 2 decimals (D-28); withdrawal/incomplete policy and SPI of a later-repeated term remain open | D-15, D-28; decisions "Still open" |
 | AMB-07 | withdrawn: honours and the AI minor are out of this release; CP-25..27 removed from the SPEC (#33) | D-18 |
 | AMB-08 | decided for modelling: 4-credit modules, 16 overall, OE/HSS (8)/open project (4); per-quad limit not modelled; load treatment still unknown (engine reports `INTERNSHIP_LOAD_POLICY_UNKNOWN`) | D-14 |
 | AMB-09 | decided (TEAM, stricter than ADV13 p. 4): a P in every active semester; whether IN 101-104 are the viva records is still open | D-16 |
 | AMB-10 | decided: 2026-27-II is official; later I/II terms get same-parity hints only; later calendar years stay unknown | D-22, D-23, D-24 |
 | AMB-11 | decided: both 2026-27 timetables are official and complete; no revision date is stated | D-22 |
-| AMB-12 | open: 54 lab/tutorial groups with unknown alternative/required meaning; the clash engine reports them as possible, never certain | - |
+| AMB-12 | decided 7 Nov: a lab or tutorial that lists several slots lists alternatives, one per student; lectures stay all required. Snapshots rebuilt; 4 unresolved lecture groups stay unknown | D-26 |
 | AMB-13 | decided: first-half courses run Q1-Q2, second-half Q3-Q4, others the whole term (2026-27 calendar) | D-22, D-24 |
 | AMB-14 | open: schema fields for calendar/catalogue `kind` and `publication_status` | Harsh |
 | AMB-15 | decided: CS 301 is in the CS 330 Operating Systems identity group (by name) | D-04 |

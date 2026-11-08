@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="CoursePath: requirements-first degree audit and semester planner for IITGN B.Tech CSE 2024 students." />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      // Dark is the default. A stored choice of light is applied before first paint, so nothing flashes.
+      try {
+        if (localStorage.getItem('coursepath-theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        else document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    </script>
     <title>CoursePath</title>
   </head>
   <body>

@@ -18,5 +18,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
+    // jsdom tests share the CPU with other workers; the default 5 s timed out a different test on each full run (7 Nov).
+    testTimeout: 20000,
   },
 });

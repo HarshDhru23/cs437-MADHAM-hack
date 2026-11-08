@@ -1,10 +1,12 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser } from './helpers';
+import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flow 4 (A08, CP-23/24) on the real stack, against the committed official
  * 2026-27 Semester I timetable (data/offerings/2026-27-I.json: reviewed,
- * complete, D-22). Expected slots are the ones in docs/team/source-findings.md
+ * complete, D-22). Later years follow the odd/even-semester timetables (D-36).
+ * The timetable panel shows only clashes, sections and "not offered": no snapshot facts, codes or source cells.
+ * Expected slots are the ones in docs/team/source-findings.md
  * (B1 Tuesday 08:30-09:50, B2 Friday 08:30-09:50, H2 Wednesday 11:30-12:50);
  * the cells and rooms are that file's source rows (PH 202 K31/L31, ES 667 K250,
  * CS 331 K112/L112). Its meetings are dated to the term's classes, so the
@@ -12,7 +14,8 @@ import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser } fr
  */
 test.describe.serial('timetable clashes', () => {
   let page: Page;
-  const timetable = (label: string) => page.getByRole('region', { name: `Timetable check for ${label}`, exact: true });
+  const timetable = (label: string) => page.getByRole('region', { name: `Timetable for ${label}`, exact: true });
+  const DEVELOPER_TEXT = /snapshot|Not checked|Not published|Expected \(unconfirmed\)|Confirmed in|Coverage|registration guarantee|OFFERING_|MEETING_|D-\d\d/;
 
   test.beforeAll(async ({ browser }: { browser: Browser }) => {
     page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
@@ -40,26 +43,20 @@ test.describe.serial('timetable clashes', () => {
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page);
     await expect(semester(page, '2026–27 Semester I')).toContainText('Current term');
   });
 
-  test('PH 202 and ES 667 clash on their Tuesday and Friday lectures, with source cells (CP-24)', async () => {
+  test('PH 202 and ES 667 clash on their Tuesday and Friday lectures (CP-24)', async () => {
     const label = '2026–27 Semester I';
     await addCourse(label, 'PH 202');
     await addCourse(label, 'ES 667');
     await expect(page.getByRole('status', { name: 'Plan save status' })).toContainText('Saved');
 
     const panel = timetable(label);
-    await expect(panel.getByRole('heading', { name: /Clashes reported by the server/ })).toBeVisible();
-    await expect(panel).toContainText('Clash check: ✕Clashes');
-    // Snapshot facts (CP-23): reviewed and complete, still not a registration guarantee.
-    await expect(panel).toContainText('timetable-2026-27-I');
-    await expect(panel).toContainText('Reviewed against its source by staff');
-    await expect(panel).toContainText(/Coverage\s*Complete/);
-    await expect(panel).toContainText('not a registration guarantee');
-    await expect(panel.getByRole('row', { name: /PH 202/ })).toContainText('Confirmed in snapshot');
+    await expect(panel.getByRole('heading', { name: /^Clashes/ })).toBeVisible();
+    await expect(panel).not.toContainText(DEVELOPER_TEXT); // no snapshot id, review status, coverage or evidence chips
+    await expect(panel.getByRole('row', { name: /PH 202/ })).not.toContainText(DEVELOPER_TEXT);
 
     const clashes = panel.locator('li[data-severity]');
     const tuesday = clashes.filter({ hasText: 'overlap on Tuesday 08:30–09:50' });
@@ -67,18 +64,17 @@ test.describe.serial('timetable clashes', () => {
     for (const clash of [tuesday, friday]) {
       await expect(clash).toHaveCount(1);
       await expect(clash).toContainText(/PH 202\s*lecture and\s*ES 667\s*lecture/);
-      await expect(clash).toContainText('Time table!K31');
-      await expect(clash).toContainText('Time table!K250');
+      await expect(clash).not.toContainText(/Time table!K\d/); // source cells are not shown to students
       // Dated, required meetings: a certain clash, not a possible one.
       await expect(clash).toContainText('Clash');
       await expect(clash).not.toContainText('Possible clash');
       await expect(clash).toHaveAttribute('data-severity', 'error');
     }
-    await expect(panel).toContainText('Different rooms do not resolve a clash');
+    await expect(panel).not.toContainText('Different rooms do not resolve a clash');
 
-    // The weekly detail supplements the list and has a text form.
-    await panel.getByText('Weekly detail for 2026–27 Semester I').click();
-    await expect(panel.getByRole('list', { name: 'Weekly meetings for 2026–27 Semester I (list)' })).toContainText('PH 202 lecture, slot B1 (required; room 7/206) — in a reported clash');
+    // The weekly timetable supplements the list and has a text form.
+    await panel.getByText('Weekly timetable for 2026–27 Semester I').click();
+    await expect(panel.getByRole('list', { name: 'Weekly meetings for 2026–27 Semester I (list)' })).toContainText('PH 202 lecture, slot B1 (room 7/206) — clash');
 
     // The section picker shows the required lecture and tutorial meetings.
     await panel.getByRole('button', { name: 'Choose sections for PH 202' }).click();
@@ -100,19 +96,15 @@ test.describe.serial('timetable clashes', () => {
     await expect(timetable(label)).not.toContainText('overlap on Tuesday');
   });
 
-  test('a course in a later term with no timetable is "Not checked", never clear (CP-23/24)', async () => {
-    // No 2027-28 timetable is published; CS 329 is in the 2026-27 Semester I one (K64), so D-23 gives only a historical hint.
+  test('a course in a later year follows the semester timetable, with no "expected" or "not published" wording (CP-23/24)', async () => {
+    // D-36: odd semesters of later years use the 2026-27 Semester I timetable; CS 329 is in it (K64).
     const label = '2027–28 Semester I';
     await addCourse(label, 'CS 329');
     await expect(page.getByRole('status', { name: 'Plan save status' })).toContainText('Saved');
     const panel = timetable(label);
-    await expect(panel.getByRole('note', { name: `Why ${label} is not checked` })).toContainText(`No timetable snapshot is stored for ${label}`);
-    await expect(panel).toContainText('Clash check: ?Not checked');
-    await expect(panel).not.toContainText('No clashes found');
-    await expect(panel.getByRole('row', { name: /CS 329/ })).toContainText('Historical hint');
-    await expect(panel.getByRole('row', { name: /CS 329/ })).not.toContainText('Confirmed in snapshot');
-    // The 2026-27 Semester I snapshot's meetings are not reused for this term.
-    await expect(panel).not.toContainText('timetable-2026-27-I');
+    await expect(panel.getByRole('button', { name: 'Choose sections for CS 329' })).toBeVisible();
+    await expect(panel).not.toContainText(DEVELOPER_TEXT);
+    await expect(page.getByRole('region', { name: 'Plan validation' })).not.toContainText(DEVELOPER_TEXT);
   });
 
   test('the planner and timetable panel fit a 390px phone', async () => {

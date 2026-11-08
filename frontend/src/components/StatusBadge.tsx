@@ -31,7 +31,8 @@ export function RequirementStatusBadge({ status }: { status: RequirementStatus }
 const SEVERITY: Record<Severity, { tone: Tone; symbol: string; label: string }> = {
   error: { tone: 'danger', symbol: '✕', label: 'Error' },
   warning: { tone: 'warning', symbol: '!', label: 'Warning' },
-  unknown: { tone: 'unknown', symbol: '?', label: 'Unknown' },
+  unknown: { tone: 'unknown', symbol: '?', label: 'To check' },
+  info: { tone: 'neutral', symbol: 'i', label: 'Note' },
   approval_required: { tone: 'scenario', symbol: '⚑', label: 'Approval required' },
 };
 
@@ -44,26 +45,14 @@ export function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
-/** A rule that rests on a CoursePath TEAM decision (docs/academic-decisions.md), labelled as such to students. */
-export function DecisionBadge({ decision }: { decision: string }) {
-  return (
-    <Badge tone="neutral" symbol="⚖">
-      CoursePath team decision {decision}
-    </Badge>
-  );
-}
-
-/**
- * Recommended preparation (D-17): a CoursePath team recommendation that never blocks a plan,
- * so a missing preparation is a warning, never a red "not eligible".
- */
+/** Recommended preparation never blocks a plan, so a missing preparation is a warning, never a red "not eligible". */
 export function PreparationBadge({ value }: { value: string | null | undefined }) {
   const map: Record<string, { tone: Tone; symbol: string; label: string }> = {
     eligible: { tone: 'success', symbol: '✓', label: 'Preparation met' },
     ineligible: { tone: 'warning', symbol: '!', label: 'Recommended preparation missing' },
     conditional: { tone: 'scenario', symbol: '◐', label: 'Planned earlier, must pass' },
-    unknown: { tone: 'unknown', symbol: '?', label: 'No recommendation recorded' },
-    not_checked: { tone: 'unknown', symbol: '?', label: 'Not checked' },
+    unknown: { tone: 'neutral', symbol: 'i', label: 'No recommendation recorded' },
+    not_checked: { tone: 'neutral', symbol: 'i', label: 'Not checked' },
   };
   const v = value ?? 'not_checked';
   const meta = map[v] ?? { tone: 'unknown' as Tone, symbol: '?', label: v };
@@ -81,13 +70,13 @@ export function EvidenceBadge({ value }: { value: string | null | undefined }) {
     eligible: { tone: 'success', symbol: '✓', label: 'Eligible' },
     ineligible: { tone: 'danger', symbol: '✕', label: 'Not eligible' },
     conditional: { tone: 'scenario', symbol: '◐', label: 'Conditional' },
-    unknown: { tone: 'unknown', symbol: '?', label: 'Unknown' },
+    unknown: { tone: 'neutral', symbol: 'i', label: 'Not confirmed' },
     clear: { tone: 'success', symbol: '✓', label: 'No clash found' },
     conflicts: { tone: 'danger', symbol: '✕', label: 'Clash' },
-    not_checked: { tone: 'unknown', symbol: '?', label: 'Not checked' },
-    confirmed_in_snapshot: { tone: 'success', symbol: '✓', label: 'In supplied snapshot' },
+    not_checked: { tone: 'neutral', symbol: 'i', label: 'Not checked' },
+    confirmed_in_snapshot: { tone: 'success', symbol: '✓', label: 'Offered this term' },
     tentative: { tone: 'warning', symbol: '~', label: 'Tentative' },
-    historical: { tone: 'neutral', symbol: '↺', label: 'Historical hint' },
+    historical: { tone: 'neutral', symbol: '↺', label: 'Expected (unconfirmed)' },
   };
   const meta = map[v] ?? { tone: 'unknown' as Tone, symbol: '?', label: v };
   return (

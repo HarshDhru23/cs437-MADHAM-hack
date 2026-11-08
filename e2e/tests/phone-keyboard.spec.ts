@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { PASSWORD, expectNoHorizontalOverflow, resetAccountThrottle, semester, uniqueUser } from './helpers';
+import { PASSWORD, expectNoHorizontalOverflow, resetAccountThrottle, semester, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * CP-31 on the real stack: import, requirement inspection and planning on a 390px
@@ -57,7 +57,7 @@ test('a student imports, inspects a requirement and plans on a phone with the ke
 
   // Review and confirm.
   await expect(page).toHaveURL(/\/record\/review\//);
-  await expect(page.getByText(/2 rows found in 2 terms/)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   const confirm = page.getByRole('button', { name: 'Confirm record' });
   await expect(confirm).toBeEnabled();
@@ -66,24 +66,23 @@ test('a student imports, inspects a requirement and plans on a phone with the ke
 
   // Requirement inspection: open one requirement's details and read its counted courses and source.
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Actual completed history');
+  await expect(page.getByRole('region', { name: 'Data context' })).toContainText('Your completed courses');
   await expectNoHorizontalOverflow(page);
-  const details = page.getByRole('button', { name: 'Details for Humanities and Social Sciences (GE included)', exact: true });
+  const details = page.getByRole('button', { name: /^Humanities and Social Sciences \(GE included\)\s*\d/ });
   await tabTo(page, details);
   await page.keyboard.press('Enter');
   await expect(details).toHaveAttribute('aria-expanded', 'true');
   const panel = page.locator(`#${await details.getAttribute('aria-controls')}`);
-  await expect(panel).toContainText('Counted toward this requirement');
-  await expect(panel).toContainText('Sources: adv13');
+  await expect(panel).toContainText('HS 191');
+  await expect(panel).not.toContainText(/adv13|Sources:/);
   await expectNoHorizontalOverflow(page);
 
-  // Planning: create a plan and add a course from the keyboard.
+  // Planning: open a plan and add a course from the keyboard.
   await tabTo(page, page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plan', exact: true }));
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/plan$/);
-  await tabTo(page, page.getByRole('button', { name: 'Create a plan' }));
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+  await tabTo(page, page.getByRole('button', { name: 'Generate plan' })); // the first action on the page is reachable by keyboard
+  await createBlankPlan(page);
   await expectNoHorizontalOverflow(page);
   await tabTo(page, semester(page, '2026–27 Semester I').getByRole('button', { name: 'Add course to 2026–27 Semester I' }));
   await page.keyboard.press('Enter');
@@ -94,6 +93,6 @@ test('a student imports, inspects a requirement and plans on a phone with the ke
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status', { name: 'Plan save status' })).toContainText('Saved');
   await expect(semester(page, '2026–27 Semester I')).toContainText('ZZ 330');
-  await expect(semester(page, '2026–27 Semester I')).toContainText('Selected courses: 4 credits');
+  await expect(semester(page, '2026–27 Semester I')).toContainText(/Semester total: 4 \/ 28 credits/);   // Plan tab wording (F2-owned): semester total against the 28-credit limit
   await expectNoHorizontalOverflow(page);
 });

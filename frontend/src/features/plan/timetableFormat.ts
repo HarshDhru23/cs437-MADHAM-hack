@@ -22,7 +22,7 @@ export function timeRange(start: number, end: number): string {
 }
 
 export function kindLabel(kind: string | null | undefined): string {
-  if (!kind) return 'meeting (kind not stated)';
+  if (!kind) return 'meeting';
   return kind;
 }
 
@@ -34,8 +34,7 @@ export function refLocators(refs: SnapshotSourceRef[] | undefined): string[] {
 export function describeMeeting(m: OfferingMeeting): string {
   const parts = [`${weekdayName(m.weekday)} ${timeRange(m.start_minute, m.end_minute)}`];
   if (m.original_slot) parts.push(`slot ${m.original_slot}`);
-  parts.push(roomText(m));
-  if (m.active_start_date || m.active_end_date) parts.push(`active ${m.active_start_date ?? '?'} to before ${m.active_end_date ?? '?'}`);
+  if (roomText(m)) parts.push(roomText(m));
   if (m.delivery_note) parts.push(m.delivery_note);
   return parts.join(' · ');
 }
@@ -43,7 +42,7 @@ export function describeMeeting(m: OfferingMeeting): string {
 export function roomText(m: OfferingMeeting): string {
   if (m.room) return `room ${m.room}`;
   if (m.room_options?.length) return `room one of ${m.room_options.join(', ')}`;
-  return 'room not stated';
+  return '';
 }
 
 export type Semantics = 'all_required' | 'choose_one' | 'unknown';

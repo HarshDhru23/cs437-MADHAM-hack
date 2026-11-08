@@ -34,3 +34,75 @@ blockquote {
   border-left: 4px solid var(--border-strong);
   background: var(--surface-muted);
 }
+
+/* Account: each part of the page is a panel; deleting data is a red-outlined danger zone. Colours from tokens.css only. */
+.account-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+.account-grid > .panel {
+  margin-bottom: 0;
+}
+.form-narrow {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 36rem;
+}
+.form-narrow .field {
+  margin: 0;
+}
+.account-name {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg2);
+}
+.danger-zone {
+  border: 1px solid var(--bad);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bad) 6%, var(--panel));
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+.danger-zone > * {
+  margin-block: 0;
+}
+.danger-zone h3 {
+  color: var(--bad);
+}
+.danger-zone blockquote {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.checkbox-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+  cursor: pointer;
+}
+.form-narrow > .btn {
+  justify-self: start;
+}
+input[type='file'] {
+  max-width: 100%;
+  color: var(--muted);
+}
+input[type='file']::file-selector-button {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.35rem var(--space-3);
+  margin-right: var(--space-3);
+  cursor: pointer;
+}
+input[type='file']::file-selector-button:hover {
+  border-color: var(--accent);
+}

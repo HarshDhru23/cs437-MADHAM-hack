@@ -11,6 +11,6 @@ class RecommendedPreparationAPITests(AccountAPIMixin, TestCase):
         self.assertEqual(created.status_code, 201, created.content)
         issues = {(i['code'], tuple(i['entity_refs'])): i for i in created.json()['data']['validation']['issues']}
         self.assertEqual(issues[('PREREQUISITE_MISSING', ('net',))]['severity'], 'warning')
-        self.assertEqual(issues[('PREREQUISITE_UNKNOWN', ('hss',))]['severity'], 'unknown')
+        self.assertEqual(issues[('PREREQUISITE_UNKNOWN', ('hss',))]['severity'], 'info')  # D-30: no recommendation recorded is informational
         rows = {r['id']: r['eligibility'] for r in created.json()['data']['validation']['per_course']}
         self.assertEqual(rows, {'net': 'ineligible', 'hss': 'unknown'})
