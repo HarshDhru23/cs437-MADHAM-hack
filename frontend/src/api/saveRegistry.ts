@@ -57,6 +57,12 @@ export const saveRegistry = {
     queue.sendNow();
   },
 
+  /** The resource itself was deleted: drop its queue (and any unsaved draft) so nothing is sent to it afterwards. */
+  discard(id: string): void {
+    const entry = entries.get(id);
+    if (entry) forget(id, entry);
+  },
+
   hasUnsaved(): boolean {
     for (const entry of entries.values()) if (entry.queue.state.draft !== null) return true;
     return false;

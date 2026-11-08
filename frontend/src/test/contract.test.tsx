@@ -33,8 +33,10 @@ describe('shared contract examples render in the UI', () => {
     });
     renderApp(<RequirementsPage />, { fetchImpl });
     const overview = await screen.findByRole('region', { name: 'Overview' }, wait);
-    expect(within(overview).getByText('Overall verdict').parentElement).toHaveTextContent('Not complete');
-    expect(screen.getByRole('region', { name: 'Unresolved decisions and issues' })).toHaveTextContent('CS 203 does not establish CS 202 completion.');
+    // The example reports the degree total and nothing counted yet: 170 credits to go.
+    expect(within(overview).getByRole('status')).toHaveTextContent('Not yet eligible to graduate — 170 credits to go');
+    expect(within(overview).getByText('Credits counted').parentElement).toHaveTextContent('0 of 170');
+    expect(screen.getByRole('region', { name: 'Things to check' })).toHaveTextContent('CS 203 does not establish CS 202 completion.');
   });
 
   it('examples/plan-validation.json', async () => {
@@ -50,15 +52,15 @@ describe('shared contract examples render in the UI', () => {
     renderApp(<PlanPage />, { fetchImpl, route: '/plan/plan-x', path: '/plan/:plan_id' });
     const term = await screen.findByRole('region', { name: '2026–27 Semester I' }, wait);
     // Values straight from the example: workload is keyed by term.
-    expect(await within(term).findByText(/Selected courses: 8 credits/, {}, wait)).toBeInTheDocument();
-    expect(within(term).getByText(/Target workload: 12 credits/)).toBeInTheDocument();
+    // The server's target workload for the term (12), shown against the 28-credit limit; the selected/placeholder split is no longer shown.
+    expect(await within(term).findByText('Semester total: 12 / 28 credits', {}, wait)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent('Synthetic required lectures overlap.');
   });
 
   it('examples/empty-record.json', async () => {
     const { fetchImpl } = fakeApi({ 'GET /record': () => ({ data: emptyRecordExample.data }), 'GET /curricula/cse-2024': () => ({ data: curriculum }) });
     renderApp(<RecordPage />, { fetchImpl });
-    expect(await screen.findByText('No accepted attempts yet.', {}, wait)).toBeInTheDocument();
+    expect(await screen.findByText('No courses on your record yet.', {}, wait)).toBeInTheDocument();
   });
 
   it('examples/revision-conflict.json', async () => {

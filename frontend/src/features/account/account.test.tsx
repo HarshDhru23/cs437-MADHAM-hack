@@ -31,6 +31,17 @@ describe('AccountPage (A04)', () => {
     expect(alert).not.toHaveTextContent('wrong-old');
   });
 
+  it('puts deleting data in its own red-outlined danger zone, apart from the other panels', async () => {
+    const { fetchImpl } = fakeApi({ 'GET /record': () => ({ data: record }) });
+    const { container } = renderApp(<AccountPage />, { fetchImpl });
+    await screen.findByLabelText('Current password');
+    const zone = container.querySelector('.danger-zone');
+    expect(zone).not.toBeNull();
+    expect(zone).toContainElement(screen.getByRole('heading', { name: 'Delete my data' }));
+    expect(zone).not.toContainElement(screen.getByRole('heading', { name: 'Change password' }));
+    expect(screen.getByRole('button', { name: 'Delete my data…' })).toHaveClass('btn-danger');
+  });
+
   it('does not ship nonfunctional recovery or SSO buttons', async () => {
     const { fetchImpl } = fakeApi({ 'GET /record': () => ({ data: record }) });
     renderApp(<AccountPage />, { fetchImpl });

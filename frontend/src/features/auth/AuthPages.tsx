@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
+import './auth.css';
 
 /** Only same-app relative paths are allowed as a post-login destination. */
 export function safeNext(next: string | null): string {
@@ -35,7 +36,7 @@ function PasswordField({
           {hint}
         </span>
       ) : null}
-      <div className="panel-row" style={{ flexWrap: 'nowrap' }}>
+      <div className="password-row">
         <input
           id={id}
           type={visible ? 'text' : 'password'}
@@ -46,7 +47,7 @@ function PasswordField({
           aria-describedby={[hint ? `${id}-hint` : '', error ? `${id}-err` : ''].filter(Boolean).join(' ') || undefined}
           spellCheck={false}
         />
-        <button type="button" className="btn" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>
+        <button type="button" className="btn btn-small" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>
           {visible ? 'Hide password' : 'Show password'}
         </button>
       </div>
@@ -88,7 +89,7 @@ function TextField({ label, value, onChange, autoComplete, error }: { label: str
 function failureMessage(error: unknown, action: 'login' | 'signup' | 'password'): string {
   if (!(error instanceof ApiError)) return 'Something went wrong. Try again.';
   if (error.kind === 'throttled') return 'Too many attempts. Wait 15 minutes, then try again.';
-  if (error.kind === 'network') return 'The CoursePath server could not be reached.';
+  if (error.kind === 'network') return 'CoursePath could not be reached.';
   if (action === 'login') return 'Sign-in details were not accepted.';
   if (action === 'signup') return 'The username or password was not accepted. Choose a different username, or a longer, less common password that is not all numbers.';
   return 'The password change was not accepted. Check your current password and choose a longer, less common new password.';
@@ -123,7 +124,11 @@ export function LoginPage() {
   };
 
   return (
-    <section className="panel" style={{ maxWidth: '32rem' }}>
+    <div className="auth-wrap">
+    <section className="panel auth-panel">
+      <p className="auth-mark" aria-hidden="true">
+        CoursePath
+      </p>
       <h1>Sign in</h1>
       <p className="muted">Sign in to your CoursePath account to save and load your record and plans on any device.</p>
       {failure ? (
@@ -138,10 +143,11 @@ export function LoginPage() {
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-      <p style={{ marginTop: '1rem' }}>
+      <p className="auth-switch">
         New here? <Link to={`/signup${params.get('next') ? `?next=${encodeURIComponent(safeNext(params.get('next')))}` : ''}`}>Create an account</Link>
       </p>
     </section>
+    </div>
   );
 }
 
@@ -179,7 +185,11 @@ export function SignupPage() {
   };
 
   return (
-    <section className="panel" style={{ maxWidth: '32rem' }}>
+    <div className="auth-wrap">
+    <section className="panel auth-panel">
+      <p className="auth-mark" aria-hidden="true">
+        CoursePath
+      </p>
       <h1>Create account</h1>
       <p className="muted">
         A CoursePath account stores your record and plans so they follow you across devices. It does not verify your IITGN identity, and CoursePath
@@ -205,10 +215,11 @@ export function SignupPage() {
           {pending ? 'Creating account…' : 'Create account'}
         </button>
       </form>
-      <p style={{ marginTop: '1rem' }}>
+      <p className="auth-switch">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>
     </section>
+    </div>
   );
 }
 

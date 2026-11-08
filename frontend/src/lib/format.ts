@@ -70,3 +70,14 @@ export function formatTimestamp(iso: string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return iso;
   return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(date) + ' IST';
 }
+
+/** An issue message as a student reads it: any leftover internal decision reference such as "(D-31)" or "team decision D-03" is dropped. */
+export function plainMessage(message: string): string {
+  return message
+    .replace(/\s*\((?:[^()]*?\b)?D-\d{2}\b[^()]*\)/g, '')
+    .replace(/[,;]?\s*(?:team decision\s+)?\bD-\d{2}\b(?:\s*,\s*D-\d{2}\b)*/g, '')
+    .replace(/[A-Z]{2,}(?:_[A-Z0-9]+)+/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;])/g, '$1')
+    .trim();
+}

@@ -31,13 +31,13 @@ test.describe.serial('re-import conflicts', () => {
   test('a changed grade must be resolved explicitly and never duplicates the attempt (CP-11)', async () => {
     await signup(page, uniqueUser('e2e_reimport'));
     await parseIms(page, paste('B'));
-    await expect(page.getByText(/2 rows found in 2 terms/)).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review imported rows' })).toBeVisible();
     await page.getByRole('button', { name: 'Confirm record' }).click();
     await expect(page.getByRole('region', { name: 'Overview' })).toBeVisible();
 
     // The same source row comes back with a revised grade.
     await parseIms(page, paste('A-'));
-    await expect(page.getByText(/0 new, 1 unchanged, 1 conflicting/)).toBeVisible();
+    await expect(page.getByText(/Compared with your saved record: 1 already saved, 1 changed/)).toBeVisible();
     const confirm = page.getByRole('button', { name: 'Confirm record' });
     await expect(confirm).toBeDisabled();
     await expect(page.getByRole('region', { name: 'Confirm' })).toContainText('Resolve the conflict for ZZ 104');
@@ -53,8 +53,8 @@ test.describe.serial('re-import conflicts', () => {
     await page.goto('/record');
     await expect(page.getByRole('region', { name: 'Academic history' }).getByText('ZZ 104', { exact: true })).toHaveCount(1);
     await expect(calculusRow(page)).toContainText('A-');
-    await page.getByRole('button', { name: /Source for ZZ 104/ }).click();
-    const source = page.getByRole('dialog', { name: 'Source for ZZ 104' });
+    await page.getByRole('button', { name: /Details for ZZ 104/ }).click();
+    const source = page.getByRole('dialog', { name: 'Details for ZZ 104' });
     await expect(source).toContainText('Re-import: grade “B” → “A-” — Grade revised after re-evaluation');
     await expect(source).not.toContainText('[object Object]');
     await page.keyboard.press('Escape');
@@ -71,7 +71,7 @@ test.describe.serial('re-import conflicts', () => {
 
   test('a commit against a record saved in another tab is refused and changes nothing (409)', async () => {
     await parseIms(page, paste('A-', '2025-26 Semester I\tZZ 201\tSynthetic Algorithms\t4\tA'));
-    await expect(page.getByText(/1 new, 2 unchanged, 0 conflicting/)).toBeVisible();
+    await expect(page.getByText(/Compared with your saved record: 1 new, 2 already saved/)).toBeVisible();
 
     // Another tab of the same account saves first, moving the record revision on.
     const other = await page.context().newPage();

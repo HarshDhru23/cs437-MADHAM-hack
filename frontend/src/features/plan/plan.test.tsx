@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import type { AcademicPlan, PlanPayload, PlanValidation } from '../../api/types';
+import type { AcademicPlan, CatalogueCourse, PlanPayload, PlanValidation } from '../../api/types';
 import { attempt, curriculum, plan, record } from '../../test/fixtures';
 import { fakeApi, issue, renderApp } from '../../test/harness';
 import { PlanIndexPage, PlanPage } from './PlanPage';
@@ -38,6 +38,9 @@ function server(
     extraIssues?: (p: AcademicPlan) => PlanValidation['issues'];
     eligibility?: PlanValidation['per_course'][number]['eligibility'];
     record?: typeof record;
+    /** Catalogue courses and the codes the 2027-28 Semester I timetable offers (for the course picker). */
+    catalogue?: CatalogueCourse[];
+    offered?: string[];
   } = {},
 ) {
   let current: AcademicPlan = structuredClone(plan);
@@ -48,9 +51,28 @@ function server(
   const api = fakeApi({
     'GET /record': () => ({ data: opts.record ?? record }),
     'GET /curricula/cse-2024': () => ({ data: curriculum }),
-    'GET /catalogue': () => ({ data: { courses: [], coverage: 'unknown', review_status: 'draft' }, issues: [issue('CATALOGUE_MISSING')] }),
+    'GET /catalogue': () => (opts.catalogue ? { data: { courses: opts.catalogue, coverage: 'partial', review_status: 'reviewed' } } : { data: { courses: [], coverage: 'unknown', review_status: 'draft' }, issues: [issue('CATALOGUE_MISSING')] }),
+    'GET /offerings?term_id=2027-28-I': () => ({
+      data: { id: 'snap', term_id: '2027-28-I', coverage: 'complete', review_status: 'reviewed', offerings: (opts.offered ?? []).map((code) => ({ id: `2027-28-I:${code}`, code, meeting_groups: [] })) },
+    }),
     'GET /plans/:id': () => ({ data: current }),
     'POST /plans/:id/validate': () => ({ data: validate(current) }),
+    // The same check the draft plan uses: numbers are the server's (the fake's differ from anything a browser-side sum would give).
+    'POST /plans/check': (req) => {
+      const body = req.body as { semesters: AcademicPlan['semesters'] };
+      const load = Object.fromEntries(body.semesters.map((s) => [s.term_id, { planned_credits: '20', limit_credits: s.term_id.endsWith('SUMMER') ? '10' : '28', available_credits: s.term_id.endsWith('SUMMER') ? '0' : '8' }]));
+      return {
+        data: {
+          validation: validate(current),
+          degree: { total_credits: '170', counted_credits: '150', remaining_credits: '20' },
+          placeholder_credits: '4',
+          uncovered_credits: '16',
+          requirements: [{ id: 'open-electives', label: 'Open electives', group: 'Open electives', required_credits: '16', counted_credits: '0', remaining_credits: '16', held_credits: '4', uncovered_credits: '12' }],
+          online: { planned_credits: '6', counted_credits: '4' },
+          load,
+        },
+      };
+    },
     'PATCH /plans/:id': (req) => {
       const body = req.body as Patch;
       patches.push(body);
@@ -88,11 +110,21 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     render(s);
     const current = await screen.findByRole('region', { name: '2026–27 Semester I' });
     expect(within(current).getByText('Current term')).toBeInTheDocument();
-    expect(within(semester('2027–28 Semester II')).getByText(/Future term/)).toBeInTheDocument();
-    // Server values (fake: 4.5 / 4.5 / 9), not the 4 + 4 a browser-side sum would give.
-    await waitFor(() => expect(within(semester('2026–27 Semester II')).getByText(/Selected courses: 4\.5 credits/)).toBeInTheDocument());
-    expect(within(semester('2026–27 Semester II')).getByText(/Placeholder target: 4\.5 credits/)).toBeInTheDocument();
-    expect(within(semester('2026–27 Semester II')).getByText(/Target workload: 9 credits/)).toBeInTheDocument();
+    expect(screen.queryByText(/Future term/)).not.toBeInTheDocument(); // no "timetable not yet known" notice on later terms
+    // The server's total (fake: 9), not the 4 + 4 a browser-side sum would give; shown against the 28-credit limit.
+    await waitFor(() => expect(within(semester('2026–27 Semester II')).getByText('Semester total: 9 / 28 credits')).toBeInTheDocument());
+    expect(screen.queryByText(/Placeholder target|Selected courses|Target workload/)).not.toBeInTheDocument();
+  });
+
+  it('shows how many more credits fit in each semester and what is left for graduation, from the server check', async () => {
+    const s = server();
+    render(s);
+    await screen.findByRole('region', { name: '2026–27 Semester I' });
+    await waitFor(() => expect(within(semester('2026–27 Semester I')).getByText(/8 more credits can be added/)).toBeInTheDocument());
+    const progress = screen.getByRole('region', { name: 'Your plan so far' });
+    await waitFor(() => expect(within(progress).getByText('16 credits left for graduation')).toBeInTheDocument());
+    expect(within(progress).getByText('Open electives: 12 more credits needed')).toBeInTheDocument();
+    expect(within(progress).getByText('150 of 170 degree credits covered by your plan')).toBeInTheDocument();
   });
 
   it('extends the plan by one term on request, without a hardcoded maximum', async () => {
@@ -110,7 +142,6 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     const sem = await screen.findByRole('region', { name: '2027–28 Semester I' });
     await userEvent.click(within(sem).getByRole('button', { name: 'Add course to 2027–28 Semester I' }));
     const dialog = screen.getByRole('dialog', { name: /Add course to 2027–28 Semester I/ });
-    expect(within(dialog).getByText(/No reviewed catalogue/)).toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText('Course code'), 'ZZ 421');
     await userEvent.type(within(dialog).getByLabelText(/Credits/), '4');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add course' }));
@@ -120,7 +151,24 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(sent.expected_revision).toBe(2);
     expect(sent.semesters.find((x) => x.term_id === '2027-28-I')?.courses).toEqual([expect.objectContaining({ normalized_code: 'ZZ 421', credits: '4' })]);
     await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Saved'));
-    expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Server revision 3');
+    expect(screen.getByRole('status', { name: 'Plan save status' })).not.toHaveTextContent(/revision/i); // no backend revision numbers for the student
+  });
+
+  it('the add-course picker lists the basket courses offered in that semester and adds the one chosen', async () => {
+    const basket = (code: string, title: string): CatalogueCourse => ({ id: `v1:${code}`, normalized_code: code, title, credits: '4', department: 'ZZ', baskets: ['systems'], could_satisfy: ['Systems basket'] });
+    const s = server({ catalogue: [basket('ZZ 327', 'Synthetic Distributed Systems'), basket('ZZ 332', 'Synthetic Compilers')], offered: ['ZZ 327'] }); // ZZ 332 is not offered that semester
+    render(s);
+    const sem = await screen.findByRole('region', { name: '2027–28 Semester I' });
+    await userEvent.click(within(sem).getByRole('button', { name: 'Add course to 2027–28 Semester I' }));
+    const dialog = screen.getByRole('dialog', { name: /Add course to 2027–28 Semester I/ });
+    await userEvent.selectOptions(await within(dialog).findByLabelText('Requirement'), 'Systems basket');
+    const results = within(dialog).getByRole('list', { name: 'Matching courses' });
+    expect(within(results).getByText('ZZ 327')).toBeInTheDocument();
+    expect(within(results).queryByText('ZZ 332')).not.toBeInTheDocument();
+    await userEvent.click(within(results).getByRole('button', { name: 'Add ZZ 327' }));
+    expect(within(semester('2027–28 Semester I')).getByText('ZZ 327')).toBeInTheDocument();
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 2000 });
+    expect(s.patches[0]!.semesters.find((x) => x.term_id === '2027-28-I')?.courses).toEqual([expect.objectContaining({ normalized_code: 'ZZ 327', credits: '4' })]);
   });
 
   it('moves a course with a keyboard-accessible select and button, and can undo', async () => {
@@ -134,8 +182,8 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(within(semester('2026–27 Semester I')).queryByText('ZZ 330')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Undo last change' }));
     expect(within(semester('2026–27 Semester I')).getByText('ZZ 330')).toBeInTheDocument();
-    await waitFor(() => expect(s.patches.length).toBeGreaterThan(0), { timeout: 2000 });
-    expect(s.patches.at(-1)?.semesters.find((x) => x.term_id === '2026-27-I')?.courses.map((c) => c.normalized_code)).toEqual(['ZZ 330']);
+    // The save is debounced; on a busy machine the move can be sent before the undo. What counts is that the last thing saved is the undone plan.
+    await waitFor(() => expect(s.patches.at(-1)?.semesters.find((x) => x.term_id === '2026-27-I')?.courses.map((c) => c.normalized_code)).toEqual(['ZZ 330']), { timeout: 4000 });
   });
 
   it('removes a course', async () => {
@@ -152,7 +200,7 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     render(s);
     const sem = await screen.findByRole('region', { name: '2026–27 Semester II' });
     const row = within(sem).getByText('HSS elective').closest('tr') as HTMLElement;
-    expect(within(row).getByText('Unresolved placeholder')).toBeInTheDocument();
+    expect(within(row).getByText('Course not chosen yet')).toBeInTheDocument();
     expect(within(row).queryByText(/Eligible|In supplied snapshot/)).not.toBeInTheDocument();
     await userEvent.click(within(row).getByRole('button', { name: 'Choose a course for HSS elective' }));
     const dialog = screen.getByRole('dialog', { name: /Choose a course for HSS elective/ });
@@ -180,14 +228,81 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(s.patches.at(-1)!.semesters.find((x) => x.term_id === '2027-28-II')!.placeholders).toEqual([expect.objectContaining({ requirement_id: 'theory', desired_credits: '4', label: 'Theory elective' })]);
   });
 
-  it('shows unknown prerequisite/offering/meeting evidence instead of eligible/clear', async () => {
+  it('adds an online course by hand, named or not, through the same save as any other edit', async () => {
+    const s = server();
+    render(s);
+    const sem = await screen.findByRole('region', { name: '2027–28 Semester II' });
+    await userEvent.click(within(sem).getByRole('button', { name: 'Add online course to 2027–28 Semester II' }));
+    const dialog = screen.getByRole('dialog', { name: 'Add online course to 2027–28 Semester II' });
+    await userEvent.selectOptions(within(dialog).getByLabelText('Counts toward'), 'open-electives');
+    await userEvent.clear(within(dialog).getByLabelText('Credits'));
+    await userEvent.type(within(dialog).getByLabelText('Credits'), '3');
+    await userEvent.type(within(dialog).getByLabelText('Course name (optional)'), 'Machine Learning on NPTEL');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add online course' }));
+    await waitFor(() => expect(s.patches.length).toBeGreaterThan(0), { timeout: 2000 });
+    expect(s.patches.at(-1)!.semesters.find((x) => x.term_id === '2027-28-II')!.placeholders).toEqual([
+      { id: 'user-online-2027-28-II-1', requirement_id: 'open-electives', desired_credits: '3', label: 'Machine Learning on NPTEL', online: true },
+    ]);
+    const row = (await within(await screen.findByRole('region', { name: '2027–28 Semester II' })).findByText('Machine Learning on NPTEL')).closest('tr') as HTMLElement;
+    expect(row).toHaveTextContent('Online course'); // a named online course is chosen already: no "Choose a course" button
+    expect(within(row).queryByRole('button', { name: /Choose a course/ })).not.toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Remove placeholder Machine Learning on NPTEL' })).toBeInTheDocument();
+  });
+
+  it('an online course without a name is called "Online course" and can still be replaced by a real one', async () => {
+    const s = server();
+    render(s);
+    const sem = await screen.findByRole('region', { name: '2027–28 Semester II' });
+    await userEvent.click(within(sem).getByRole('button', { name: 'Add online course to 2027–28 Semester II' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: /Add online course/ })).getByRole('button', { name: 'Add online course' }));
+    await waitFor(() => expect(s.patches.length).toBeGreaterThan(0), { timeout: 2000 });
+    expect(s.patches.at(-1)!.semesters.find((x) => x.term_id === '2027-28-II')!.placeholders).toEqual([expect.objectContaining({ label: 'Online course', online: true })]);
+    expect(await within(sem).findByRole('button', { name: 'Choose a course for Online course' })).toBeInTheDocument();
+  });
+
+  it('refuses online credits outside 1 to 8 with a plain message and adds nothing', async () => {
+    const s = server();
+    render(s);
+    const sem = await screen.findByRole('region', { name: '2027–28 Semester II' });
+    await userEvent.click(within(sem).getByRole('button', { name: 'Add online course to 2027–28 Semester II' }));
+    const dialog = screen.getByRole('dialog', { name: /Add online course/ });
+    await userEvent.clear(within(dialog).getByLabelText('Credits'));
+    await userEvent.type(within(dialog).getByLabelText('Credits'), '12');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add online course' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Enter the credits as a number from 1 to 8.');
+    expect(s.patches).toHaveLength(0);
+  });
+
+  it('adds a summer break for each academic year whose second semester is in the plan, and only once', async () => {
+    const s = server();
+    render(s);
+    await screen.findByRole('region', { name: '2027–28 Semester II' });
+    const choice = screen.getByLabelText('Add a summer break') as HTMLSelectElement;
+    expect([...choice.options].map((o) => o.textContent)).toEqual(['Choose a summer break', '2026–27 Summer', '2027–28 Summer']);
+    await userEvent.selectOptions(choice, '2026-27-SUMMER');
+    await waitFor(() => expect(s.patches.length).toBeGreaterThan(0), { timeout: 2000 });
+    expect(s.patches.at(-1)!.semesters.map((x) => x.term_id)).toEqual(['2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II', '2026-27-SUMMER']);
+    const summer = await screen.findByRole('region', { name: '2026–27 Summer' });
+    expect(await within(summer).findByText(/Summer total: .* \/ 10 credits/)).toBeInTheDocument(); // a summer break holds at most 10 credits
+    expect([...(screen.getByLabelText('Add a summer break') as HTMLSelectElement).options].map((o) => o.textContent)).toEqual(['Choose a summer break', '2027–28 Summer']);
+  });
+
+  it('shows how many online credits are planned and how many count toward the degree', async () => {
+    const s = server();
+    render(s);
+    const progress = await screen.findByRole('region', { name: 'Your plan so far' });
+    expect(await within(progress).findByText('Online credits: 6 planned, 4 count toward your degree')).toBeInTheDocument();
+  });
+
+  it('a planned course row shows no evidence chips: nothing "not checked", "not confirmed" or "no recommendation", and never eligible/clear', async () => {
     const s = server();
     render(s);
     const sem = await screen.findByRole('region', { name: '2026–27 Semester I' });
     const row = (await within(sem).findByText('ZZ 330')).closest('tr') as HTMLElement;
-    await waitFor(() => expect(within(row).getAllByText('Unknown').length).toBeGreaterThan(0));
-    expect(within(row).getByText('Not checked')).toBeInTheDocument();
-    expect(within(row).queryByText('No clash found')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent('No problems found with your plan.'));
+    expect(row).not.toHaveTextContent(/Not checked|Not confirmed|No recommendation|Not published|Unknown|Expected|snapshot/i);
+    expect(within(row).queryByText(/Preparation met|No clash found|Eligible/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Timetable check:|Completion term|evidence incomplete/)).not.toBeInTheDocument();
   });
 
   it('groups validation issues; selecting one highlights the affected item and shows the remedy', async () => {
@@ -195,8 +310,9 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     render(s);
     const panel = await screen.findByRole('region', { name: 'Plan validation' });
     await within(panel).findByText('ZZ 331 needs ZZ 330 completed or planned earlier.');
-    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // D-17: a recommendation, never an error
-    await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items for PREREQUISITE_MISSING' }));
+    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // a recommendation, never an error
+    expect(panel).not.toHaveTextContent('PREREQUISITE_MISSING');
+    await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items: ZZ 331 needs ZZ 330 completed or planned earlier.' }));
     const row = within(semester('2026–27 Semester II')).getByText('ZZ 331').closest('tr') as HTMLElement;
     expect(row).toHaveAttribute('data-highlight', 'true');
     expect(within(row).getByText(/needs ZZ 330/)).toBeInTheDocument();
@@ -213,14 +329,14 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     const panel = await screen.findByRole('region', { name: 'Plan validation' });
     await within(panel).findByText('Missing: ZZ 201 and (ZZ 202 or ZZ 203)');
     expect(within(panel).getByRole('heading', { name: 'Errors (1)' })).toBeInTheDocument(); // the duplicate
-    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // D-17 recommendation
+    expect(within(panel).getByRole('heading', { name: 'Warnings (1)' })).toBeInTheDocument(); // the recommendation
     const net = within(semester('2026–27 Semester II')).getByText('ZZ 331').closest('tr') as HTMLElement;
     expect(within(net).getByText('Missing: ZZ 201 and (ZZ 202 or ZZ 203)')).toBeInTheDocument();
-    await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items for DUPLICATE_COURSE' }));
+    await userEvent.click(within(panel).getByRole('button', { name: 'Show affected items: ZZ 331 is already in your plan or already completed.' }));
     const os = within(semester('2026–27 Semester I')).getByText('ZZ 330').closest('tr') as HTMLElement;
     expect(os).toHaveAttribute('data-highlight', 'true');
     expect(net).toHaveAttribute('data-highlight', 'true');
-    expect(within(os).getByText(/missing repeat instance evidence/)).toBeInTheDocument();
+    expect(within(os).getByText(/already in your plan or already completed/)).toBeInTheDocument();
     // Explanations come from the server; the planner does not reschedule anything itself.
     expect(s.patches).toHaveLength(0);
   });
@@ -247,22 +363,20 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(within(semester('2026–27 Semester II')).queryByText('Current term')).not.toBeInTheDocument();
   });
 
-  it('after an unsaved edit, rows show "Not checked" instead of the previous revision\'s eligibility and issues', async () => {
+  it('after an unsaved edit, rows drop the previous version\'s problems and the panel says it is checking', async () => {
     const s = server({ offlineOnce: true, eligibility: 'eligible', extraIssues: () => [issue('DUPLICATE_COURSE', 'error', ['c-os'], 'Synthetic duplicate on ZZ 330.')] });
     render(s);
     const sem1 = await screen.findByRole('region', { name: '2026–27 Semester I' });
     const before = within(sem1).getByText('ZZ 330').closest('tr') as HTMLElement;
-    await waitFor(() => expect(within(before).getByText('Preparation met')).toBeInTheDocument()); // D-17 wording
-    expect(within(before).getByText('Synthetic duplicate on ZZ 330.')).toBeInTheDocument();
+    await waitFor(() => expect(within(before).getByText('ZZ 330 is already in your plan or already completed.')).toBeInTheDocument());
     await userEvent.selectOptions(within(sem1).getByLabelText('Move ZZ 330 to'), '2027-28-I');
     await userEvent.click(within(sem1).getByRole('button', { name: 'Move ZZ 330' }));
     // The save fails (offline), so no newer validation arrives: old results must not stay on the row.
     await waitFor(() => expect(screen.getByRole('status', { name: 'Plan save status' })).toHaveTextContent('Offline'), { timeout: 2000 });
     const moved = within(semester('2027–28 Semester I')).getByText('ZZ 330').closest('tr') as HTMLElement;
-    expect(within(moved).queryByText('Preparation met')).not.toBeInTheDocument();
-    expect(within(moved).queryByText('Synthetic duplicate on ZZ 330.')).not.toBeInTheDocument();
-    expect(within(moved).getAllByText('Not checked').length).toBeGreaterThan(0);
-    expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/not validated yet/);
+    expect(within(moved).queryByText('ZZ 330 is already in your plan or already completed.')).not.toBeInTheDocument();
+    expect(moved).not.toHaveTextContent(/Not checked/);
+    expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/Checking your latest changes/);
   });
 
   it('leaving the page within the save delay still sends the edit', async () => {

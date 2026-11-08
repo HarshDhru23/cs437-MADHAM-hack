@@ -1,21 +1,20 @@
 import { useState, type FormEvent } from 'react';
 import { endpoints } from '../../api/endpoints';
-import { useRecord } from '../../api/hooks';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
 import { failureMessage, PasswordField } from '../auth/AuthPages';
 import { YourData } from './YourData';
+import './account.css';
 
 export function AccountPage() {
   const session = useSession();
-  const record = useRecord();
   const [oldPassword, setOld] = useState('');
   const [newPassword, setNew] = useState('');
   const [confirm, setConfirm] = useState('');
   const [errors, setErrors] = useState<{ old?: string; next?: string; confirm?: string }>({});
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
   const [pending, setPending] = useState(false);
-  usePublishView({ dataMode: 'none', recordRevision: record.data?.revision ?? null });
+  usePublishView({ dataMode: 'none' });
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -42,27 +41,26 @@ export function AccountPage() {
   };
 
   return (
-    <div>
+    <div className="account-grid">
       <h1>Account</h1>
       <section className="panel" aria-label="Account details">
         <h2>Signed in</h2>
         <p>
-          Username: <span className="mono">{session.user?.username}</span>
+          Username: <span className="mono account-name">{session.user?.username}</span>
         </p>
         <p className="muted">
-          Your CoursePath account is separate from IITGN systems. It does not verify your identity or academic standing.
-          {record.data ? ` Your saved record is at revision ${record.data.revision}.` : ''}
+          Your CoursePath account is separate from IITGN systems.
         </p>
       </section>
 
-      <section className="panel" aria-label="Change password" style={{ maxWidth: '36rem' }}>
+      <section className="panel" aria-label="Change password">
         <h2>Change password</h2>
         {message ? (
           <p className="callout" data-tone={message.tone === 'danger' ? 'danger' : undefined} role={message.tone === 'danger' ? 'alert' : 'status'}>
             {message.text}
           </p>
         ) : null}
-        <form onSubmit={submit} noValidate>
+        <form onSubmit={submit} noValidate className="form-narrow">
           <PasswordField label="Current password" value={oldPassword} onChange={setOld} autoComplete="current-password" error={errors.old} />
           <PasswordField label="New password" value={newPassword} onChange={setNew} autoComplete="new-password" error={errors.next} hint="At least 8 characters; avoid common and all-number passwords." />
           <PasswordField label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" error={errors.confirm} />

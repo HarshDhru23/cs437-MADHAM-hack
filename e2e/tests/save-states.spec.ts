@@ -36,12 +36,12 @@ test.describe.serial('save states across devices', () => {
     await page.context().setOffline(false);
     await page.getByRole('button', { name: 'Retry save' }).click();
     await expect(status).toContainText('Saved');
-    await expect(status).toContainText('Server revision 1');
+    await expect(status).not.toContainText(/revision/i);   // revision numbers are not shown
     await page.reload();
     await expect(semester(page, '2024–25 Semester I')).toContainText('ZZ 330');
   });
 
-  test('current enrolment confirmed on one device is loaded on another with the same revision (A04, CP-29)', async ({ browser }) => {
+  test('current enrolment confirmed on one device is loaded on another (A04, CP-29)', async ({ browser }) => {
     await page.goto('/record');
     const enrolment = page.getByRole('region', { name: 'Current enrolment' });
     const form = enrolment.getByRole('form', { name: 'Add current course' });
@@ -52,8 +52,6 @@ test.describe.serial('save states across devices', () => {
     await form.getByLabel(/I confirm I am enrolled/).check();
     await form.getByRole('button', { name: 'Add to current enrolment' }).click();
     await expect(enrolment.getByRole('status')).toContainText('Saved');
-    const revision = (await enrolment.getByRole('status').innerText()).match(/Server revision (\d+)/)?.[1];
-    expect(revision).toBeTruthy();
 
     const other = await (await browser.newContext()).newPage();
     await login(other, owner, '/record');
@@ -61,8 +59,7 @@ test.describe.serial('save states across devices', () => {
     const row = remote.getByRole('row', { name: /ZZ 331/ });
     await expect(row).toContainText('2026–27 Semester I');
     await expect(row).toContainText('L1, T2');
-    await expect(other.getByText('Record revision', { exact: true }).locator('..')).toContainText(revision!);
-    await expect(other.getByRole('region', { name: 'Data context' })).toContainText(`Record revision:${revision}`);
+    await expect(other.getByRole('region', { name: 'Data context' })).not.toContainText(/revision/i);
     await other.close();
   });
 });

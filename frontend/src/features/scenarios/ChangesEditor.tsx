@@ -1,12 +1,17 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useMemo, useState, type KeyboardEvent } from 'react';
+import { useCatalogue } from '../../api/hooks';
 import type { AcademicPlan, ScenarioChange, ScenarioOp } from '../../api/types';
-import { compareTerms, formatTerm } from '../../lib/format';
-import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
+import { CoursePicker, type PickedCourse } from '../../components/CoursePicker';
+import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
+import { isDecimalString } from '../../lib/validation';
 import { describeChange, fitChanges, laterTerms, LETTER_GRADES, OP_LABEL, PLAN_OPS, type PlanItem } from './model';
+import { PlannedCourseSearch } from './PlannedCourseSearch';
 
 interface ChangesEditorProps {
   plan: AcademicPlan | null;
   items: PlanItem[];
+  /** Every item the plan has had, so a change on a course the plan has since dropped still shows its name (not an internal id). */
+  named?: PlanItem[];
   changes: ScenarioChange[];
   onChange: (changes: ScenarioChange[], message: string) => void;
 }
@@ -18,15 +23,19 @@ const OPS: ScenarioOp[] = ['drop', 'fail', 'grade', 'postpone', 'replace', 'cap'
  * hypothetical changes. Only changes the server will accept after the earlier
  * ones are offered; a listed change it would refuse says why.
  */
-export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorProps) {
+export function ChangesEditor({ plan, items, named, changes, onChange }: ChangesEditorProps) {
+  const names = named ?? items;
   const formId = useId();
   const [op, setOp] = useState<ScenarioOp>('drop');
   const [itemId, setItemId] = useState('');
   const [grade, setGrade] = useState('');
   const [term, setTerm] = useState('');
-  const [code, setCode] = useState('');
+  const [replacement, setReplacement] = useState<(PickedCourse & { title?: string }) | null>(null);
   const [credits, setCredits] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const catalogue = useCatalogue();
+  const titles = useMemo(() => new Map((catalogue.data?.courses ?? []).map((c) => [c.normalized_code, c.title] as const)), [catalogue.data]);
+  const titleOf = (code: string) => titles.get(code) || undefined;
 
   const { refused, open } = fitChanges(changes, items);
   const refusedAt = new Map(refused.map((r) => [r.index, r.reason]));
@@ -40,7 +49,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
     setItemId('');
     setGrade('');
     setTerm('');
-    setCode('');
+    setReplacement(null);
     setCredits('');
   };
 
@@ -55,9 +64,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
       case 'postpone':
         return term ? { op, item_id: item!.id, term_id: term } : 'Choose a later term.';
       case 'replace':
-        if (!isCourseCode(code)) return 'Enter a course code such as CS 330.';
-        if (!isDecimalString(credits.trim())) return 'Enter the replacement’s credits as a number such as 4 or 1.5.';
-        return { op, item_id: item!.id, course: { normalized_code: normalizeCode(code), credits: credits.trim() } };
+        return replacement ? { op, item_id: item!.id, course: { normalized_code: replacement.normalized_code, credits: replacement.credits } } : 'Choose a replacement course.';
       case 'cap':
         if (!term) return 'Choose a term to cap.';
         if (!isDecimalString(credits.trim())) return 'Enter the credit cap as a number such as 16.';
@@ -67,15 +74,14 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
     }
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  const submit = () => {
     const change = build();
     if (typeof change === 'string') {
       setError(change);
       return;
     }
     setError(null);
-    onChange([...changes, change], `Added: ${describeChange(change, items)}. Save the scenario to re-evaluate.`);
+    onChange([...changes, change], `Added: ${describeChange(change, names)}. Save the scenario to re-evaluate.`);
     reset();
   };
 
@@ -83,7 +89,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
     const removed = changes[index];
     onChange(
       changes.filter((_, i) => i !== index),
-      removed ? `Removed: ${describeChange(removed, items)}.` : 'Removed a change.',
+      removed ? `Removed: ${describeChange(removed, names)}.` : 'Removed a change.',
     );
   };
 
@@ -95,10 +101,10 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
       ) : (
         <ol className="scenario-changes" aria-label="Hypothetical changes">
           {changes.map((change, index) => {
-            const text = describeChange(change, items);
+            const text = describeChange(change, names);
             const why = refusedAt.get(index);
             return (
-              <li key={`${change.op}-${index}`}>
+              <li key={`${change.op}-${index}`} className="chip change-chip" data-op={change.op}>
                 <span>{text}</span>{' '}
                 <span className="muted">{PLAN_OPS.includes(change.op) ? '(plan edit if applied)' : '(stays hypothetical)'}</span>{' '}
                 <button type="button" className="btn btn-small" aria-label={`Remove change: ${text}`} onClick={() => remove(index)}>
@@ -106,7 +112,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
                 </button>
                 {why ? (
                   <p className="field-error">
-                    The server will refuse this change: {why} Remove it before saving.
+                    This change cannot be saved: {why} Remove it before saving.
                   </p>
                 ) : null}
               </li>
@@ -115,7 +121,8 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
         </ol>
       )}
 
-      <form onSubmit={submit} aria-label="Add a hypothetical change" noValidate>
+      {/* A group, not a <form>: the replacement picker holds a form of its own (add by code), and forms cannot be nested. */}
+      <div role="form" aria-label="Add a hypothetical change">
         <div className="field">
           <label htmlFor={`${formId}-op`}>Change type</label>
           <select
@@ -125,6 +132,7 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
               setOp(e.target.value as ScenarioOp);
               setError(null);
               setTerm('');
+              setReplacement(null);
             }}
           >
             {OPS.map((o) => (
@@ -135,23 +143,17 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
           </select>
         </div>
         {needsItem ? (
-          <div className="field">
-            <label htmlFor={`${formId}-item`}>Planned course</label>
-            <select
-              id={`${formId}-item`}
+          <div>
+            <PlannedCourseSearch
+              items={open}
+              titleOf={titleOf}
               value={itemId}
-              onChange={(e) => {
-                setItemId(e.target.value);
+              onChange={(id) => {
+                setItemId(id);
                 setTerm('');
+                setReplacement(null);
               }}
-            >
-              <option value="">Choose a course</option>
-              {open.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.code} — {formatTerm(i.term_id)}
-                </option>
-              ))}
-            </select>
+            />
             {items.length === 0 ? (
               <span className="hint">The baseline plan has no selected courses to change.</span>
             ) : open.length < items.length ? (
@@ -187,16 +189,33 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
           </div>
         ) : null}
         {op === 'replace' ? (
-          <>
-            <div className="field">
-              <label htmlFor={`${formId}-code`}>Replacement course code</label>
-              <input id={`${formId}-code`} type="text" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" />
-            </div>
-            <div className="field">
-              <label htmlFor={`${formId}-rcredits`}>Replacement credits</label>
-              <input id={`${formId}-rcredits`} type="text" inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} />
-            </div>
-          </>
+          <div className="field">
+            <span className="label">Replacement course</span>
+            {!item ? (
+              <span className="hint">Choose the planned course to replace first.</span>
+            ) : replacement ? (
+              <div role="group" aria-label="Replacement course" className="panel-row">
+                <strong>
+                  {[replacement.normalized_code, replacement.title ?? titleOf(replacement.normalized_code), `${formatCredits(replacement.credits)} credits`].filter(Boolean).join(' · ')}
+                </strong>
+                <button type="button" className="btn btn-small" onClick={() => setReplacement(null)}>
+                  Choose a different course
+                </button>
+              </div>
+            ) : (
+              <CoursePicker
+                courses={catalogue.data?.courses ?? []}
+                coverage={catalogue.data?.coverage ?? 'unknown'}
+                term={item.term_id}
+                pickLabel="Use"
+                submitLabel="Use this course"
+                onPick={(course) => {
+                  setReplacement({ ...course, title: titleOf(course.normalized_code) });
+                  setError(null);
+                }}
+              />
+            )}
+          </div>
         ) : null}
         {op === 'cap' ? (
           <>
@@ -213,7 +232,19 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
             </div>
             <div className="field">
               <label htmlFor={`${formId}-cap`}>Credit cap</label>
-              <input id={`${formId}-cap`} type="text" inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} />
+              <input
+                id={`${formId}-cap`}
+                type="text"
+                inputMode="decimal"
+                value={credits}
+                onChange={(e) => setCredits(e.target.value)}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+              />
               <span className="hint">A hypothetical limit for this scenario. It never changes official load rules.</span>
             </div>
           </>
@@ -223,10 +254,10 @@ export function ChangesEditor({ plan, items, changes, onChange }: ChangesEditorP
             {error}
           </p>
         ) : null}
-        <button type="submit" className="btn">
+        <button type="button" className="btn" onClick={submit}>
           Add change
         </button>
-      </form>
+      </div>
     </section>
   );
 }

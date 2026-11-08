@@ -1,48 +1,182 @@
-/* A09 scenario screens. Uses the shared tokens; nothing here conveys status by colour alone. */
+/*
+ * Scenario screens, Mission Control look. Violet is the what-if colour; cyan marks plan edits, amber limits, red problems, mint the diff's additions.
+ * Colours come from tokens.css only (tints with color-mix); nothing here conveys status by colour alone.
+ */
+
+/* ---------- the what-if banner ---------- */
 .scenario-banner {
-  border-width: 2px;
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--whatif);
+  border-left-width: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--scenario-soft);
+}
+.scenario-banner p {
+  margin: 0;
 }
 .scenario-banner-title {
-  font-size: 1.15rem;
-  margin: 0 0 var(--space-1);
+  font-family: var(--font-m);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--whatif);
+}
+.scenario-banner .btn {
+  justify-self: start;
 }
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: var(--space-2);
-  margin: var(--space-2) 0;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-1) 0;
 }
 .facts dt {
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .facts dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
-.choice-group {
-  border: 1px solid var(--border);
-  border-radius: 6px;
+
+/* ---------- the list of scenarios ---------- */
+.scenario-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.scenario-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
   padding: var(--space-2) var(--space-3);
+}
+.scenario-row::before,
+.change-chip::before {
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0.05rem 0.45rem;
+  white-space: nowrap;
+}
+.scenario-row::before {
+  content: 'what-if';
+  color: var(--whatif);
+}
+.scenario-row a {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.scenario-row .muted {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: 0.85rem;
+}
+.scenario-row .btn {
+  margin-left: auto;
+}
+
+/* ---------- the changes of a scenario, as chips ---------- */
+.scenario-changes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+.change-chip {
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.9rem;
+}
+/* The change type is a mono pill drawn from the list item's data-op: plan edits in cyan, hypotheticals in violet. */
+.change-chip::before {
+  content: attr(data-op);
+  color: var(--accent);
+}
+.change-chip[data-op='fail']::before,
+.change-chip[data-op='grade']::before,
+.change-chip[data-op='cap']::before {
+  color: var(--whatif);
+}
+.change-chip > span:first-child {
+  font-family: var(--font-m);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.change-chip > .btn {
+  margin-left: auto;
+}
+.change-chip > .field-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* ---------- choices as selectable chips (internship duration, placement, period) ---------- */
+.choice-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
   margin: 0 0 var(--space-3);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
 }
 .choice-group legend {
-  font-weight: 600;
+  font-family: var(--font-m);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
   padding: 0 var(--space-1);
 }
 .choice {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   min-height: var(--target);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 0 var(--space-3);
+  font-family: var(--font-m);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background-color 0.15s var(--ease);
+}
+.choice:hover {
+  border-color: var(--accent);
+}
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.choice:has(input:focus-visible) {
+  outline: var(--focus);
+  outline-offset: 2px;
 }
 .choice input {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: var(--accent);
 }
+
 .date-row {
   display: flex;
   flex-wrap: wrap;
@@ -56,20 +190,31 @@ input[type='date'] {
   font: inherit;
   min-height: var(--target);
   max-width: 100%;
+  color-scheme: inherit;
 }
-.module-list,
-.scenario-changes {
-  padding-left: 1.25rem;
-}
-.module-list > li,
-.scenario-changes > li {
-  margin-bottom: var(--space-2);
+
+/* ---------- IN 498 modules ---------- */
+.module-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+  display: grid;
+  gap: var(--space-3);
 }
 .module-list fieldset {
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  padding: var(--space-3);
   min-width: 0;
 }
+.module-list legend {
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+  padding: 0 var(--space-1);
+}
+
+/* ---------- the comparison ---------- */
 .cell-list {
   margin: 0;
   padding-left: 1rem;
@@ -86,7 +231,86 @@ input[type='date'] {
 }
 .stale-note {
   font-weight: 600;
+  color: var(--warn);
 }
 .stale-note::before {
   content: '⟳ ';
+}
+
+/* The diff: what the scenario changes, one line each. It scrolls sideways by itself on a phone. */
+.diff-block {
+  font-family: var(--font-m);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-3);
+  overflow-x: auto;
+  max-width: 100%;
+}
+.diff-line {
+  padding: 0 var(--space-3);
+  white-space: pre;
+  width: max-content;
+  min-width: 100%;
+}
+.diff-head {
+  color: var(--whatif);
+}
+.diff-add {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+}
+.diff-remove {
+  color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+}
+.diff-none {
+  color: var(--muted);
+}
+
+/* ---------- the planned-course search in the hypothetical changes form ---------- */
+.planned-search-list {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.planned-search-list[hidden] {
+  display: none;
+}
+.planned-search-list [role='option'] {
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--font-m);
+  font-size: 0.85rem;
+}
+.planned-search-list [role='option'] + [role='option'] {
+  border-top: 1px solid var(--line);
+}
+.planned-search-list [role='option']:hover,
+.planned-search-list [role='option'][aria-selected='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.planned-search-list [role='option'][aria-selected='true'] {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Date fields follow the form fields of the other controls. */
+input[type='date'] {
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 var(--space-3);
 }

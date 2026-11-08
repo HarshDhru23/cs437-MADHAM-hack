@@ -5,6 +5,8 @@
  * is active. It does not parse, audit or calculate anything: responses are
  * fixed synthetic examples. Unimplemented routes return 404, never success.
  */
+import checkExample from '../../../../examples/plan-check.json';
+import generationExample from '../../../../examples/plan-generation.json';
 import { analysis, curriculum, plan, preview, record } from '../../test/fixtures';
 import type { AcademicPlan, AcademicRecord } from '../types';
 
@@ -46,6 +48,15 @@ export function createMockFetch(): typeof fetch {
       const ids: string[] = body.accepted_candidate_ids ?? [];
       rec = { ...rec, revision: rec.revision + 1, attempts: [...rec.attempts, ...preview.candidate_attempts.filter((c) => ids.includes(c.id))] };
       return reply(rec);
+    }
+    // The generate route answers with the contract example verbatim (examples/plan-generation.json), never a look-alike.
+    if (key === 'POST /plans/generate') {
+      if (body.record_revision !== rec.revision) return reply({ current_revision: rec.revision, action: 'reload_compare' }, 409, [mockIssue('REVISION_CONFLICT', 'Stale (mock).')]);
+      return reply(generationExample.data, 200, generationExample.issues);
+    }
+    if (key === 'POST /plans/check') {
+      if (body.record_revision !== rec.revision) return reply({ current_revision: rec.revision, action: 'reload_compare' }, 409, [mockIssue('REVISION_CONFLICT', 'Stale (mock).')]);
+      return reply(checkExample.data, 200, checkExample.issues);
     }
     if (key === 'GET /plans') return reply(plans);
     if (key === 'POST /plans') {

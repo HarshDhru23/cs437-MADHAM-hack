@@ -1,0 +1,157 @@
+/* My record: readout tiles, dense semester tables, grade pills. Tokens only (styles/tokens.css). */
+
+.rec-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+}
+.rec-tiles > div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: var(--space-3) var(--space-4);
+}
+.rec-tiles dt {
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.rec-tiles dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-d);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-history table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.rec-history table.data caption {
+  caption-side: top;
+  text-align: left;
+  padding: var(--space-2) 0;
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.rec-history table.data th,
+.rec-history table.data td {
+  padding: 6px var(--space-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+.rec-history table.data thead th {
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom-color: var(--border-strong);
+}
+.rec-history table.data tbody tr:hover {
+  background: var(--accent-soft);
+}
+.rec-history table.data td.num,
+.rec-history table.data th.num {
+  text-align: right;
+  font-family: var(--font-m);
+  font-variant-numeric: tabular-nums;
+}
+.rec-history table.data tbody th[scope='row'] {
+  font-weight: 500;
+}
+.rec-history table.data tr[data-changed='true'] {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+.rec-history .mono {
+  font-family: var(--font-m);
+  color: var(--accent);
+}
+
+.grade-pill {
+  display: inline-block;
+  min-width: 2.25rem;
+  padding: 1px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg2);
+  color: var(--text) !important;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .rec-history table.data td.num {
+    text-align: left;
+  }
+}
+
+/* Phone: one compact card per course (code, title, credits on the first line; grade, status and actions below) */
+@media (max-width: 720px) {
+  .rec-history table.data.stack-mobile caption {
+    display: block;
+    width: 100%;
+  }
+  .rec-history table.data.stack-mobile tr {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto auto;
+    gap: var(--space-1) var(--space-2);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+  }
+  .rec-history table.data.stack-mobile th[scope='row'],
+  .rec-history table.data.stack-mobile td {
+    width: auto;
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .rec-history table.data.stack-mobile td[data-label]::before {
+    content: none;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Credits'] {
+    text-align: right;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Credits']::after {
+    content: ' cr';
+    color: var(--text-muted);
+  }
+  .rec-history table.data.stack-mobile td[data-label='Status'],
+  .rec-history table.data.stack-mobile td[data-label='Counts as'] {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .rec-history table.data.stack-mobile td[data-label='Credits'] {
+    grid-column: 3 / 5;
+    grid-row: 1;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Grade'] {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Status'] {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Counts as'] {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .rec-history table.data.stack-mobile td[data-label='Actions'] {
+    grid-column: 4;
+    grid-row: 2;
+    justify-self: end;
+  }
+}
