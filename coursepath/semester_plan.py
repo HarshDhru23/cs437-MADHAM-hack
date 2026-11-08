@@ -110,18 +110,16 @@ def _load_issues(context, term, total):
     issues = []
     summer = term.endswith('SUMMER')
     standing = context.get('standing', 'unknown')
-    cap = Decimal(10 if summer else 21 if standing == 'GPS' else 28)  # D-31: regular standing is assumed until the profile says otherwise
+    simple = context.get('simple_load') is True   # D-36: the product limit is 28 credits, with no GPS or advisor cap, no overload path and no 20-24 guidance
+    cap = Decimal(10 if summer else 21 if standing == 'GPS' and not simple else 28)  # D-31: regular standing is assumed until the profile says otherwise
     advisor = context.get('advisor_cap')
-    if advisor is not None:
+    if advisor is not None and not simple:
         cap = min(cap, decimal_value(advisor))
     term_cap = context.get('term_caps', {}).get(term)
     if term_cap is not None:
         cap = min(cap, decimal_value(term_cap))
     if standing == 'unknown':
         issues.append(issue('STANDING_ASSUMED', 'Assuming regular standing (28-credit cap) until you set your standing and any advisor cap in your profile.', 'info', [term]))
-    simple = context.get('simple_load') is True   # D-36: the product limit is 28 credits, with no overload path and no 20-24 guidance
-    if simple and not summer:
-        cap = min(cap, Decimal(28))
     if total > cap:
         may_overload = not simple and not summer and standing != 'GPS' and cap == 28 and total <= 32
         if may_overload:
