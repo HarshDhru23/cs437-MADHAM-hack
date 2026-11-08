@@ -720,7 +720,9 @@
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_rejects_rows_the_record_editor_would_reject",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_keeps_justified_history_and_owned_verified_approvals",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_accepts_only_well_formed_reported_controls",
-        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans"
+        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans",
+        "server.records.test_restore_totals_regression.RestoreReportedTotalsDiffTests.test_cp30_restore_diff_names_a_change_to_the_printed_totals",
+        "server.records.test_restore_totals_regression.RestoreReportedTotalsDiffTests.test_cp30_honest_backup_diff_reports_the_printed_totals_unchanged"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
