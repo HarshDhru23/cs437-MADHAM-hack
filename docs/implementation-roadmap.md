@@ -110,7 +110,7 @@ Each attempt carries: stable ID; original and normalized course code; catalogue 
 
 Keep completion status, prerequisite exposure and performance participation separate. Grade E is failed for earned credit, but the transcript says it *can* count as prerequisite exposure; evaluate only under the particular prerequisite's approved policy. Grade P can earn credits without entering CPI. Unknown symbols require review; do not convert them to F. PLANNED belongs to a plan, not to completed history.
 
-Preview shows semester groups, row counts, credit totals, unmatched courses and flagged cells, with original evidence on demand. Students can edit extraction errors or omit a row, then explicitly accept the import. Correcting a transcription error does not approve an academic equivalence. Re-import produces a diff (new/unchanged/conflicting) and requires conflict resolution; deduplicate the same source attempt, never all occurrences of a course code. A newer import cannot silently replace a user correction or prior grade.
+Preview shows semester groups, row counts, credit totals, unmatched courses and flagged cells, with original evidence on demand. Students can edit extraction errors or omit a row, then explicitly accept the import. Correcting a transcription error does not approve an academic equivalence. Re-import produces a diff (new/unchanged/updated/removed) and the new import replaces the rows an earlier import saved (changed rows keep their identity and a re-import entry in their history; a row the new import repeats unchanged keeps the student's correction); rows the student typed in are never replaced, and a changed one still needs a decision. Deduplicate the same source attempt, never all occurrences of a course code.
 
 ### 4.4 Sample acceptance evidence
 
@@ -258,7 +258,7 @@ Expand `SPEC.md` **before feature code**, with at least one independently meanin
 | CP-08 | A student can review and correct candidate rows before accepting an import. | Browser preview; no pre-commit record mutation. |
 | CP-09 | A student can recover from an unsupported/invalid import with row-level explanations and the old record intact. | Malformed/encrypted/image-only/oversized input and atomicity tests. |
 | CP-10 | A student's course variants, zero-credit obligations and distinct repeated registrations are preserved. | ES 242(N), PE/IN and two CS 299 fixtures. |
-| CP-11 | A student can re-import without duplicating the same attempt and can resolve conflicting changes. | Idempotence, revised grade, user-correction and distinct-instance tests. |
+| CP-11 | A student can re-import without duplicating the same attempt: a new import replaces the earlier imported rows, and a changed row they typed in themselves still needs a decision. | Idempotence, revised grade, dropped row, user-correction and distinct-instance tests. |
 | CP-12 | A student can see discrepancies between source totals, extracted rows and degree-countable credits. | PDF 104 vs paste 105; separate classification, no forced equality. |
 | CP-13 | A student can inspect source evidence and unresolved catalogue/equivalence matches for imported rows. | CS 203/202 stays unresolved without approval. |
 | CP-14 | A student's earned-credit, prerequisite-exposure and performance status follow separate approved grade policies. | P/D/E/F/unknown/blank matrix and zero-credit obligations. |

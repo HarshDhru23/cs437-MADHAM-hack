@@ -46,13 +46,14 @@ export function AccountPage() {
       <section className="panel" aria-label="Account details">
         <h2>Signed in</h2>
         <p>
-          Username: <span className="mono account-name">{session.user?.username}</span>
+          {session.signIn.password ? 'Username' : 'IITGN account'}: <span className="mono account-name">{session.user?.username}</span>
         </p>
         <p className="muted">
-          Your CoursePath account is separate from IITGN systems.
+          {session.signIn.password ? 'Your CoursePath account is separate from IITGN systems.' : 'You sign in with Google, so there is no CoursePath password to change.'}
         </p>
       </section>
 
+      {session.signIn.password ? (
       <section className="panel" aria-label="Change password">
         <h2>Change password</h2>
         {message ? (
@@ -69,9 +70,10 @@ export function AccountPage() {
           </button>
         </form>
       </section>
+      ) : null}
 
       <YourData />
-      <p className="muted">Password recovery is not available in this release, so keep your password somewhere safe.</p>
+      {session.signIn.password ? <p className="muted">Password recovery is not available in this release, so keep your password somewhere safe.</p> : null}
     </div>
   );
 }

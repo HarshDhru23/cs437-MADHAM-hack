@@ -40,6 +40,20 @@ az webapp config appsettings set --resource-group coursepath-rg --name coursepat
 
 PostgreSQL requires TLS; psycopg negotiates it by default. `WEBSITE_HOSTNAME` is set by App Service and is trusted automatically by `settings.py`.
 
+## Google sign-in (D-46, once)
+
+Only IITGN Google accounts can sign in. Create the OAuth client in the Google Cloud console (any project signed in with an `@iitgn.ac.in` account; the "Internal" user type keeps it to the IITGN Workspace, which is a second lock on top of the server's own check):
+
+1. APIs & Services, OAuth consent screen: user type **Internal** (only available to a project inside the IITGN organisation; otherwise choose External and publish it, the server still refuses other domains).
+2. Credentials, Create credentials, **OAuth client ID**, application type **Web application**. Under **Authorised JavaScript origins** add `https://coursepath-iitgn.azurewebsites.net` (and `http://localhost:5173` for local trials). No redirect URI is needed: the button hands the page a signed token.
+3. Put the client ID (it is public, not a secret) in the App Service settings and restart:
+
+```powershell
+az webapp config appsettings set --resource-group coursepath-rg --name coursepath-iitgn --settings COURSEPATH_GOOGLE_CLIENT_ID=<client id>.apps.googleusercontent.com
+```
+
+While it is set, password sign-up and sign-in are off. To keep password sign-in for accounts made before this change (never for new ones), also set `COURSEPATH_ALLOW_PASSWORD_LOGIN=1`. Remove the client ID setting to go back to username and password.
+
 ## Every release
 
 ```powershell
@@ -56,7 +70,7 @@ The first start is slow (about 100 s: Oryx unpacks the build, the image refreshe
 ## Smoke test (deploy.md step 5)
 
 1. `GET https://coursepath-iitgn.azurewebsites.net/api/v1/health` returns `{"status":"ok","database":"ok"}`.
-2. Sign up a synthetic account, paste the synthetic IMS table, review and confirm, see the audit, add a course to a plan and save.
+2. Sign in with an IITGN Google account (a non-IITGN account must be refused), paste the synthetic IMS table, review and confirm, see the audit, add a course to a plan and save.
 3. Over HTTPS the API needs an `Origin` header on mutations (browsers send it; a bare script gets 403 from Django's CSRF check).
 4. Open the same account in a second browser and see the saved plan; reload a deep link such as `/plan/<id>`.
 

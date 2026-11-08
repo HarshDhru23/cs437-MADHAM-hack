@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser } from './helpers';
+import { expectNoHorizontalOverflow, IMS_TEXT, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Saved plans on the real stack: create, edit, come back, delete (from the list and from the plan's own page), and a phone-width layout.
@@ -29,8 +29,8 @@ test.describe.serial('saved plans', () => {
     await page.goto('/plan');
     await expect(page.getByText('You have no saved plans yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: /^Delete plan/ })).toHaveCount(0); // nothing to delete yet
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await expect(page.getByRole('button', { name: /Create (a|another) plan/ })).toHaveCount(0); // plans start from Generate plan, never as an empty "My plan"
+    await createBlankPlan(page);
   });
 
   test('edits are saved, and coming back to the plan keeps them and keeps saving without a conflict', async () => {
@@ -67,12 +67,11 @@ test.describe.serial('saved plans', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 
-  test('a second plan gets its own name, and the list deletes one plan after asking', async () => {
-    await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create another plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+  test('each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking', async () => {
+    await createBlankPlan(page, 'My plan 2');
     await page.goto('/plan');
     const list = page.getByRole('list', { name: 'Your saved plans' });
+    await expect(list.getByRole('listitem').filter({ hasText: 'My plan 2' })).toContainText('Not valid'); // an empty plan covers none of the degree
     await expect(list.getByRole('link', { name: 'My plan', exact: true })).toBeVisible();
     await expect(list.getByRole('link', { name: 'My plan 2', exact: true })).toBeVisible();
 

@@ -14,6 +14,7 @@ const answer = (uncovered: string): PlanCheck => ({
   degree: { total_credits: '170', counted_credits: '100', remaining_credits: '70' },
   placeholder_credits: '0',
   uncovered_credits: uncovered,
+  status: { valid: Number(uncovered) <= 0, problems: 0, uncovered_credits: uncovered },
   requirements: [],
   online: { planned_credits: '0', counted_credits: '0' },
   load: {},

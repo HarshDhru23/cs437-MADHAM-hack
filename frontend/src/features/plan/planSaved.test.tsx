@@ -323,23 +323,6 @@ describe('Saved plan page: bugs found while exercising it', () => {
     expect(document.body).not.toHaveTextContent(/CoursePath team|standing|20-24|[A-Z]{3,}_[A-Z]+/);
   });
 
-  it('a new plan never reuses the name of an existing one', async () => {
-    const s = makeServer();
-    const created: PlanPayload[] = [];
-    const original = s.fetchImpl;
-    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).endsWith('/plans') && init?.method === 'POST') {
-        created.push(JSON.parse(String(init.body)) as PlanPayload);
-        return new Response(JSON.stringify({ data: { ...created[0], id: 'plan-3', revision: 0, validation: { workload: {}, per_course: [], issues: [], meeting_check_status: 'not_checked', completion_term: null } }, issues: [], schema_version: '1' }), { status: 201 });
-      }
-      return original(input, init);
-    }) as typeof fetch;
-    renderApp(<PlanIndexPage />, { fetchImpl, route: '/plan', path: '/plan' });
-    await userEvent.click(await screen.findByRole('button', { name: 'Create another plan' }));
-    await screen.findByText('navigated-away');
-    expect(created[0]?.label).toBe('My plan'); // neither existing plan is called "My plan"
-  });
-
   it('the placeholder form lists only requirements a student works on, and rejects 0 credits', async () => {
     const s = makeServer();
     renderRoutes(s, '/plan/plan-1');

@@ -876,6 +876,32 @@
               "type": "null"
             }
           ]
+        },
+        "sign_in": {
+          "type": "object",
+          "description": "What the sign-in page offers (D-46). With a Google client ID configured, only IITGN Google accounts sign in and the password forms are off.",
+          "required": [
+            "google_client_id",
+            "google_domain",
+            "password"
+          ],
+          "properties": {
+            "google_client_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The public OAuth client ID for Google sign-in, or null when it is not configured."
+            },
+            "google_domain": {
+              "type": "string"
+            },
+            "password": {
+              "type": "boolean",
+              "description": "Whether username and password sign-up and sign-in are offered."
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -1025,6 +1051,9 @@
         },
         "validation": {
           "$ref": "#/$defs/validation"
+        },
+        "status": {
+          "$ref": "#/$defs/plan_status"
         }
       },
       "additionalProperties": false
@@ -2509,7 +2538,8 @@
         "uncovered_credits",
         "requirements",
         "load",
-        "online"
+        "online",
+        "status"
       ],
       "properties": {
         "validation": {
@@ -2612,6 +2642,9 @@
             },
             "additionalProperties": false
           }
+        },
+        "status": {
+          "$ref": "#/$defs/plan_status"
         }
       },
       "additionalProperties": false
@@ -2972,6 +3005,30 @@
         },
         "validation": {
           "$ref": "#/$defs/validation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan_status": {
+      "type": "object",
+      "description": "Whether a plan is valid (D-45): its check finds no error and no degree requirement is left uncovered. A plan that is not valid can still be saved.",
+      "required": [
+        "valid",
+        "problems",
+        "uncovered_credits"
+      ],
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "problems": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of error-severity problems in the plan's check."
+        },
+        "uncovered_credits": {
+          "$ref": "#/$defs/decimal",
+          "description": "Degree credits the plan leaves uncovered."
         }
       },
       "additionalProperties": false

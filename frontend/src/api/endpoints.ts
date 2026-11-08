@@ -28,6 +28,7 @@ export interface Credentials {
 export const endpoints = {
   signup: (api: ApiClient, body: Credentials) => api.send<SessionUser>('POST', '/auth/signup', body),
   login: (api: ApiClient, body: Credentials) => api.send<SessionUser>('POST', '/auth/login', body),
+  googleSignIn: (api: ApiClient, credential: string) => api.send<SessionUser>('POST', '/auth/google', { credential }),
   logout: (api: ApiClient) => api.send<null>('POST', '/auth/logout', {}),
   changePassword: (api: ApiClient, body: { old_password: string; new_password: string }) => api.send<null>('POST', '/auth/password', body),
 

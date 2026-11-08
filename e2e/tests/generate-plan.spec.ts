@@ -25,7 +25,7 @@ test('generate a draft plan, edit it, discard it, then save one as my plan (CP-3
   await page.goto('/plan');
   const generateButton = page.getByRole('button', { name: 'Generate plan' });
   await expect(generateButton).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create a plan' })).toBeVisible(); // manual planning is still there
+  await expect(page.getByRole('button', { name: /Create (a|another) plan/ })).toHaveCount(0); // no empty "My plan" to create: plans start from Generate plan
 
   // First draft: one click, no dialog. Reviewed, edited, then discarded. Nothing is saved.
   await generateButton.click();

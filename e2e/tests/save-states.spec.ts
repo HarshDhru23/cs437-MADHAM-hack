@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { login, semester, signup, uniqueUser } from './helpers';
+import { login, semester, signup, uniqueUser, createBlankPlan } from './helpers';
 
 /**
  * Flow 7 (offline save) and the A04 record part of flow 2 on the real stack:
@@ -17,8 +17,7 @@ test.describe.serial('save states across devices', () => {
   test('an offline plan edit is kept as an unsaved draft and saved on retry (CP-29)', async () => {
     await signup(page, owner);
     await page.goto('/plan');
-    await page.getByRole('button', { name: 'Create a plan' }).click();
-    await expect(page).toHaveURL(/\/plan\/[0-9a-f-]+$/);
+    await createBlankPlan(page, 'My plan', ['2024-25-I', '2024-25-II', '2025-26-I', '2025-26-II', '2026-27-I', '2026-27-II', '2027-28-I', '2027-28-II']);
     const first = semester(page, '2024–25 Semester I');
     await expect(first).toBeVisible();
     const status = page.getByRole('status', { name: 'Plan save status' });

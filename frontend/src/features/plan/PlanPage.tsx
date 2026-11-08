@@ -17,11 +17,12 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
-import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
+import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
 import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
 import type { SectionChoice } from './SectionPicker';
 import { GeneratePlanPanel } from './GeneratePlanPanel';
+import { PlanStatusBadge } from './PlanStatusNote';
 import { useDeletePlan, UnsavedChangesError } from './deletePlan';
 import { meterLevel, meterWidth, sumCredits } from './loadLevel';
 import { plainIssues, type PlainIssue } from './plainIssues';
@@ -33,19 +34,14 @@ import { studentIssues } from './savedPlanIssues';
 import { TermTimetablePanel } from './TermTimetablePanel';
 import './plan.css';
 
-const DEFAULT_LAST_SEMESTER = 8;
-
 function planPayload(p: AcademicPlan | PlanPayload): PlanPayload {
   return { ...(p.label !== undefined ? { label: p.label } : {}), semesters: p.semesters };
 }
 
 /** /plan — list plans or create the first one. */
 export function PlanIndexPage() {
-  const session = useSession();
   const plans = usePlans();
   const record = useRecord();
-  const cache = useResourceCache();
-  const navigate = useNavigate();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const wantsGenerate = params.get('generate') === '1'; // opened from the command bar: generate once, then drop the parameter
@@ -61,33 +57,9 @@ export function PlanIndexPage() {
       ),
     [setParams],
   );
-  const [error, setError] = useState<ApiError | null>(null);
-  const [pending, setPending] = useState(false);
   const removal = useDeletePlan({ onDeleted: () => undefined });
   const justDeleted = (location.state as { deleted?: string } | null)?.deleted ?? null; // set when a plan was deleted from its own page
   usePublishView({ dataMode: 'projected', recordRevision: record.data?.revision ?? null });
-
-  const create = async () => {
-    if (!record.data) return;
-    const latest = latestCompletedTerm(record.data.attempts);
-    const start = (latest && nextRegularTerm(latest)) ?? `${record.data.profile.admission_year}-${String((record.data.profile.admission_year + 1) % 100).padStart(2, '0')}-I`;
-    const terms = regularTermsThrough(start, record.data.profile.admission_year, DEFAULT_LAST_SEMESTER);
-    const taken = new Set((plans.data ?? []).map((p) => p.label));
-    let label = 'My plan';
-    for (let n = 2; taken.has(label); n += 1) label = `My plan ${n}`; // several plans stay tellable apart in the list
-    const payload: PlanPayload = { label, semesters: (terms.length ? terms : [start]).map((term_id) => ({ term_id, courses: [], placeholders: [] })) };
-    setPending(true);
-    setError(null);
-    try {
-      const result = await endpoints.createPlan(session.api, payload);
-      cache.invalidate('plans:');
-      navigate(`/plan/${encodeURIComponent(result.data.id)}`);
-    } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError('server', 0, String(e), []));
-    } finally {
-      setPending(false);
-    }
-  };
 
   return (
     <div>
@@ -96,7 +68,6 @@ export function PlanIndexPage() {
       {record.data ? <GeneratePlanPanel record={record.data} autoStart={wantsGenerate} onAutoStarted={dropGenerate} /> : null}
       {plans.loading || record.loading ? <StatePanel kind="loading" title="Loading your plans…" /> : null}
       {plans.error ? <ErrorPanel error={plans.error} onRetry={plans.reload} /> : null}
-      {error ? <ErrorPanel error={error} /> : null}
       {justDeleted && !removal.showsMessage ? (
         <p className="callout" data-tone="success" role="status">
           Deleted “{justDeleted}”.
@@ -110,7 +81,7 @@ export function PlanIndexPage() {
             const name = p.label ?? 'Untitled plan';
             return (
               <li key={p.id}>
-                <Link to={`/plan/${encodeURIComponent(p.id)}`}>{name}</Link> <span className="muted num">· {p.semesters.length} semesters</span>{' '}
+                <Link to={`/plan/${encodeURIComponent(p.id)}`}>{name}</Link> <PlanStatusBadge status={p.status} /> <span className="muted num">· {p.semesters.length} semesters</span>{' '}
                 <button
                   type="button"
                   className="btn btn-small btn-danger"
@@ -125,12 +96,7 @@ export function PlanIndexPage() {
           })}
         </ul>
       ) : plans.data ? (
-        <p>You have no saved plans yet. A new plan lists every remaining semester through semester 8; you can extend it.</p>
-      ) : null}
-      {plans.data ? (
-        <button type="button" className="btn btn-primary" onClick={create} disabled={pending || !record.data}>
-          {pending ? 'Creating…' : plans.data.length > 0 ? 'Create another plan' : 'Create a plan'}
-        </button>
+        <p>You have no saved plans yet. Generate one above, change it, and save it.</p>
       ) : null}
     </div>
   );

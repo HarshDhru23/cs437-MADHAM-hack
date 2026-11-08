@@ -263,6 +263,24 @@ Recorded 7 Nov 2026 by Harsh, after the hosted app showed an "unknown" on almost
 
 **D-43. UI direction: Mission Control** (TEAM, Harsh, 8 Nov). The whole interface follows one design, "Mission Control" (`docs/design/mission-control.md`): dark theme by default (light is an optional toggle that never follows the system setting), one fixed palette (cyan for progress, amber for limits, violet for what-if, mint for done, red for problems), a display, a body and a monospace face, a command bar on `/` or Ctrl+K, and plain student wording. The palette is closed: no other colours. Awards and achievements (badges for milestones, honours, minors) are not shown or kept anywhere, and there is no prerequisite map. Screens show only real data: nothing animated or listed that the server did not return.
 
+**D-44. Importing again replaces the earlier import** (TEAM, Harsh, 8 Nov). Amends the roadmap's CP-11 text ("requires conflict resolution").
+- **Replaces.** A new import (PDF or IMS paste) replaces the rows an earlier import saved, whichever source it came from. A saved imported row the new import repeats unchanged stays as it is, with any correction the student made. One the import changes is updated: it keeps its identity and gets a `reimport` entry in its history. One the new import no longer has is removed. The review page says so before the student confirms ("Updated", "no longer in this import").
+- **Never touched.** Rows the student typed in themselves (they carry no source) are kept. If the import changes one of those, it is still a conflict that needs a decision. A row the student leaves out of the review keeps its saved version.
+- **Totals.** The totals printed by an earlier import describe the rows it saved, so they are replaced with the new import's (or cleared if it prints none).
+- **Why.** Pasting the same transcript twice, or a PDF after a paste, used to fail with "conflict" or "ambiguous attempt identity" on rows that were only the earlier copy of the same transcript.
+
+**D-45. A plan is valid, or not valid, and either can be saved** (TEAM, Harsh, 8 Nov). Amends D-36.
+- **Valid** means the plan's check (`POST /plans/check`, the same one that runs after every change to a draft) finds no error-severity problem **and** no degree requirement is left uncovered: `uncovered_credits` is 0 after the plan's courses and the credits its placeholders hold. The server decides and returns it as `status: {valid, problems, uncovered_credits}`; the browser never works it out.
+- **Saving.** A draft that is not valid can still be saved (it used to be blocked while the check found an error). Next to the Save button and at the end of the draft the student is told plainly which it is and why ("Not a valid plan yet: 1 problem to fix and 12 credits of your degree not covered yet. You can still save it").
+- **The list of plans.** Every saved plan shows "Valid" or "Not valid" beside its name. The status is computed from the plan and the **current** record each time plans are read, so a plan that was valid when saved turns "Not valid" if the record later changes under it (a failed course, a re-import). It is never stored.
+- **No empty "My plan".** The Plans page no longer has a button that creates an empty plan; plans start from Generate plan. Editing a saved plan by hand is unchanged.
+
+**D-46. Sign-in is Google, for IITGN accounts only** (TEAM, Harsh, 8 Nov). Amends the roadmap's account decision (username and password).
+- **Who.** With `COURSEPATH_GOOGLE_CLIENT_ID` set, only IITGN Google accounts sign in. The browser gets a Google ID token (Google Identity Services); the server checks it with Google's library (signature, audience = our client ID, issuer, expiry) and then requires a **verified** address that ends in `@iitgn.ac.in` **and** a Google Workspace domain claim (`hd`) equal to `iitgn.ac.in`. Anything else is refused with `NOT_IITGN_ACCOUNT`. The domain is fixed in code, not configurable.
+- **Accounts.** The first sign-in creates the account, named by the lower-cased address, with no password and an empty record. Later sign-ins reach the same account from any device. An older password account that happens to use the same name is never taken over (`ACCOUNT_CONFLICT`).
+- **Passwords.** While Google is configured, password sign-up is off and password sign-in is off too, unless `COURSEPATH_ALLOW_PASSWORD_LOGIN=1` keeps it for accounts made before this change (never for new ones). Without a client ID (local development, tests, the browser suite) the username and password forms work as before. Google accounts have no password to change, so the Account page hides that form for them.
+- **Not decided here.** Existing password accounts are not linked to Google accounts; nothing moves data between them.
+
 ## Implementation follow-ups
 
 Each item goes through the normal reviewed PR. Owners are from `docs/team/README.md`.

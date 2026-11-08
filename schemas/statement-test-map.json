@@ -251,7 +251,11 @@
       "tests": [
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_idempotent_reimport_correction_and_conflict",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_reimport_of_same_source_does_not_duplicate_or_double_credit",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_changed_grade_on_reimport_is_a_conflict_not_a_silent_overwrite"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_changed_grade_on_reimport_is_a_conflict_not_a_silent_overwrite",
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_swaps_earlier_imported_rows_for_the_new_import",
+        "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_keeps_a_row_left_out_of_the_review_and_a_changed_manual_row_still_conflicts",
+        "server.records.test_imports.ReimportReplacesTests.test_changed_grade_and_a_dropped_row_need_no_resolution",
+        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -261,7 +265,7 @@
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
-        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a changed grade must be resolved explicitly and never duplicates the attempt (CP-11)",
+        "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > importing again replaces the earlier import and never duplicates an attempt (CP-11)",
         "e2e/tests/pdf-import.spec.ts::PDF import shows every semester and source totals; re-import is idempotent"
       ],
       "frontend_tests": [
@@ -981,6 +985,70 @@
       "academic_data": "reviewed_adv13",
       "browser_tests": [],
       "frontend_tests": []
+    },
+    {
+      "id": "CP-36",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": true,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "reviewed_adv13",
+      "tests": [
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_covers_every_remaining_requirement_is_valid",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_removing_a_course_leaves_credits_uncovered_and_the_plan_not_valid",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_an_error_makes_the_plan_not_valid_even_when_nothing_is_uncovered",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_is_not_valid_is_still_saved_and_listed_with_its_status",
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving"
+      ],
+      "browser_tests": [
+        "e2e/tests/saved-plans.spec.ts::saved plans > each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/plan/generate.test.tsx::Saving > a valid plan says so beside Save, and the status follows each change the server checks",
+        "frontend/src/features/plan/generate.test.tsx::Saving > a plan that is not valid (credits still uncovered) can still be saved, and says why before it is",
+        "frontend/src/features/plan/generate.test.tsx::Problems are shown where they belong, as soon as the check answers > a semester that is over 28 credits is explained in plain words and the plan is marked not valid",
+        "frontend/src/features/plan/plan.test.tsx::PlanIndexPage > shows \"Valid\" or \"Not valid\" beside each saved plan name, as the server says"
+      ]
+    },
+    {
+      "id": "CP-37",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_session_tells_the_page_what_sign_in_offers",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_iitgn_account_signs_in_and_gets_its_own_record",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_signing_in_again_reaches_the_same_account",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_account_outside_iitgn_is_refused_and_nothing_is_created",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_a_token_that_fails_google_verification_is_a_401",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_google_being_unreachable_is_a_503_not_a_sign_in",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_a_missing_or_malformed_credential_is_a_400",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_password_sign_up_and_sign_in_are_off",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_older_password_account_with_the_same_name_is_never_taken_over",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_endpoint_does_not_exist_without_a_client_id",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_sign_in_attempts_are_throttled_like_password_ones",
+        "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_pop_up_sign_in_is_not_cut_off_by_the_opener_policy",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_for_this_app_verifies",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_issued_for_another_app_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_an_expired_token_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > shows only the Google button, and says it is for IITGN accounts, when Google is configured",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > sends the Google credential to the server, then leaves the sign-in page",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > says only IITGN accounts can sign in when the server refuses the account, and stays on the page",
+        "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > keeps the username and password form, and no Google button, when Google is not configured"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

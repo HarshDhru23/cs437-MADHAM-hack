@@ -131,7 +131,7 @@ function ScenarioList() {
         <h2 id={`${formId}-new`}>New scenario</h2>
         {planList.length === 0 ? (
           <p>
-            A scenario copies a saved plan. <Link to="/plan">Create a plan first</Link>.
+            A scenario copies a saved plan. <Link to="/plan">Generate a plan first</Link>.
           </p>
         ) : (
           <form onSubmit={create} noValidate>
