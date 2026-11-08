@@ -469,13 +469,13 @@ def _plan_check(user, stored, payload):
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
-    held = {}
+    # An online credit is held where the allocator counted it (D-10, D-42): above the 8-credit discipline cap, or aimed at a requirement online
+    # courses cannot fill, it holds open-elective credit, never the requirement the student aimed it at.
+    held = dict(online['counted_by_requirement'])
     for semester in payload['semesters']:
         for p in semester.get('placeholders', []):
-            credits = decimal_value(p['desired_credits'])
-            if p.get('online') is True:
-                credits = online['counted_by_placeholder'].get(p['id'], Decimal(0))
-            held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + credits
+            if p.get('online') is not True:
+                held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + decimal_value(p['desired_credits'])
     requirements, uncovered = [], Decimal(0)
     for row in requirement_progress(rules, audit['projected']):
         covered = min(held.get(row['id'], Decimal(0)), decimal_value(row['remaining_credits']))
