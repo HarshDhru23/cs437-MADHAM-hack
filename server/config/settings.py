@@ -21,20 +21,32 @@ if not SECRET_KEY:
         except FileExistsError:
             pass
     SECRET_KEY = secret_path.read_text()
-ALLOWED_HOSTS = os.getenv('COURSEPATH_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('COURSEPATH_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if host.strip()]
+if os.getenv('WEBSITE_HOSTNAME'):  # Azure App Service sets this to the app's own host name
+    ALLOWED_HOSTS.append(os.environ['WEBSITE_HOSTNAME'])
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('COURSEPATH_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+# One origin: Django serves /api/v1/* and the built React app (frontend/dist). COURSEPATH_FRONTEND_DIR moves the build for tests.
+COURSEPATH_FRONTEND_DIR = Path(os.getenv('COURSEPATH_FRONTEND_DIR') or BASE_DIR / 'frontend' / 'dist')
+WHITENOISE_ROOT = COURSEPATH_FRONTEND_DIR
 ROOT_URLCONF = 'server.config.urls'
 WSGI_APPLICATION = 'server.config.wsgi.application'
 INSTALLED_APPS = ['django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'server.records']
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
               'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware',
               'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware']
+if not DEBUG:  # static files of the React build (assets/, index.html); the platform proxy terminates TLS
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    # Safe only because the platform proxy overwrites this header on every request (Azure App Service does).
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_REDIRECT_EXEMPT = [r'^api/v1/health$']  # the platform's readiness probe is plain HTTP
 DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': LOCAL_DIR / 'coursepath.sqlite3', 'OPTIONS': {'timeout': 20}}}
 if DEBUG and os.getenv('COURSEPATH_SQLITE_PATH'):
     DATABASES['default']['NAME'] = os.environ['COURSEPATH_SQLITE_PATH']
 if not DEBUG or os.getenv('COURSEPATH_DB_ENGINE') == 'postgresql':
     DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': os.environ['COURSEPATH_DB_NAME'],
                            'USER': os.environ['COURSEPATH_DB_USER'], 'PASSWORD': os.environ['COURSEPATH_DB_PASSWORD'],
-                           'HOST': os.environ['COURSEPATH_DB_HOST'], 'PORT': os.getenv('COURSEPATH_DB_PORT', '5432')}}
+                           'HOST': os.environ['COURSEPATH_DB_HOST'], 'PORT': os.getenv('COURSEPATH_DB_PORT', '5432'),
+                           'OPTIONS': {'connect_timeout': 5}}}  # an unreachable database fails fast (health check answers 503) instead of hanging a worker
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

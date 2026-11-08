@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import path, re_path
 from server.api import views
 
 urlpatterns = [
+    path('api/v1/health', views.health),
     path('api/v1/session', views.session),
     path('api/v1/auth/<str:action>', views.auth),
     path('api/v1/record', views.record),
@@ -22,4 +23,5 @@ urlpatterns = [
     path('api/v1/scenarios/compare', views.scenarios_compare),
     path('api/v1/scenarios/<uuid:scenario_id>', views.scenario_detail),
     path('api/v1/scenarios/<uuid:scenario_id>/apply-plan', views.scenario_apply),
+    re_path(r'^(?!api/|assets/).*$', views.spa),  # deep links such as /plan/<id> load the React app; registered after every API route
 ]
