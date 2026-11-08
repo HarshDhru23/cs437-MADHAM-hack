@@ -255,7 +255,12 @@
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_swaps_earlier_imported_rows_for_the_new_import",
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_keeps_a_row_left_out_of_the_review_and_a_changed_manual_row_still_conflicts",
         "server.records.test_imports.ReimportReplacesTests.test_changed_grade_and_a_dropped_row_need_no_resolution",
-        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive"
+        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d44_same_row_formatted_differently_keeps_the_correction",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d44_a_real_change_formatted_differently_still_replaces",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d10_two_cs299_registrations_stay_two_attempts_when_reformatted",
+        "tests.reference.test_reimport_normalized_compare.TypedRowNumericCreditsTests.test_d44_typed_row_with_the_same_values_is_unchanged",
+        "tests.reference.test_reimport_normalized_compare.TypedRowNumericCreditsTests.test_d44_typed_row_the_import_changes_still_conflicts"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

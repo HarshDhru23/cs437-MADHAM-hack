@@ -14,6 +14,30 @@ def is_imported(attempt):
     return bool(attempt.get('source_key') or attempt.get('source_refs'))
 
 
+def _canonical(field, value):
+    """A value as an import stores it, so a row that only comes back reformatted (ES242(N), doubled spaces, 4.0) is the same row (D-44)."""
+    try:
+        if field in {'normalized_code', 'code'}:
+            return normalize_code(value)
+        if field == 'title':
+            return ' '.join(value.split())
+        if field == 'credits':
+            return decimal_value(value.strip() if isinstance(value, str) else value)
+        if field == 'grade':
+            return value.strip().upper()
+    except (AttributeError, TypeError, ValueError):
+        pass
+    return value
+
+
+def _same_values(a, b, fields=FIELDS):
+    return isinstance(a, dict) and isinstance(b, dict) and all(_canonical(f, a.get(f)) == _canonical(f, b.get(f)) for f in fields)
+
+
+def _same_original(a, b):
+    return isinstance(a, dict) and isinstance(b, dict) and _same_values(a, b, set(a) | set(b))
+
+
 def _same_attempt(a, b):
     return (a['term_id'], a['normalized_code'], a.get('instance_id')) == (b['term_id'], b['normalized_code'], b.get('instance_id'))
 
@@ -72,7 +96,7 @@ def reconcile_import(record, preview, resolutions, replace_imported=False):
             before = next((a for a in prior if a.get('source_key') == row.get('source_key')), None) or next((a for a in prior if _same_attempt(a, row)), None)
             if before is not None:
                 prior.remove(before)
-                if all(before.get(field) == row.get(field) for field in FIELDS) or (before.get('user_corrections') and before.get('original') == incoming.get('original') and not edits):
+                if _same_values(before, row) or (before.get('user_corrections') and _same_original(before.get('original'), incoming.get('original')) and not edits):
                     attempts.append(before)
                     diff.append({'candidate_id': incoming['id'], 'attempt_id': before['id'], 'status': 'unchanged'})
                 else:
@@ -92,8 +116,8 @@ def reconcile_import(record, preview, resolutions, replace_imported=False):
                 issues.append(issue('IMPORT_CONFLICT', 'Ambiguous cross-source attempt identity.', 'error', [row['id']]))
                 continue
         if existing is not None:
-            same_values = all(existing.get(field) == row.get(field) for field in FIELDS)
-            original_unchanged = existing.get('user_corrections') and existing.get('original') == incoming.get('original') and not edits
+            same_values = _same_values(existing, row)
+            original_unchanged = existing.get('user_corrections') and _same_original(existing.get('original'), incoming.get('original')) and not edits
             if same_values or original_unchanged or resolution.get('action') == 'keep_existing':
                 diff.append({'candidate_id': row['id'], 'attempt_id': existing['id'], 'status': 'unchanged'})
                 continue
