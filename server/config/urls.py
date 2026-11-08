@@ -7,6 +7,8 @@ urlpatterns = [
     path('api/v1/auth/<str:action>', views.auth),
     path('api/v1/record', views.record),
     path('api/v1/plans', views.plans),
+    path('api/v1/plans/generate', views.plans_generate),
+    path('api/v1/plans/check', views.plans_check),
     path('api/v1/plans/<uuid:plan_id>', views.plan_detail),
     path('api/v1/imports/preview', views.import_preview),
     path('api/v1/imports/backup-preview', views.backup_preview),

@@ -15,7 +15,8 @@ from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from coursepath.issues import issue
-from coursepath.serialization import plain
+from decimal import Decimal
+from coursepath.serialization import plain, decimal_string, decimal_value
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
 from coursepath.validation import plan_payload, current_enrolment, scenario_payload, reported_controls
 from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts, restore_rejections
@@ -281,6 +282,19 @@ def _calendar():
 
 
 def _offering_snapshots():
+    """Every term's snapshot: the published ones, plus the odd- and even-semester timetables carried forward to the following years."""
+    from coursepath.offerings import with_following_terms
+    published = _published_snapshots()
+    key = tuple(sorted((term, id(snapshot)) for term, snapshot in published.items()))   # the committed snapshots are cached objects, so the carry-forward is too
+    if _CARRIED.get('key') != key:
+        _CARRIED.update(key=key, published=published, result={s['term_id']: s for s in with_following_terms(list(published.values()))})   # keeps the originals alive so ids stay unique
+    return _CARRIED['result']
+
+
+_CARRIED = {}
+
+
+def _published_snapshots():
     """Per term: the latest staff-loaded reviewed snapshot, else the committed official one (D-22), else the latest draft.
     Payloads are loaded only for those versions."""
     from server.records.models import OfferingSnapshot
@@ -297,12 +311,16 @@ def _offering_snapshots():
 
 
 def _validate_owned_plan(owner, plan):
+    return _validate_payload(owner, plan.payload)
+
+
+def _validate_payload(owner, payload, simple_load=False):
     from coursepath.semester_plan import validate_plan
     from coursepath.identity import identity_map
     record = AcademicRecord.objects.get(owner=owner)
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown')},
-                         plan.payload, list(_offering_snapshots().values()))
+    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown'),
+                          'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)
@@ -312,7 +330,7 @@ def offerings(request):
     snapshot = _offering_snapshots().get(term)
     if snapshot is None:
         return response({'id': None, 'term_id': term, 'coverage': 'unknown', 'review_status': None, 'offerings': [], 'slot_map': {}, 'source_refs': []},
-                        [issue('OFFERING_UNKNOWN', f'No timetable snapshot is loaded for {term}; availability and clashes are unknown.')])
+                        [issue('OFFERING_UNKNOWN', f'No {term} timetable is published yet, so availability and clashes cannot be confirmed.', 'info')])
     gaps = []
     if snapshot['review_status'] != 'reviewed':
         gaps.append(issue('OFFERING_SNAPSHOT_UNREVIEWED', 'This timetable snapshot has not been reviewed; offerings are tentative.', 'warning'))
@@ -327,10 +345,10 @@ def calendar(request):
     data = _calendar() or {'terms': []}
     if not data['terms']:
         return response({'id': None, 'review_status': None, 'source_refs': [], 'terms': [], 'internship_presets': []},
-                        [issue('CALENDAR_MISSING', 'No academic calendar is published in CoursePath.', action='Enter exact internship dates.')])
+                        [issue('CALENDAR_MISSING', 'No academic calendar is published in CoursePath.', 'info', action='Enter exact internship dates.')])
     last = data['terms'][-1]['id']
     return response({**data, 'internship_presets': internship_presets(data)},
-                    [issue('CALENDAR_MISSING', f'Terms after {last} have no published dates, so overlaps with them are not checked.', sources=['SRC-CALENDAR'],
+                    [issue('CALENDAR_MISSING', f'Terms after {last} have no published dates yet, so overlaps with them are not checked.', 'info', sources=['SRC-CALENDAR'],
                            action='Courses planned in those terms are listed as unchecked until the institute publishes the dates.')])
 
 
@@ -343,8 +361,10 @@ def curriculum(request):
 
 @endpoint({'GET'}, public=True)
 def catalogue(request):
-    return response({'courses': [], 'coverage': 'unknown', 'review_status': 'draft'},
-                    [issue('CATALOGUE_MISSING', 'No reviewed catalogue snapshot is committed. Course/basket/prerequisite searches cannot be verified.')])
+    from coursepath.catalogue import build_catalogue
+    data = build_catalogue(_curriculum_for(), list(_published_snapshots().values()), _recommendations())
+    return response(data, [issue('CATALOGUE_PARTIAL', 'Lists the courses in the official 2026-27 timetables, matched to the approved rules. '
+                                 'A course not offered in those terms can still be added by its code.', 'info')])
 
 
 @endpoint({'POST'})
@@ -382,6 +402,67 @@ def plan_validate(request, plan_id):
     if request.payload.get('record_revision') != record.revision:
         raise RevisionConflict(record.revision)
     return response(_validate_owned_plan(request.user, plan))
+
+
+@endpoint({'POST'})
+def plans_check(request):
+    """Check an unsaved plan (for example an edited generated draft): the same validation as a saved plan, plus the degree credits it would
+    cover. Saves nothing."""
+    from coursepath.degree_audit import evaluate_audit
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    if set(request.payload) - {'record_revision', 'semesters'}:
+        raise ValueError('Unsupported plan check fields')
+    if request.payload.get('record_revision') != stored.revision:
+        raise RevisionConflict(stored.revision)
+    from coursepath.degree_audit import requirement_progress
+    from coursepath.plan_generation import term_cap
+    payload = validated_plan({'semesters': request.payload.get('semesters')})
+    record = record_data(stored)
+    rules = _curriculum_for(stored)
+    audit = evaluate_audit(rules, {}, record, payload)
+    from coursepath.online_credits import count_online
+    online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
+    held = {}
+    for semester in payload['semesters']:
+        for p in semester.get('placeholders', []):
+            credits = decimal_value(p['desired_credits'])
+            if p.get('online') is True:
+                credits = online['counted_by_placeholder'].get(p['id'], Decimal(0))
+            held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + credits
+    requirements, uncovered = [], Decimal(0)
+    for row in requirement_progress(rules, audit['projected']):
+        covered = min(held.get(row['id'], Decimal(0)), decimal_value(row['remaining_credits']))
+        left = decimal_value(row['remaining_credits']) - covered
+        uncovered += left
+        requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
+    validation = _validate_payload(request.user, payload, simple_load=True)
+    validation['issues'] = validation['issues'] + online['issues']
+    load = {}
+    for term, row in validation['workload'].items():
+        limit = term_cap(term)
+        planned = decimal_value(row['target_credits'])
+        load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
+    return response({'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
+                     'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
+                     'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}})
+
+
+@endpoint({'POST'})
+def plans_generate(request):
+    """D-35 (CP-35): a draft plan for the remaining degree from the owner's record. Saves nothing; the client saves it through POST /plans."""
+    from coursepath.plan_generation import generate_plan
+    stored = get_object_or_404(AcademicRecord, owner=request.user)
+    if set(request.payload) - {'record_revision', 'options'}:
+        raise ValueError('Unsupported plan generation fields')
+    if request.payload.get('record_revision') != stored.revision:
+        raise RevisionConflict(stored.revision)
+    record = record_data(stored)
+    result = generate_plan({'curriculum': _curriculum_for(stored), 'attempts': record['attempts'], 'current_enrolment': record['current_enrolment'] or [],
+                            'catalogue': _recommendations(), 'offering_snapshots': list(_offering_snapshots().values()),
+                            'standing': stored.profile.get('standing', 'unknown'), 'advisor_cap': stored.profile.get('advisor_cap'),
+                            'record_revision': stored.revision}, request.payload.get('options', {}))
+    issues = result.pop('issues')
+    return response(result, issues)
 
 
 def _recommendations():
