@@ -109,7 +109,13 @@
       "tests": [
         "tests.test_prerequisites.PrerequisiteTests.test_cp05_explain_unsatisfied_prerequisites_in_semester_order",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp05_unmet_recommendation_is_a_labelled_warning_that_never_blocks",
-        "server.records.test_recommendations.RecommendedPreparationAPITests.test_cp05_saved_plan_warns_about_recommended_preparation_without_blocking"
+        "server.records.test_recommendations.RecommendedPreparationAPITests.test_cp05_saved_plan_warns_about_recommended_preparation_without_blocking",
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp05_confirmed_current_enrolment_in_an_earlier_term_is_conditional",
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp05_unconfirmed_enrolment_does_not_count",
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp05_generated_draft_validation_counts_confirmed_current_enrolment",
+        "server.records.test_plan_current_enrolment_regression.CurrentEnrolmentPlanCheckTests.test_cp05_plan_check_counts_confirmed_current_enrolment",
+        "server.records.test_plan_current_enrolment_regression.CurrentEnrolmentPlanCheckTests.test_cp05_saved_plan_counts_confirmed_current_enrolment",
+        "server.records.test_plan_current_enrolment_regression.CurrentEnrolmentPlanCheckTests.test_cp05_current_enrolment_in_the_same_term_still_warns"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -520,7 +526,8 @@
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_internship_downstream_check_finds_the_current_course_recommendation",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
-        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries"
+        "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries",
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp22_current_enrolment_in_the_same_term_is_not_earlier_preparation"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -650,7 +657,8 @@
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_stale_scenario_must_rebase_before_plan_apply",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
-        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing"
+        "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing",
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp28_scenario_validation_counts_confirmed_current_enrolment"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

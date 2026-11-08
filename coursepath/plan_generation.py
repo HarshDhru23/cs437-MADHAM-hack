@@ -650,7 +650,7 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
         assumptions.append(f"Terms without a published timetable ({', '.join(patterns)}) use the same-semester pattern of the official 2026-27 lists as a hint.")
     if curriculum.get('noncredit_obligations'):
         assumptions.append('The comprehensive viva needs a P in every active semester; it is recorded each semester, not planned here.')
-    validation = validate_plan({'attempts': attempts, 'catalogue': catalogue, 'identity': identity, 'standing': standing, 'simple_load': True}, {'semesters': semesters}, snapshots or None)
+    validation = validate_plan({'attempts': attempts, 'current_enrolment': enrolment, 'catalogue': catalogue, 'identity': identity, 'standing': standing, 'simple_load': True}, {'semesters': semesters}, snapshots or None)
     issues = [issue('REQUIREMENT_UNMET', f"{u['label']} is not fully placed: {u['reason']}", 'warning', [u['requirement_id']], [], 'Choose courses for it yourself or adjust the terms and limits.')
               for u in unmet if u['reason_code'] != 'STUDENT_CHOICE'
               or (student_choice(leaf_by_id[u['requirement_id']]) and any(pid.startswith('gen-placeholder-') for pid in u['placeholder_ids']))]

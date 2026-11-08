@@ -31,6 +31,8 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     workload, per_course, issues, meeting_checks = {}, [], [], {}
     planned = [{**c, 'normalized_code': c.get('normalized_code', c.get('course_id')), 'term_id': semester['term_id']}
                for semester in plan.get('semesters', []) for c in semester.get('courses', [])]
+    # CP-05: confirmed current enrolment is preparation taken earlier but not yet passed, so like an earlier planned course it is conditional.
+    planned += [r for r in context.get('current_enrolment') or [] if r.get('confirmed')]
     seen = {}
     for semester in sorted(plan.get('semesters', []), key=lambda s: term_key(s['term_id'])):
         term = semester['term_id']
