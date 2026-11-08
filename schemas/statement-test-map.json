@@ -782,7 +782,14 @@
         "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
-        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_a_google_account_deletes_its_data_with_a_fresh_google_credential",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_a_google_account_deletes_itself_with_the_same_address_in_another_case",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_a_google_account_without_a_valid_credential_for_its_own_address_deletes_nothing",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_google_reauthentication_is_refused_when_no_client_id_is_configured",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_google_being_unreachable_is_a_503_and_deletes_nothing",
+        "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_google_rechecks_are_throttled_like_password_ones",
+        "server.records.test_google_delete_regression.PasswordAccountDeletionTests.test_cp32_a_password_account_cannot_swap_its_password_for_a_google_credential"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

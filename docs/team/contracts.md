@@ -129,7 +129,7 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 | POST `/scenarios/{id}/apply-plan` | Explicit plan-only apply with expected revisions. Does not apply hypothetical grades/failures to accepted actual history. |
 | GET `/export?kind=json` | Owned versioned structured backup; no password/session secrets. Print-ready report uses the analysis response and frontend print view. |
 | POST `/imports/backup-preview` | Validate versioned JSON backup as a candidate; review before transactional restore through the normal commit path. This is backup restore, not general XLSX import. |
-| DELETE `/account/data` | Authenticated explicit confirmation/re-auth as appropriate; delete owned personal state and previews; return documented retention/backup behavior. Account/session deletion semantics must be stated in UI. |
+| DELETE `/account/data` | `{expected_revision, confirm: "delete my data", delete_account?, password?, google_credential?}`. Authenticated explicit confirmation and re-auth: a password account sends its `password`; a Google-only account (D-46, no password) sends `google_credential`, a fresh Google ID token that must pass the same checks as `POST /auth/google` and name the account's own address (a password account cannot use it instead). 403 `REAUTH_FAILED`, 429 `AUTH_THROTTLED`, 503 `SIGN_IN_UNAVAILABLE` when Google is unreachable; nothing is deleted on any of them. Delete owned personal state and previews; return documented retention/backup behavior. Account/session deletion semantics must be stated in UI. |
 
 ### Plan generation (`POST /plans/generate`, D-35, CP-35)
 
