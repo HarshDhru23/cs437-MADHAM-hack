@@ -132,7 +132,10 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
-        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle"
+        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_the_printed_cse_discipline_establishes_the_programme_without_any_cs_course_title",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_another_discipline_is_not_cse_even_with_a_computer_science_course_title",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_spelled_out_and_abbreviated_cse_programme_lines_are_recognised"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
