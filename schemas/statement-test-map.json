@@ -1001,7 +1001,9 @@
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_removing_a_course_leaves_credits_uncovered_and_the_plan_not_valid",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_an_error_makes_the_plan_not_valid_even_when_nothing_is_uncovered",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_is_not_valid_is_still_saved_and_listed_with_its_status",
-        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving"
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving",
+        "server.records.test_plan_check_min_courses_regression.PlanCheckCourseMinimumTests.test_cp36_a_plan_missing_physical_education_courses_is_not_valid",
+        "server.records.test_plan_check_min_courses_regression.PlanCheckCourseMinimumTests.test_cp36_one_four_credit_course_does_not_fill_the_two_course_ge_basket"
       ],
       "browser_tests": [
         "e2e/tests/saved-plans.spec.ts::saved plans > each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking"

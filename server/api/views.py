@@ -462,20 +462,22 @@ def plan_validate(request, plan_id):
 
 def _plan_check(user, stored, payload):
     """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
-    from coursepath.degree_audit import evaluate_audit, requirement_progress
+    from coursepath.degree_audit import course_shortfalls, evaluate_audit, requirement_progress
     from coursepath.plan_generation import term_cap
     from coursepath.online_credits import count_online
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
-    held = {}
+    held, holders = {}, {}
     for semester in payload['semesters']:
         for p in semester.get('placeholders', []):
             credits = decimal_value(p['desired_credits'])
             if p.get('online') is True:
                 credits = online['counted_by_placeholder'].get(p['id'], Decimal(0))
             held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + credits
+            if p.get('online') is not True or credits > 0:
+                holders[p['requirement_id']] = holders.get(p['requirement_id'], 0) + 1   # a placeholder stands for one course still to choose
     requirements, uncovered = [], Decimal(0)
     for row in requirement_progress(rules, audit['projected']):
         covered = min(held.get(row['id'], Decimal(0)), decimal_value(row['remaining_credits']))
@@ -484,6 +486,13 @@ def _plan_check(user, stored, payload):
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
     validation = _validate_payload(user, payload, simple_load=True)
     validation['issues'] = validation['issues'] + online['issues']
+    # D-45: a requirement that asks for a number of courses (Physical Education, the GE basket) is uncovered while it is short of them, even with
+    # every credit covered; the plan is then not valid, with one problem per such requirement.
+    for row in course_shortfalls(rules, audit['projected']):
+        short = row['remaining_courses'] - holders.get(row['id'], 0)
+        if short > 0:
+            validation['issues'].append(issue('REQUIREMENT_COURSES_MISSING', f"{row['label']} still needs {short} more course{'s' if short > 1 else ''}.",
+                                              'error', [row['id']], [], 'Add courses that count toward it.'))
     load = {}
     for term, row in validation['workload'].items():
         limit = term_cap(term)
