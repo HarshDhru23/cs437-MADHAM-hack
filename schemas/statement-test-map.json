@@ -517,10 +517,21 @@
       "id": "CP-21",
       "oct27_target": false,
       "tests": [
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_25_credit_term_over_a_24_credit_advisor_cap_gets_load_limit_when_saved",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_term_at_the_advisor_cap_is_fine",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_the_same_plan_without_a_cap_has_no_load_limit",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_reading_the_saved_plan_again_still_applies_the_cap",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp36_draft_checks_keep_their_single_28_credit_limit",
         "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
-        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged"
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_24_enrolled_plus_8_planned_credits_in_one_term_is_over_the_limit",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_unconfirmed_enrolment_does_not_count_toward_the_load",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_enrolment_in_another_term_does_not_count_toward_this_terms_load",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_a_course_both_enrolled_and_planned_is_counted_once",
+        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_24_enrolled_and_8_planned_credits_in_one_term_is_over_the_limit",
+        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_the_same_plan_without_enrolment_stays_within_the_limit"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -606,6 +617,10 @@
       "id": "CP-24",
       "oct27_target": false,
       "tests": [
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_a_planned_course_in_the_same_slot_as_an_enrolled_one_clashes",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_touching_times_do_not_clash",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_unconfirmed_enrolment_does_not_clash",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_two_enrolled_courses_that_clash_with_each_other_are_not_a_plan_problem",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_ph202_es667_lectures_clash_on_both_weekly_meetings",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_tutorial_clash_is_reported_when_lectures_differ",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_touching_and_distinct_times_are_clear",
@@ -836,7 +851,14 @@
         "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_deletion_rechecks_do_not_count",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_40_mb_upload_is_refused_without_touching_disk",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_an_upload_just_over_10_mb_is_refused_without_touching_disk",
-        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory"
+        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_after_a_commit_no_preview_row_still_holds_the_grades",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_a_second_commit_of_the_same_preview_is_still_a_409",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_a_restored_backup_leaves_no_grades_in_its_preview_row",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_someone_elses_import_deletes_an_expired_preview_of_another_student",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_someone_elses_commit_deletes_an_expired_preview_of_another_student",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_an_unexpired_preview_of_another_student_is_left_alone",
+        "tests.tooling.test_package_azure.AzurePackagePrivacyTests.test_cp32_only_tracked_source_and_built_frontend_enter_the_bundle"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
