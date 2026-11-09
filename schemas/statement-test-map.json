@@ -511,7 +511,12 @@
       },
       "academic_data": "reviewed_adv13",
       "browser_tests": [],
-      "frontend_tests": []
+      "frontend_tests": [
+        "frontend/src/features/requirements/verdictPending.test.tsx::the requirements verdict while the viva is pending > \"Completed + current courses\" does not say every requirement is complete",
+        "frontend/src/features/requirements/verdictPending.test.tsx::the requirements verdict while the viva is pending > \"With my plan\" does not say the plan covers every requirement",
+        "frontend/src/features/requirements/verdictPending.test.tsx::the requirements verdict while the viva is pending > \"Completed + current courses\" says every requirement is complete when nothing is pending (negative)",
+        "frontend/src/features/requirements/verdictPending.test.tsx::the requirements verdict while the viva is pending > \"With my plan\" says the plan covers every requirement when nothing is pending (negative)"
+      ]
     },
     {
       "id": "CP-21",
