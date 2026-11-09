@@ -75,6 +75,9 @@
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
       "frontend_tests": [
+        "frontend/src/features/requirements/serverNumbersAsIs.test.tsx::the requirements page shows the server's counted credits as they are > a group row shows the number the server sent, even above what the group asks for",
+        "frontend/src/features/requirements/serverNumbersAsIs.test.tsx::the requirements page shows the server's counted credits as they are > the ring caption for that group shows the same number",
+        "frontend/src/features/requirements/serverNumbersAsIs.test.tsx::the requirements page shows the server's counted credits as they are > a group below what it asks for still shows its real count (negative)",
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
         "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",

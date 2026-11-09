@@ -127,7 +127,7 @@ export function DegreeRing({ groups, total, counted, highlightId, onHighlight }:
             {active.counted !== null ? (
               <span className="mono num">
                 {' · '}
-                {formatCredits(Number(active.counted) > Number(active.required) ? active.required : active.counted)} / {formatCredits(active.required)}
+                {formatCredits(active.counted)} / {formatCredits(active.required)}
               </span>
             ) : (
               <span className="mono num"> · {formatCredits(active.required)} credits</span>
