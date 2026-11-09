@@ -239,12 +239,18 @@ def validated_plan(payload):
     return plan_payload(payload)
 
 
+MAX_SAVED_PLANS = 50   # the same bound a backup may restore
+
+
 @endpoint({'GET', 'POST'})
 def plans(request):
     record = get_object_or_404(AcademicRecord, owner=request.user)
     if request.method == 'GET':
         return response([_plan_with_status(request.user, record, p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
-    stored = AcademicPlan.objects.create(owner=request.user, payload=validated_plan(request.payload))
+    payload = validated_plan(request.payload)
+    if AcademicPlan.objects.filter(owner=request.user).count() >= MAX_SAVED_PLANS:
+        raise ValueError(f'At most {MAX_SAVED_PLANS} saved plans; delete one first')   # every list call checks each saved plan (CR-103)
+    stored = AcademicPlan.objects.create(owner=request.user, payload=payload)
     return response({**_plan_with_status(request.user, record, stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
 
 
