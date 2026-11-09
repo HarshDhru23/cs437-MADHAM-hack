@@ -517,16 +517,21 @@
       "id": "CP-21",
       "oct27_target": false,
       "tests": [
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_25_credit_term_over_a_24_credit_advisor_cap_gets_load_limit_when_saved",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_term_at_the_advisor_cap_is_fine",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_the_same_plan_without_a_cap_has_no_load_limit",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_reading_the_saved_plan_again_still_applies_the_cap",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp36_draft_checks_keep_their_single_28_credit_limit",
+        "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
+        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged",
         "tests.domain.test_enrolment_same_term.SameTermLoad.test_24_enrolled_plus_8_planned_credits_in_one_term_is_over_the_limit",
         "tests.domain.test_enrolment_same_term.SameTermLoad.test_unconfirmed_enrolment_does_not_count_toward_the_load",
         "tests.domain.test_enrolment_same_term.SameTermLoad.test_enrolment_in_another_term_does_not_count_toward_this_terms_load",
         "tests.domain.test_enrolment_same_term.SameTermLoad.test_a_course_both_enrolled_and_planned_is_counted_once",
         "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_24_enrolled_and_8_planned_credits_in_one_term_is_over_the_limit",
-        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_the_same_plan_without_enrolment_stays_within_the_limit",
-        "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
-        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
-        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
-        "tests.domain.test_planning.SimpleLoadLimit.test_cp21_without_the_simple_limit_the_overload_rules_are_unchanged"
+        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_the_same_plan_without_enrolment_stays_within_the_limit"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
