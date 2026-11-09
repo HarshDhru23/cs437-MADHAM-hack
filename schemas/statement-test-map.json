@@ -811,6 +811,12 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_after_a_commit_no_preview_row_still_holds_the_grades",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_a_second_commit_of_the_same_preview_is_still_a_409",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_a_restored_backup_leaves_no_grades_in_its_preview_row",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_someone_elses_import_deletes_an_expired_preview_of_another_student",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_someone_elses_commit_deletes_an_expired_preview_of_another_student",
+        "server.records.test_preview_retention.PreviewRetentionTests.test_cp32_an_unexpired_preview_of_another_student_is_left_alone",
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
