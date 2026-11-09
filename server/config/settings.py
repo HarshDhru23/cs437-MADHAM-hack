@@ -28,14 +28,15 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('COURSEPATH_CSRF_
 # One origin: Django serves /api/v1/* and the built React app (frontend/dist). COURSEPATH_FRONTEND_DIR moves the build for tests.
 COURSEPATH_FRONTEND_DIR = Path(os.getenv('COURSEPATH_FRONTEND_DIR') or BASE_DIR / 'frontend' / 'dist')
 WHITENOISE_ROOT = COURSEPATH_FRONTEND_DIR
+COURSEPATH_CSP_REPORT_ONLY = os.getenv('COURSEPATH_CSP_REPORT_ONLY') == '1'   # send the policy without enforcing it (server/api/csp.py)
 ROOT_URLCONF = 'server.config.urls'
 WSGI_APPLICATION = 'server.config.wsgi.application'
 INSTALLED_APPS = ['django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'server.records']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
+MIDDLEWARE = ['server.api.csp.ContentSecurityPolicyMiddleware', 'django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
               'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware',
               'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware']
 if not DEBUG:  # static files of the React build (assets/, index.html); the platform proxy terminates TLS
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')   # after the CSP and security middleware, which wrap it
     # Safe only because the platform proxy overwrites this header on every request (Azure App Service does).
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_REDIRECT_EXEMPT = [r'^api/v1/health$']  # the platform's readiness probe is plain HTTP
