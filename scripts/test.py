@@ -128,8 +128,8 @@ def run_frontend_suite(root):
 def e2e_ports():
     """(Django API, production preview) ports used by e2e/playwright.config.ts.
 
-    The API port defaults to 8000; set COURSEPATH_E2E_API_PORT when 8000 is taken."""
-    return int(os.environ.get("COURSEPATH_E2E_API_PORT", "8000")), 4173
+    The API port defaults to 8000 (COURSEPATH_E2E_API_PORT) and the preview to 4173 (COURSEPATH_E2E_WEB_PORT), as in playwright.config.ts."""
+    return int(os.environ.get("COURSEPATH_E2E_API_PORT", "8000")), int(os.environ.get("COURSEPATH_E2E_WEB_PORT", "4173"))
 
 
 def busy_ports(ports):

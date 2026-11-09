@@ -8,6 +8,10 @@ from coursepath.imports.normalization import TERM, CODE, candidate, candidate_is
 from coursepath.issues import issue
 
 
+# "Comp Science & Engg" is how IITGN transcripts print the discipline.
+CSE_DISCIPLINE = r'\bComp(?:uter|\.)?\s+Sci(?:ence|\.)?\s*(?:&|and)\s*Eng(?:g|ineering|\.)?\b|\bCSE\b'
+
+
 def lines_from_words(words):
     rows = []
     for word in sorted(words, key=lambda w: (round(w['top'] / 3), w['x0'])):
@@ -16,6 +20,22 @@ def lines_from_words(words):
         else:
             rows[-1].append(word)
     return [sorted(row, key=lambda w: w['x0']) for row in rows]
+
+
+def _row_shaped(line, credit_x, grade_x):
+    """A number in the credit column and a single grade-like token in the grade column."""
+    credit = [w['text'] for w in line if credit_x <= w['x0'] < grade_x]
+    grade = [w['text'] for w in line if w['x0'] >= grade_x]
+    return len(credit) == 1 and re.fullmatch(r'\d+(?:\.\d+)?', credit[0]) is not None and len(grade) == 1 and re.fullmatch(r'[A-Za-z][+-]?', grade[0]) is not None
+
+
+def _split_glued_code(line, code):
+    """A code that fills its column touches the title ("491-VIIISpecial"); cut that word where the code ends.
+    The transcript font is monospaced, so the title keeps its real x position for wrapped-line matching."""
+    index = len(code.split()) - 1
+    word, cut = line[index], len(code.split()[-1])
+    split_x = word['x0'] + (word['x1'] - word['x0']) * cut / len(word['text'])
+    return line[:index] + [{**word, 'text': word['text'][:cut], 'x1': split_x}, {**word, 'text': word['text'][cut:], 'x0': split_x}] + line[index + 1:]
 
 
 def extract_pdf(data, source, max_pages):
@@ -33,7 +53,9 @@ def extract_pdf(data, source, max_pages):
             text = page.extract_text() or ''
             profile = result.setdefault('profile_candidates', {'programme': None, 'admission_year': None})
             if re.search(r'B\.?\s*Tech|Bachelor\s+of\s+Technology', text, re.I):
-                profile['programme'] = 'BTECH_CSE' if re.search(r'Computer\s+Science|\bCSE\b', text, re.I) else 'BTECH'
+                # Only the DISCIPLINE/PROGRAMME header decides; course titles ("Special Topics in Computer Science") never do.
+                header = '\n'.join(line for line in text.splitlines() if re.search(r'\b(?:DISCIPLINE|PROGRAMME)\b', line, re.I))
+                profile['programme'] = 'BTECH_CSE' if re.search(CSE_DISCIPLINE, header, re.I) else 'BTECH'
             admission = re.search(r'(?:MONTH\s*&\s*YEAR\s*OF\s*ADMISSION|ADMISSION(?:\s*YEAR)?)\s*:?\s*(?:[A-Za-z]+\s+)?(20\d{2})', text, re.I)
             if admission:
                 profile['admission_year'] = int(admission[1])
@@ -71,6 +93,11 @@ def extract_pdf(data, source, max_pages):
                         continue
                     joined = ' '.join(w['text'] for w in line)
                     match = re.match(rf'^({CODE})\s+', joined)
+                    glued = None if match else re.match(rf'^({CODE})(?=[A-Z][a-z])', joined)
+                    if glued:
+                        line = _split_glued_code(line, glued[1])
+                        joined = ' '.join(w['text'] for w in line)
+                        match = re.match(rf'^({CODE})\s+', joined)
                     if match:
                         code = match[1]
                         code_words = len(code.split())
@@ -95,9 +122,11 @@ def extract_pdf(data, source, max_pages):
                         previous['title'] += ' ' + joined
                         previous['original']['title'] += ' ' + joined
                         previous['source_refs'][0]['box'][3] = max(w['bottom'] for w in line)
-                    elif re.match(rf'^({CODE})\s+', joined):
+                    elif re.match(rf'^({CODE})\s+', joined) or _row_shaped(line, credit_x, grade_x):
+                        # A line with a credit and a grade is a course row even when its code is unreadable: disclose it, never skip it.
                         result['unparsed_rows'].append({'page': page_number, 'block': block, 'raw': joined})
                         result['issues'].append(issue('IMPORT_ROW_UNPARSED', 'Unrecognized course-looking PDF row.', 'error'))
+                        previous = None
     if not result['candidate_attempts']:
         result['issues'].append(issue('PDF_LAYOUT_UNKNOWN', 'No supported text layout found. Use IMS paste or manual entry.', 'error'))
     if result.get('profile_candidates', {}).get('programme') != 'BTECH_CSE':

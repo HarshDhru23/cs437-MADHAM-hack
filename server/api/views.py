@@ -263,8 +263,10 @@ def import_preview(request):
     from coursepath.imports.reconcile import reconcile_import
     stored = get_object_or_404(AcademicRecord, owner=request.user)
     if request.content_type == 'multipart/form-data':
-        revision = int(request.POST.get('expected_revision', '-1'))
         upload = request.FILES.get('file')
+        if getattr(request, 'upload_too_large', False):  # set by server.api.uploads, which stopped before storing the excess
+            return response(issues=[issue('INPUT_LIMIT', 'PDF exceeds 10 MB.', 'error')], status=413)
+        revision = int(request.POST.get('expected_revision', '-1'))
         if upload is None:
             raise ValueError('Missing PDF')
         if upload.size > 10 * 1024 * 1024:
@@ -663,7 +665,9 @@ def scenario_apply(request, scenario_id):
         return response(stale, [issue('SCENARIO_STALE', 'The saved record, plan or rules changed after this scenario was created.', 'error', [str(scenario.pk)],
                                       action='Rebase the scenario on the current record and plan, then compare again.')], 409)
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
-    result = update_plan(plan, expected, plan_payload(edited))
+    payload = plan_payload(edited)
+    # No plan edit (only fail/grade/cap/internship changes) writes nothing, so the revision stays and other scenarios stay current.
+    result = update_plan(plan, expected, payload) if payload != plan.payload else plan_data(plan)
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
 
 
