@@ -8,7 +8,7 @@ from copy import deepcopy
 from coursepath.degree_audit import evaluate_audit
 from coursepath.identity import identity_map
 from coursepath.imports.grades import POINTS, grade_status
-from coursepath.internships import evaluate_internship
+from coursepath.internships import evaluate_internship, remaining_needs
 from coursepath.issues import issue
 from coursepath.models import term_key, validate_term_id
 from coursepath.performance import calculate_performance
@@ -93,13 +93,17 @@ def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None,
     planning = {'attempts': record.get('attempts', []), 'current_enrolment': record.get('current_enrolment', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
                 'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}, 'identity': identity_map(context['curriculum'].get('identity_groups'))}
     validation = validate_plan(planning, plan, context.get('offering_snapshots'), context.get('calendar'))
-    stay = None
-    if internship:
-        stay = evaluate_internship({**planning, 'approvals': context.get('approvals', []), 'record_revision': record.get('revision'),
-                                    'current_enrolment': record.get('current_enrolment', [])}, internship, plan, context.get('calendar'))
+    stay = evaluate_internship(internship_context(context, record, audit), internship, plan, context.get('calendar')) if internship else None
     issues = audit['issues'] + performance['issues'] + validation['issues'] + (stay['issues'] if stay else [])
     return {'audit': audit, 'performance': {**performance, 'hypothetical': bool(hypothetical)}, 'validation': validation,
             'internship': stay, 'completion_term': None, 'issues': issues}
+
+
+def internship_context(context, record, audit):
+    """What evaluate_internship reads, with the need per exposure target taken from this audit's projected view (D-14)."""
+    return {'attempts': record.get('attempts', []), 'current_enrolment': record.get('current_enrolment', []), 'catalogue': context.get('catalogue', {}),
+            'identity': identity_map(context['curriculum'].get('identity_groups')), 'approvals': context.get('approvals', []),
+            'record_revision': record.get('revision'), 'remaining': remaining_needs(audit['projected'])}
 
 
 def _requirements(tree, result=None):

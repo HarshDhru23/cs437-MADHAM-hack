@@ -882,7 +882,9 @@
         "tests.reference.test_nov3_regression.InternshipTests.test_six_month_internship_spanning_semester_7_exposes_its_courses",
         "tests.reference.test_nov3_regression.InternshipTests.test_remote_placement_needs_permission_not_a_silent_pass",
         "tests.reference.test_nov3_regression.InternshipTests.test_without_a_calendar_nothing_is_reported_clear",
-        "tests.reference.test_nov3_regression.InternshipTests.test_three_cases_compare_on_one_untouched_baseline"
+        "tests.reference.test_nov3_regression.InternshipTests.test_three_cases_compare_on_one_untouched_baseline",
+        "server.records.test_internship_context_regression.InternshipContextTests.test_cp33_internship_case_resolves_course_identity_like_the_scenario",
+        "server.records.test_internship_context_regression.InternshipContextTests.test_cp33_internship_cases_compare_on_the_baseline_plan"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -923,7 +925,8 @@
         "tests.reference.test_nov3_regression.InternshipTests.test_six_months_alone_earns_zero_credit",
         "tests.reference.test_nov3_regression.InternshipTests.test_example_12oe_4hss_stays_proposed_without_approval",
         "tests.reference.test_nov3_regression.InternshipTests.test_student_reported_approval_does_not_become_verified",
-        "tests.reference.test_nov3_regression.InternshipTests.test_caps_16_overall_8_hss_4_open_project"
+        "tests.reference.test_nov3_regression.InternshipTests.test_caps_16_overall_8_hss_4_open_project",
+        "server.records.test_internship_context_regression.InternshipContextTests.test_cp34_a_module_aimed_at_a_satisfied_requirement_is_flagged_not_needed"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

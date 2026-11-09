@@ -620,7 +620,7 @@ def scenario_detail(request, scenario_id):
 @endpoint({'POST'})
 def scenarios_compare(request):
     from coursepath.internships import compare_internships
-    from coursepath.scenarios import compare_scenario
+    from coursepath.scenarios import compare_scenario, internship_context
     ids = request.payload.get('scenario_ids')
     if not isinstance(ids, list) or not 1 <= len(ids) <= 6 or len(set(ids)) != len(ids):
         raise ValueError('Compare one to six distinct scenarios')
@@ -631,8 +631,9 @@ def scenarios_compare(request):
     context, baseline = _engine_context(request.user, stored), _baseline(stored, chosen[0].plan)
     comparisons = [compare_scenario(context, baseline, scenario_data(s)) for s in chosen]
     current = [s for s, c in zip(chosen, comparisons) if not c['stale'] and s.payload.get('internship')]
-    planning = {'attempts': baseline['record']['attempts'], 'current_enrolment': baseline['record']['current_enrolment'], 'catalogue': context['catalogue'],
-                'approvals': context['approvals'], 'record_revision': stored.revision}
+    # Cases compare on the untouched baseline plan (contracts section 6), with the same context as a scenario's own internship evaluation.
+    base = next((c['baseline'] for c in comparisons if not c['stale']), None)
+    planning = internship_context(context, baseline['record'], base['audit']) if base else {}
     table = compare_internships(planning, baseline['plan'], context['calendar'], [s.payload['internship'] for s in current])
     cases = [{**case, 'scenario_id': str(s.pk)} for s, case in zip(current, table['cases'])]
     issues, seen = [], set()
