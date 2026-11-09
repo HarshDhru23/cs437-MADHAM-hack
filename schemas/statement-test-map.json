@@ -811,6 +811,10 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
+        "tests.tooling.test_private_names.PrivateFileNames.test_preflight_refuses_every_private_file_name",
+        "tests.tooling.test_private_names.PrivateFileNames.test_preflight_does_not_refuse_ordinary_files",
+        "tests.tooling.test_private_names.PrivateFileNames.test_gitignore_ignores_every_private_file_name_and_nothing_ordinary",
+        "tests.tooling.test_private_names.PrivateFileNames.test_no_roll_number_shaped_literal_is_left_in_the_committed_text_of_the_scripts",
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",

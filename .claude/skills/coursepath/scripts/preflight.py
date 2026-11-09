@@ -65,11 +65,9 @@ OWNERSHIP = [
 ]
 NAME_HINTS = {"harsh": "harsh", "dhru": "harsh", "aaryan": "aaryan", "manashree": "manashree"}
 
-PRIVATE_NAMES = {
-    "24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf",
-    "24110107_Graduation Plan.xlsx",
-    "copied_input.txt",
-}
+# The supplied files are named after the student's roll number, so they are matched by pattern (fnmatch), never by one name.
+PRIVATE_NAMES = {"copied_input.txt"}
+PRIVATE_PATTERNS = ["[0-9]*B.Tech*.pdf", "[0-9]*_Graduation Plan.xlsx", "Transcript*.pdf"]
 NEVER_COMMIT = ["*.sqlite3", "*.sqlite3-journal", "server/.local/*", ".env", ".env.*",
                 "*.pem", "*.key", "*.p12"]
 ALLOWED = {".env.example"}
@@ -81,7 +79,7 @@ SECRET_FAIL = [
 SECRET_WARN = [
     (re.compile(r"(?i)\b(password|passwd|api[_-]?key|token)\b['\"]?\s*[:=]\s*['\"][^'\"\s]{6,}['\"]"),
      "credential-looking literal (fine only if synthetic test data)"),
-    (re.compile(r"\b24110107\b"), "roll number from the private transcript"),
+    (re.compile(r"\b2\d{7}\b"), "an 8-digit number shaped like a roll number (fine only if it is not a real one)"),
 ]
 
 
@@ -125,7 +123,7 @@ def is_never_commit(path: str) -> bool:
     name = path.rsplit("/", 1)[-1]
     if name in ALLOWED:
         return False
-    return name in PRIVATE_NAMES or any(
+    return name in PRIVATE_NAMES or any(fnmatch.fnmatch(name, p) for p in PRIVATE_PATTERNS) or any(
         fnmatch.fnmatch(path, p) or fnmatch.fnmatch(name, p) for p in NEVER_COMMIT)
 
 

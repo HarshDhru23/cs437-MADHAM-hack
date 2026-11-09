@@ -18,7 +18,7 @@ Rotation: Harsh's PRs → Aaryan, Aaryan's → Manashree, Manashree's → Harsh.
 
 **Spec and test honesty** (judging criterion "Honest tests")
 - [ ] Every new behavior has a SPEC statement and a test ID in `statement-test-map.json`.
-- [ ] Expected values are justified from sources, not copied from output. Ask "where did 849 come from?"
+- [ ] Expected values are justified from sources, not copied from output. Ask "where did that number come from?"
 - [ ] At least one negative case for the plausible wrong implementation.
 - [ ] **Break it on purpose:** change one line of the implementation (e.g. include P in CPI, treat `<=` as overlap), run the test, confirm it fails, revert. If nothing fails, the test is not honest.
 - [ ] No new `skip`/`xfail`, no weakened assertions, no expected-value edits without source evidence.

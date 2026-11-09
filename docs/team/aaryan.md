@@ -86,7 +86,7 @@ Files: `src/features/performance/`, contributing-attempt view and tests.
 
 Display cumulative CPI, per-term SPI table, source-reported versus recalculated value, performance credits/points and policy-completeness state. Expand a term/value to inspect included/excluded attempts and source. P is performance-excluded even when credit-bearing. Missing/zero denominator is `Unavailable` with reason, not0. Show hypothetical scenario grades/values under an unmistakable scenario label.
 
-Use server values; no client weighted-grade formula. Tests show9.23/849/92 fixture correctly, no raw105-as-CPI-denominator, unavailable exceptional policy, per-term breakdown and rounded display. CP-15/16. A trend chart is optional only after the readable table and tests work.
+Use server values; no client weighted-grade formula. Tests show the sample record's CPI, points and credits fixture correctly, no raw105-as-CPI-denominator, unavailable exceptional policy, per-term breakdown and rounded display. CP-15/16. A trend chart is optional only after the readable table and tests work.
 
 ## A08. Course offerings, section choice and clashes — full-feature block (3 Nov)
 

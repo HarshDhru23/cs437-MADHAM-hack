@@ -20,8 +20,10 @@ htmlcov/
 Thumbs.db
 
 # Personal academic inputs. Keep originals local; commit anonymized fixtures.
-/24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf
-/24110107_Graduation Plan.xlsx
+# (the files are named after the student's roll number, so match the pattern, not one number)
+/[0-9]*B.Tech*.pdf
+/[0-9]*_Graduation Plan.xlsx
+/Transcript*.pdf
 /copied_input.txt
 # Hand-transcribed oracle of the real transcript: same privacy as the originals.
 /real_transcript_oracle.json

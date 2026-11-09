@@ -15,7 +15,7 @@ class PrivateInputTests(unittest.TestCase):
     def test_independent_committed_roadmap_controls(self):
         directory = Path(os.environ['COURSEPATH_REAL_INPUT_DIR'])
         cases = [
-            (parse_pdf((directory / '24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf').read_bytes(), 'private-local'), 39, ['28', '22', '28', '26']),
+            (parse_pdf(next(directory.glob('[0-9]*B.Tech*.pdf')).read_bytes(), 'private-local'), 39, ['28', '22', '28', '26']),
             (parse_ims((directory / 'copied_input.txt').read_text(encoding='utf-8-sig'), 'private-local'), 40, ['28', '23', '28', '26'])]
         for parsed, expected_count, expected_sums in cases:
             rows = parsed['candidate_attempts']
