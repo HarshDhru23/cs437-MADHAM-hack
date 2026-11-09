@@ -843,6 +843,7 @@
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
+        "e2e/tests/google-delete.spec.ts::a Google-only account deletes its data with a Google credential and no password (CP-32, CP-37)",
         "e2e/tests/student-flow.spec.ts::student flow > another account cannot see the first account's plan; sign-out clears personal state (CP-32 foundation)",
         "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting with a wrong password deletes nothing; the right password empties the record (CP-32)",
         "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting the account signs out and returns to the public requirements (CP-32)",
