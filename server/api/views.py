@@ -102,6 +102,15 @@ def verify_google_credential(credential):
     return id_token.verify_oauth2_token(credential, google_requests.Request(), settings.COURSEPATH_GOOGLE_CLIENT_ID, clock_skew_in_seconds=10)
 
 
+def iitgn_email(claims):
+    """The lower-cased address of verified Google claims for an IITGN account (D-46), or None."""
+    domain, email = settings.COURSEPATH_GOOGLE_DOMAIN, claims.get('email')
+    # `hd` is the Google Workspace domain the account belongs to; the address must agree with it, and Google must have verified the address.
+    if not isinstance(email, str) or claims.get('email_verified') is not True or claims.get('hd') != domain or not email.lower().endswith('@' + domain):
+        return None
+    return email.lower()
+
+
 def _google_sign_in(request, credential):
     from google.auth.exceptions import GoogleAuthError, TransportError
     domain = settings.COURSEPATH_GOOGLE_DOMAIN
@@ -113,11 +122,9 @@ def _google_sign_in(request, credential):
         return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
     except (ValueError, GoogleAuthError):
         return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
-    email = claims.get('email')
-    # `hd` is the Google Workspace domain the account belongs to; the address must agree with it, and Google must have verified the address.
-    if not isinstance(email, str) or claims.get('email_verified') is not True or claims.get('hd') != domain or not email.lower().endswith('@' + domain):
+    email = iitgn_email(claims)
+    if email is None:
         return response(issues=[issue('NOT_IITGN_ACCOUNT', f'Sign in with your IITGN Google account (name@{domain}).', 'error')], status=403)
-    email = email.lower()
     with transaction.atomic():
         user = User.objects.filter(username=email).first()
         if user is None:
@@ -776,6 +783,22 @@ RETENTION = ('Deleted from the CoursePath database immediately. This repository 
              'if the hosting provider keeps backups, a copy may remain there until those backups expire under the host\'s retention policy.')
 
 
+def _google_reauth(user, credential):
+    """None when a fresh Google ID token proves the owner of a Google-only account (D-46: no password), else the refusal. Without a client ID
+    Google's library would skip the audience check, so nothing is accepted then."""
+    from google.auth.exceptions import GoogleAuthError, TransportError
+    refused = response(issues=[issue('REAUTH_FAILED', 'Confirm with your IITGN Google account to delete data.', 'error')], status=403)
+    if not settings.COURSEPATH_GOOGLE_CLIENT_ID or not isinstance(credential, str) or not 20 <= len(credential) <= 4096:
+        return refused
+    try:
+        claims = verify_google_credential(credential)
+    except TransportError:
+        return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
+    except (ValueError, GoogleAuthError):
+        return refused
+    return None if iitgn_email(claims) == user.username else refused
+
+
 @endpoint({'DELETE'})
 @transaction.atomic
 def account_data(request):
@@ -785,8 +808,11 @@ def account_data(request):
         raise ValueError('Type "delete my data" to confirm; delete_account is a JSON boolean')
     if throttled(request):
         return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
-    if not request.user.check_password(payload.get('password') or ''):
-        return response(issues=[issue('REAUTH_FAILED', 'Enter your current password to delete data.', 'error')], status=403)
+    if request.user.has_usable_password():
+        if not request.user.check_password(payload.get('password') or ''):
+            return response(issues=[issue('REAUTH_FAILED', 'Enter your current password to delete data.', 'error')], status=403)
+    elif (refused := _google_reauth(request.user, payload.get('google_credential'))) is not None:
+        return refused
     stored = AcademicRecord.objects.select_for_update().get(owner=request.user)
     expected = expected_revision(payload)
     if expected != stored.revision:
