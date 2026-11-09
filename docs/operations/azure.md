@@ -24,8 +24,10 @@ az postgres flexible-server db create --resource-group coursepath-rg --server-na
 az webapp create --resource-group coursepath-rg --plan coursepath-plan --name coursepath-iitgn --runtime "PYTHON:3.13"
 az webapp update --resource-group coursepath-rg --name coursepath-iitgn --https-only true
 az webapp config set --resource-group coursepath-rg --name coursepath-iitgn --always-on true --min-tls-version 1.2 --ftps-state Disabled `
-  --startup-file "python server/manage.py migrate --noinput && gunicorn server.config.wsgi --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile -"
+  --startup-file "python server/manage.py migrate --noinput && python server/manage.py purge_previews && gunicorn server.config.wsgi --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile -"
 ```
+
+**Import previews (CR-109).** The startup command above also runs `purge_previews`, which deletes expired import previews (they hold unreviewed grades). That is a purge at every start, not a periodic one; deploys restart the app, so in practice it runs at each deploy. The app also deletes every student's expired previews whenever anyone imports or commits, and empties a preview as soon as it is committed. **The live App Service still has the older startup command** (without `purge_previews`): applying this needs the owner's go-ahead, then `az webapp config set --resource-group coursepath-rg --name coursepath-iitgn --startup-file "<the command above>"`, followed by a check of `/api/v1/health`.
 
 `--public-access 0.0.0.0` lets Azure services reach the database; nothing else can. The app settings (names are in `.env.example`):
 
