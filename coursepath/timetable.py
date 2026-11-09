@@ -76,8 +76,10 @@ def _resolve(item, snapshot, issues):
     return result, resolved
 
 
-def check_meetings(items, snapshot):
+def check_meetings(items, snapshot, reference_ids=()):
+    """`reference_ids` names items that are fixed facts (confirmed current enrolment): they are checked against the others but not against each other."""
     issues, per_item, resolved_meetings = [], {}, {}
+    reference = set(reference_ids)
     for item in items:
         if snapshot is None:
             per_item[item['id']] = 'not_checked'
@@ -90,6 +92,8 @@ def check_meetings(items, snapshot):
     ids = list(resolved_meetings)
     for i, first in enumerate(ids):
         for second in ids[i + 1:]:
+            if first in reference and second in reference:
+                continue
             for a, kind_a, certain_a in resolved_meetings[first]:
                 for b, kind_b, certain_b in resolved_meetings[second]:
                     if a['weekday'] != b['weekday'] or not (a['start_minute'] < b['end_minute'] and b['start_minute'] < a['end_minute']):
