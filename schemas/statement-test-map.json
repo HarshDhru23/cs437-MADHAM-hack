@@ -517,6 +517,12 @@
       "id": "CP-21",
       "oct27_target": false,
       "tests": [
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_24_enrolled_plus_8_planned_credits_in_one_term_is_over_the_limit",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_unconfirmed_enrolment_does_not_count_toward_the_load",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_enrolment_in_another_term_does_not_count_toward_this_terms_load",
+        "tests.domain.test_enrolment_same_term.SameTermLoad.test_a_course_both_enrolled_and_planned_is_counted_once",
+        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_24_enrolled_and_8_planned_credits_in_one_term_is_over_the_limit",
+        "server.records.test_enrolment_same_term_regression.EnrolmentLoadTests.test_cp21_the_same_plan_without_enrolment_stays_within_the_limit",
         "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
@@ -606,6 +612,10 @@
       "id": "CP-24",
       "oct27_target": false,
       "tests": [
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_a_planned_course_in_the_same_slot_as_an_enrolled_one_clashes",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_touching_times_do_not_clash",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_unconfirmed_enrolment_does_not_clash",
+        "tests.domain.test_enrolment_same_term.SameTermClashes.test_two_enrolled_courses_that_clash_with_each_other_are_not_a_plan_problem",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_ph202_es667_lectures_clash_on_both_weekly_meetings",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_tutorial_clash_is_reported_when_lectures_differ",
         "tests.domain.test_offerings.MeetingClashTests.test_cp24_touching_and_distinct_times_are_clear",
