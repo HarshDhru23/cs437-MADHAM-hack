@@ -83,6 +83,10 @@ The startup command runs `migrate` on every start. Back the database up first on
 
 The first start is slow (about 100 s: Oryx unpacks the build, the image refreshes certificates, then `migrate` runs), so `az webapp deploy` can report "failed to start within 10 mins" or time out while the site is in fact coming up. Check `az webapp log startup show` and the health URL before redeploying.
 
+## Content-Security-Policy (CR-110 item 5)
+
+Every HTML page the app serves carries a `Content-Security-Policy` header (`server/api/csp.py`): scripts only from the app itself, Google's sign-in script (`https://accounts.google.com/gsi/client`) and the one inline theme script in `index.html`, allowed by its SHA-256 hash (computed from the built file, so editing that script cannot leave the policy stale); frames only from `https://accounts.google.com/gsi/`; no `eval`, no plugins, no framing of the app. Inline **styles** are allowed because Google's script injects the sign-in button's CSS inline (with them blocked the button renders unstyled); inline CSS cannot run script. If a real page is ever blocked, set the app setting `COURSEPATH_CSP_REPORT_ONLY=1` and restart: the same policy is then sent as `Content-Security-Policy-Report-Only` (the browser reports violations in its console and enforces nothing), which is a way back without a deploy. After any change to `index.html`, a script or the sign-in, open `/login` and the main pages in a browser and check the console for violations.
+
 ## Smoke test (deploy.md step 5)
 
 1. `GET https://coursepath-iitgn.azurewebsites.net/api/v1/health` returns `{"status":"ok","database":"ok"}`.
