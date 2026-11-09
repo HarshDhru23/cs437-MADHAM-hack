@@ -400,7 +400,9 @@ def _validate_payload(owner, payload, simple_load=False):
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
     data = record_data(record)
     return validate_plan({'attempts': data['attempts'], 'current_enrolment': data['current_enrolment'], 'catalogue': _recommendations(), 'identity': identity,
-                          'standing': record.profile.get('standing', 'unknown'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+                          'standing': record.profile.get('standing', 'unknown'),
+                          # CR-106: a saved plan keeps the advisor cap (ADV13 p. 7, D-36); a draft check (simple_load) has one 28-credit limit.
+                          'advisor_cap': None if simple_load else record.profile.get('advisor_cap'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)

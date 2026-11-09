@@ -517,6 +517,11 @@
       "id": "CP-21",
       "oct27_target": false,
       "tests": [
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_25_credit_term_over_a_24_credit_advisor_cap_gets_load_limit_when_saved",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_a_term_at_the_advisor_cap_is_fine",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_the_same_plan_without_a_cap_has_no_load_limit",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp21_reading_the_saved_plan_again_still_applies_the_cap",
+        "server.records.test_advisor_cap_saved_plan.SavedPlanAdvisorCapTests.test_cp36_draft_checks_keep_their_single_28_credit_limit",
         "tests.domain.test_planning.PlanningTests.test_cp21_load_boundaries_and_cpi_never_approves",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_29_credits_is_an_error_not_an_overload_request",
         "tests.domain.test_planning.SimpleLoadLimit.test_cp21_with_the_simple_limit_28_credits_and_a_light_term_raise_nothing",
