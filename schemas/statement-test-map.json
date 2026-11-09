@@ -738,6 +738,12 @@
         "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
       ],
       "frontend_tests": [
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > sends the kept draft when the same account signs in again, with the revision it was based on",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > does the same for a queue whose page was left while the session was expired",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a draft that is now stale still gets a 409 and then waits for the student (revision checks still apply)",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a different account signing in drops the draft and sends nothing",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a save that failed for another reason is not resent by a sign-in",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a sign-in with nothing waiting sends nothing",
         "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
         "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",

@@ -102,6 +102,16 @@ export class SaveQueue<T> {
     this.options.onChange = onChange;
   }
 
+  /**
+   * The same account signed in again after its session expired: a draft whose save was refused with 401 is sent now, against the revision it was
+   * made on, so a draft that went stale meanwhile still gets its 409. A save that failed for any other reason keeps its Retry button.
+   */
+  resumeAfterSignIn(): void {
+    if (this.current.draft === null || this.current.status !== 'error' || this.current.error?.kind !== 'auth') return;
+    this.update({ status: 'pending', error: null });
+    this.schedule(0);
+  }
+
   /** The view went away: send a waiting draft immediately instead of dropping it. */
   sendNow(): void {
     if (this.current.draft !== null && this.current.status === 'pending') this.schedule(0);
