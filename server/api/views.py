@@ -71,6 +71,11 @@ def health(request):
     return response({'status': 'ok', 'database': 'ok'})
 
 
+@endpoint({'GET', 'POST', 'PUT', 'PATCH', 'DELETE'}, public=True)
+def api_not_found(request):
+    raise Http404   # the endpoint wrapper answers with the NOT_FOUND envelope
+
+
 def spa(request, path=''):
     if request.method not in ('GET', 'HEAD'):
         return HttpResponseNotAllowed(['GET', 'HEAD'])
