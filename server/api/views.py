@@ -135,19 +135,31 @@ def _google_sign_in(request, credential):
             created = False
             if user.has_usable_password():
                 return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
+    throttle_success(request)
     login(request, user)
     return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
 
 
+def _throttle_key(request):
+    return hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+
+
 @transaction.atomic
 def throttled(request):
-    key = hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+    """Count this attempt against the address (10 per 15 minutes, then 429). Counting before the check keeps a burst of parallel guesses
+    inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only failures lock an address out."""
+    key = _throttle_key(request)
     now = timezone.now()
     entry, _ = LoginThrottle.objects.get_or_create(key=key, defaults={'window_start': now})
     LoginThrottle.objects.filter(pk=key, window_start__lt=now - timedelta(minutes=15)).update(attempts=0, window_start=now)
     LoginThrottle.objects.filter(pk=key).update(attempts=F('attempts') + 1)
     entry.refresh_from_db()
     return entry.attempts > 10
+
+
+def throttle_success(request):
+    """Students on one network share an address, so a sign-in that succeeded must not use up their failure allowance; earlier failures stay."""
+    LoginThrottle.objects.filter(pk=_throttle_key(request), attempts__gt=0).update(attempts=F('attempts') - 1)
 
 
 @endpoint({'POST'}, public=True)
@@ -178,11 +190,13 @@ def auth(request, action):
                     AcademicRecord.objects.create(owner=user)
             except IntegrityError:
                 raise ValueError('Account unavailable')
+            throttle_success(request)
             login(request, user)
             return response({'id': str(user.pk), 'username': user.username}, status=201)
         user = authenticate(request, username=username, password=password)
         if user is None:
             return response(issues=[issue('INVALID_CREDENTIALS', 'Sign-in details were not accepted.', 'error')], status=401)
+        throttle_success(request)
         login(request, user)
         return response({'id': str(user.pk), 'username': user.username})
     if not request.user.is_authenticated:
@@ -256,8 +270,10 @@ def import_preview(request):
     from coursepath.imports.reconcile import reconcile_import
     stored = get_object_or_404(AcademicRecord, owner=request.user)
     if request.content_type == 'multipart/form-data':
-        revision = int(request.POST.get('expected_revision', '-1'))
         upload = request.FILES.get('file')
+        if getattr(request, 'upload_too_large', False):  # set by server.api.uploads, which stopped before storing the excess
+            return response(issues=[issue('INPUT_LIMIT', 'PDF exceeds 10 MB.', 'error')], status=413)
+        revision = int(request.POST.get('expected_revision', '-1'))
         if upload is None:
             raise ValueError('Missing PDF')
         if upload.size > 10 * 1024 * 1024:
@@ -382,8 +398,9 @@ def _validate_payload(owner, payload, simple_load=False):
     from coursepath.identity import identity_map
     record = AcademicRecord.objects.get(owner=owner)
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown'),
-                          'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+    data = record_data(record)
+    return validate_plan({'attempts': data['attempts'], 'current_enrolment': data['current_enrolment'], 'catalogue': _recommendations(), 'identity': identity,
+                          'standing': record.profile.get('standing', 'unknown'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)
@@ -476,13 +493,13 @@ def _plan_check(user, stored, payload):
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
-    held = {}
+    # An online credit is held where the allocator counted it (D-10, D-42): above the 8-credit discipline cap, or aimed at a requirement online
+    # courses cannot fill, it holds open-elective credit, never the requirement the student aimed it at.
+    held = dict(online['counted_by_requirement'])
     for semester in payload['semesters']:
         for p in semester.get('placeholders', []):
-            credits = decimal_value(p['desired_credits'])
-            if p.get('online') is True:
-                credits = online['counted_by_placeholder'].get(p['id'], Decimal(0))
-            held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + credits
+            if p.get('online') is not True:
+                held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + decimal_value(p['desired_credits'])
     requirements, uncovered = [], Decimal(0)
     for row in requirement_progress(rules, audit['projected']):
         covered = min(held.get(row['id'], Decimal(0)), decimal_value(row['remaining_credits']))
@@ -610,7 +627,7 @@ def scenario_detail(request, scenario_id):
 @endpoint({'POST'})
 def scenarios_compare(request):
     from coursepath.internships import compare_internships
-    from coursepath.scenarios import compare_scenario
+    from coursepath.scenarios import compare_scenario, internship_context
     ids = request.payload.get('scenario_ids')
     if not isinstance(ids, list) or not 1 <= len(ids) <= 6 or len(set(ids)) != len(ids):
         raise ValueError('Compare one to six distinct scenarios')
@@ -621,8 +638,9 @@ def scenarios_compare(request):
     context, baseline = _engine_context(request.user, stored), _baseline(stored, chosen[0].plan)
     comparisons = [compare_scenario(context, baseline, scenario_data(s)) for s in chosen]
     current = [s for s, c in zip(chosen, comparisons) if not c['stale'] and s.payload.get('internship')]
-    planning = {'attempts': baseline['record']['attempts'], 'current_enrolment': baseline['record']['current_enrolment'], 'catalogue': context['catalogue'],
-                'approvals': context['approvals'], 'record_revision': stored.revision}
+    # Cases compare on the untouched baseline plan (contracts section 6), with the same context as a scenario's own internship evaluation.
+    base = next((c['baseline'] for c in comparisons if not c['stale']), None)
+    planning = internship_context(context, baseline['record'], base['audit']) if base else {}
     table = compare_internships(planning, baseline['plan'], context['calendar'], [s.payload['internship'] for s in current])
     cases = [{**case, 'scenario_id': str(s.pk)} for s, case in zip(current, table['cases'])]
     issues, seen = [], set()
@@ -656,7 +674,9 @@ def scenario_apply(request, scenario_id):
         return response(stale, [issue('SCENARIO_STALE', 'The saved record, plan or rules changed after this scenario was created.', 'error', [str(scenario.pk)],
                                       action='Rebase the scenario on the current record and plan, then compare again.')], 409)
     edited, skipped = plan_edits({'id': str(plan.pk), 'revision': plan.revision, **plan.payload}, scenario_data(scenario))
-    result = update_plan(plan, expected, plan_payload(edited))
+    payload = plan_payload(edited)
+    # No plan edit (only fail/grade/cap/internship changes) writes nothing, so the revision stays and other scenarios stay current.
+    result = update_plan(plan, expected, payload) if payload != plan.payload else plan_data(plan)
     return response({'plan': {**result, 'validation': _validate_owned_plan(request.user, plan)}, 'not_applied': skipped})
 
 
@@ -719,7 +739,7 @@ def backup_preview(request):
     shared = incoming.keys() & existing.keys()
     diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
             'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
-            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans),
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'reported_controls_changed': reported != stored.reported_controls, 'plans_to_create': len(plans),
             'plans_skipped_existing': sorted({m for m in matches if m is not None}), 'scenarios_not_restored': len(scenarios)}
     issues = []
     if backup.get('rule_version') != _curriculum_for(stored)['version']:
@@ -797,6 +817,7 @@ def account_data(request):
     expected = expected_revision(payload)
     if expected != stored.revision:
         raise RevisionConflict(stored.revision)
+    throttle_success(request)  # re-authenticated
     owned = {'attempts': stored.attempts.all(), 'plans': AcademicPlan.objects.filter(owner=request.user),
              'scenarios': Scenario.objects.filter(owner=request.user), 'import_previews': ImportPreview.objects.filter(owner=request.user),
              'approval_evidence': ApprovalEvidence.objects.filter(owner=request.user)}

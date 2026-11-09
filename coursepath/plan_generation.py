@@ -487,8 +487,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
                         number = len(online_rows) + 1
                         row = {'id': f'gen-online-{number}', 'code': ONLINE_CODE[leaf['id']].format(900 + number), 'term': term, 'credits': size, 'leaf': leaf['id']}
                         trial = run(rows_now() + [online_row(r) for r in online_rows] + [online_row(row)])
-                        allocated = {a['attempt_id'] for a in trial['ledger']}
-                        if row['id'] in allocated and all(r['id'] in allocated for r in online_rows):
+                        placed = {a['attempt_id']: a['requirement_id'] for a in trial['ledger']}
+                        if all(placed.get(r['id']) == r['leaf'] for r in online_rows + [row]):   # counted in the requirement it is held for, not moved past a cap
                             accepted_row = row
                             break
                     if accepted_row:
@@ -551,9 +551,10 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
                         entry.update(reason_code='STUDENT_CHOICE', reason=f'Choose any course that counts toward {labels[leaf["id"]]}; the credits are held in your plan.')
                 elif student_choice(leaf):
                     if uncovered > 0:
-                        room = [t for t in plan_terms if load_f[t] + uncovered <= limits[t][1]]
+                        # the earliest term that fits within its target, then within its maximum: packed so the plan ends as early as it can (D-40)
+                        room = [t for limit_index in (0, 1) for t in plan_terms if load_f[t] + uncovered <= limits[t][limit_index]]
                         if room:
-                            term = max(room, key=lambda t: (limits[t][1] - load_f[t], -plan_terms.index(t)))
+                            term = room[0]
                             holder = {'id': f'gen-placeholder-{term}-{leaf["id"]}', 'requirement_id': leaf['id'], 'desired_credits': decimal_string(uncovered), 'term': term,
                                       'label': PROJECT_LABEL}
                             placeholder_rows.append(holder)
@@ -650,7 +651,7 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
         assumptions.append(f"Terms without a published timetable ({', '.join(patterns)}) use the same-semester pattern of the official 2026-27 lists as a hint.")
     if curriculum.get('noncredit_obligations'):
         assumptions.append('The comprehensive viva needs a P in every active semester; it is recorded each semester, not planned here.')
-    validation = validate_plan({'attempts': attempts, 'catalogue': catalogue, 'identity': identity, 'standing': standing, 'simple_load': True}, {'semesters': semesters}, snapshots or None)
+    validation = validate_plan({'attempts': attempts, 'current_enrolment': enrolment, 'catalogue': catalogue, 'identity': identity, 'standing': standing, 'simple_load': True}, {'semesters': semesters}, snapshots or None)
     issues = [issue('REQUIREMENT_UNMET', f"{u['label']} is not fully placed: {u['reason']}", 'warning', [u['requirement_id']], [], 'Choose courses for it yourself or adjust the terms and limits.')
               for u in unmet if u['reason_code'] != 'STUDENT_CHOICE'
               or (student_choice(leaf_by_id[u['requirement_id']]) and any(pid.startswith('gen-placeholder-') for pid in u['placeholder_ids']))]

@@ -28,11 +28,12 @@ def evaluate_prerequisite(expression, term_id, attempts, planned=(), identity=No
     minimum = expression.get('minimum_grade')
     if minimum and minimum not in POINTS:
         return {'status': 'unknown', 'missing': [code], 'proof': [], 'source_refs': expression.get('source_refs', [])}
+    coreq = expression.get('co_requisite') is True
     for attempt in attempts:
         if canonical_code(attempt['normalized_code'], identity) != code:
             continue
-        if attempt.get('term_id') is None or _key(attempt['term_id']) >= _key(term_id):
-            continue
+        if attempt.get('term_id') is None or _key(attempt['term_id']) > _key(term_id) or (_key(attempt['term_id']) == _key(term_id) and not coreq):
+            continue  # only a co-requisite may come from the same term
         grade = attempt.get('grade')
         passed = attempt.get('completion_status') == 'completed'
         exposure = grade is not None and grade in expression.get('allow_exposure_grades', [])
@@ -41,7 +42,7 @@ def evaluate_prerequisite(expression, term_id, attempts, planned=(), identity=No
             return {'status': 'eligible', 'missing': [], 'proof': [attempt['id']], 'source_refs': expression.get('source_refs', [])}
     for row in planned:
         earlier = _key(row['term_id']) < _key(term_id)
-        same_coreq = expression.get('co_requisite') is True and row['term_id'] == term_id
+        same_coreq = coreq and row['term_id'] == term_id
         if canonical_code(row['normalized_code'], identity) == code and (earlier or same_coreq):
             return {'status': 'conditional', 'missing': [], 'proof': [row.get('id', code)],
                     'assumption': 'Pass the prerequisite with any required minimum grade.', 'source_refs': expression.get('source_refs', [])}

@@ -13,7 +13,8 @@ from coursepath.issues import issue
 # The learning designation every imported row starts with (D-21). Restore checks read it too, so change it only here.
 IMPORTED_LEARNING_DESIGNATION = 'degree'
 
-CODE = r'[A-Za-z]{2,5}\s*\d{2,4}(?:\s*\([^\n)]{1,20}\))?'
+# Special-topics sections carry a suffix ("CS 392-I", "MS 491-VIII"); the full code is the identity (D-01, D-06).
+CODE = r'[A-Za-z]{2,5}\s*\d{2,4}(?:-[A-Za-z0-9]{1,6})?(?:\s*\([^\n)]{1,20}\))?'
 TERM = r'20\d{2}\s*-\s*(?:20)?\d{2}\s*(?:-\s*)?(?:(?:Semester|Sem)\s*[-:]?\s*)?(?:SUMMER|II|I)\b'
 
 

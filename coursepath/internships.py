@@ -20,6 +20,7 @@ from coursepath.serialization import decimal_value, decimal_string
 MODULE_CREDITS = Decimal(4)
 EXPOSURE_CAP = Decimal(16)
 TARGET_CAPS = {'open_project': Decimal(4), 'hss': Decimal(8), 'open_elective': None}
+TARGET_REQUIREMENTS = {'open_project': 'open-project', 'hss': 'hss-other', 'open_elective': 'open-electives'}  # D-14 targets as curriculum requirement IDs
 TIERS = ('earned', 'approved', 'proposed')
 DECISION = 'docs/academic-decisions.md#4-external-exposure'
 ATTENDANCE_SEVERITY = {'onsite_full_time': 'error', 'remote_or_part_time': 'approval_required'}
@@ -53,6 +54,16 @@ def _need(remaining, target):
         return decimal_value(remaining.get(target))
     except ValueError:
         return None
+
+
+def remaining_needs(requirements):
+    """Remaining credits per exposure target from audit requirement results. A target whose requirement is absent is left out: unknown, never zero."""
+    found, stack = {}, list(requirements)
+    while stack:
+        node = stack.pop()
+        found[node['id']] = node.get('remaining_credits')
+        stack += node.get('children', [])
+    return {target: found[rid] for target, rid in TARGET_REQUIREMENTS.items() if rid in found}
 
 
 def _record_credits(context):

@@ -8,7 +8,7 @@ from copy import deepcopy
 from coursepath.degree_audit import evaluate_audit
 from coursepath.identity import identity_map
 from coursepath.imports.grades import POINTS, grade_status
-from coursepath.internships import evaluate_internship
+from coursepath.internships import evaluate_internship, remaining_needs
 from coursepath.issues import issue
 from coursepath.models import term_key, validate_term_id
 from coursepath.performance import calculate_performance
@@ -90,16 +90,20 @@ def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None,
     audit = evaluate_audit(context['curriculum'], context.get('catalogue', {}), record, plan, awards=tuple(award_ids))
     performance = calculate_performance(record.get('attempts', []) + list(hypothetical), context['grading_policy'],
                                         identity_map(context['curriculum'].get('identity_groups')))
-    planning = {'attempts': record.get('attempts', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
+    planning = {'attempts': record.get('attempts', []), 'current_enrolment': record.get('current_enrolment', []), 'catalogue': context.get('catalogue', {}), 'standing': context.get('standing', 'unknown'),
                 'advisor_cap': context.get('advisor_cap'), 'term_caps': caps or {}, 'identity': identity_map(context['curriculum'].get('identity_groups'))}
     validation = validate_plan(planning, plan, context.get('offering_snapshots'), context.get('calendar'))
-    stay = None
-    if internship:
-        stay = evaluate_internship({**planning, 'approvals': context.get('approvals', []), 'record_revision': record.get('revision'),
-                                    'current_enrolment': record.get('current_enrolment', [])}, internship, plan, context.get('calendar'))
+    stay = evaluate_internship(internship_context(context, record, audit), internship, plan, context.get('calendar')) if internship else None
     issues = audit['issues'] + performance['issues'] + validation['issues'] + (stay['issues'] if stay else [])
     return {'audit': audit, 'performance': {**performance, 'hypothetical': bool(hypothetical)}, 'validation': validation,
             'internship': stay, 'completion_term': None, 'issues': issues}
+
+
+def internship_context(context, record, audit):
+    """What evaluate_internship reads, with the need per exposure target taken from this audit's projected view (D-14)."""
+    return {'attempts': record.get('attempts', []), 'current_enrolment': record.get('current_enrolment', []), 'catalogue': context.get('catalogue', {}),
+            'identity': identity_map(context['curriculum'].get('identity_groups')), 'approvals': context.get('approvals', []),
+            'record_revision': record.get('revision'), 'remaining': remaining_needs(audit['projected'])}
 
 
 def _requirements(tree, result=None):
@@ -121,8 +125,11 @@ def _deltas(base, other):
     added = [i for i in other['issues'] if key(i) not in old]
     terms = sorted(set(base['validation']['workload']) | set(other['validation']['workload']), key=term_key)
     load = lambda result, term: result['validation']['workload'].get(term, {}).get('target_credits', '0')
+    # Downstream: a course newly short of recommended preparation, or short of more of it than in the baseline (D-17).
+    missing = lambda result: {c['id']: set(c['prerequisite_proof']['missing']) for c in result['validation']['per_course'] if c['eligibility'] == 'ineligible'}
+    was, now = missing(base), missing(other)
     return {'requirements': requirements, 'new_issues': added, 'resolved_issues': [i for i in base['issues'] if key(i) not in new],
-            'downstream_affected': sorted({e for i in added if i['code'] == 'PREREQUISITE_MISSING' for e in i['entity_refs']}),
+            'downstream_affected': sorted(e for e, m in now.items() if e not in was or m - was[e]),
             'workload': {t: {'baseline': load(base, t), 'scenario': load(other, t)} for t in terms if load(base, t) != load(other, t)},
             'cpi': {'baseline': base['performance']['cumulative']['unrounded_value'], 'scenario': other['performance']['cumulative']['unrounded_value'],
                     'hypothetical': other['performance']['hypothetical']},
