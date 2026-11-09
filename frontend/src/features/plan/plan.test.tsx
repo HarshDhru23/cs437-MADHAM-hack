@@ -363,7 +363,7 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     expect(within(semester('2026–27 Semester II')).queryByText('Current term')).not.toBeInTheDocument();
   });
 
-  it('after an unsaved edit, rows drop the previous version\'s problems and the panel says it is checking', async () => {
+  it('after an unsaved edit, rows drop the previous version\'s problems and the panel says its checks are from the last saved version', async () => {
     const s = server({ offlineOnce: true, eligibility: 'eligible', extraIssues: () => [issue('DUPLICATE_COURSE', 'error', ['c-os'], 'Synthetic duplicate on ZZ 330.')] });
     render(s);
     const sem1 = await screen.findByRole('region', { name: '2026–27 Semester I' });
@@ -376,7 +376,9 @@ describe('PlanPage (A06, CP-04/05/20..22)', () => {
     const moved = within(semester('2027–28 Semester I')).getByText('ZZ 330').closest('tr') as HTMLElement;
     expect(within(moved).queryByText('ZZ 330 is already in your plan or already completed.')).not.toBeInTheDocument();
     expect(moved).not.toHaveTextContent(/Not checked/);
-    expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/Checking your latest changes/);
+    // CR-75: the save failed, so nothing is being checked; the panel says its problems are from the last saved version (it used to claim "Checking...").
+    expect(screen.getByRole('region', { name: 'Plan validation' })).not.toHaveTextContent(/Checking your latest changes/);
+    expect(screen.getByRole('region', { name: 'Plan validation' })).toHaveTextContent(/describe the last version that was saved/);
   });
 
   it('leaving the page within the save delay still sends the edit', async () => {

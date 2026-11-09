@@ -32,7 +32,7 @@ function groupsStillNeeded(requirements: PlanCheckRequirement[]): { group: strin
  * requirements that still need credits ("Open electives: 12 more credits needed"). Every number comes from the server check.
  * While a newer check is pending the last numbers stay on screen, marked as updating.
  */
-export function PlanProgress({ check, pending, showOnlineWarnings = false, plannedTotal }: { check: PlanCheck | null; pending: boolean; showOnlineWarnings?: boolean; plannedTotal?: string }) {
+export function PlanProgress({ check, pending, outOfDate = false, showOnlineWarnings = false, plannedTotal }: { check: PlanCheck | null; pending: boolean; outOfDate?: boolean; showOnlineWarnings?: boolean; plannedTotal?: string }) {
   const open = check ? groupsStillNeeded(check.requirements) : [];
   // The server says in plain words when online credits would not all count; a page that does not place that sentence beside a semester shows it here.
   const onlineWarnings = check && showOnlineWarnings ? plainIssues(check.validation.issues.filter((i) => /^ONLINE/.test(i.code)), () => undefined) : [];
@@ -40,8 +40,9 @@ export function PlanProgress({ check, pending, showOnlineWarnings = false, plann
   const allCovered = check ? Number(check.uncovered_credits) <= 0 : false;
   const coveredRows = check ? check.requirements.filter((r) => !needs(r)).length : 0;
   return (
-    <section className="pb-progress" aria-label="Your plan so far" aria-busy={pending} data-updating={pending && check ? 'true' : undefined}>
+    <section className="pb-progress" aria-label="Your plan so far" aria-busy={pending} data-updating={pending && check ? 'true' : undefined} data-stale={outOfDate && check ? 'true' : undefined}>
       <h3>Your plan so far</h3>
+      {outOfDate && check ? <p className="muted">These numbers are from before your last change.</p> : null}
       {!check ? (
         pending ? (
           <p aria-live="polite" className="muted">
