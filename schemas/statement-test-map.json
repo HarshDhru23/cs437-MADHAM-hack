@@ -60,7 +60,9 @@
         "tests.domain.test_degree_totals.DegreeTotals.test_a_planned_course_counts_only_in_the_projected_view",
         "tests.domain.test_degree_totals.RequirementRows.test_an_empty_record_lists_38_requirements_asking_for_170_credits",
         "tests.domain.test_degree_totals.RequirementRows.test_the_hand_counted_record_leaves_exactly_the_open_requirements",
-        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group"
+        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp03_a_pending_group_never_counts_a_childs_surplus_toward_its_shortfall",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp03_group_counts_agree_with_the_degree_total"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -417,7 +419,8 @@
         "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_cs203_is_not_cs202_and_counts_only_as_an_elective",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_surplus_is_reported_and_courses_are_never_split",
-        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases"
+        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp17_a_satisfied_group_still_reports_its_surplus"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
