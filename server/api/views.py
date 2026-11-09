@@ -128,19 +128,31 @@ def _google_sign_in(request, credential):
             created = False
             if user.has_usable_password():
                 return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
+    throttle_success(request)
     login(request, user)
     return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
 
 
+def _throttle_key(request):
+    return hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+
+
 @transaction.atomic
 def throttled(request):
-    key = hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+    """Count this attempt against the address (10 per 15 minutes, then 429). Counting before the check keeps a burst of parallel guesses
+    inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only failures lock an address out."""
+    key = _throttle_key(request)
     now = timezone.now()
     entry, _ = LoginThrottle.objects.get_or_create(key=key, defaults={'window_start': now})
     LoginThrottle.objects.filter(pk=key, window_start__lt=now - timedelta(minutes=15)).update(attempts=0, window_start=now)
     LoginThrottle.objects.filter(pk=key).update(attempts=F('attempts') + 1)
     entry.refresh_from_db()
     return entry.attempts > 10
+
+
+def throttle_success(request):
+    """Students on one network share an address, so a sign-in that succeeded must not use up their failure allowance; earlier failures stay."""
+    LoginThrottle.objects.filter(pk=_throttle_key(request), attempts__gt=0).update(attempts=F('attempts') - 1)
 
 
 @endpoint({'POST'}, public=True)
@@ -171,11 +183,13 @@ def auth(request, action):
                     AcademicRecord.objects.create(owner=user)
             except IntegrityError:
                 raise ValueError('Account unavailable')
+            throttle_success(request)
             login(request, user)
             return response({'id': str(user.pk), 'username': user.username}, status=201)
         user = authenticate(request, username=username, password=password)
         if user is None:
             return response(issues=[issue('INVALID_CREDENTIALS', 'Sign-in details were not accepted.', 'error')], status=401)
+        throttle_success(request)
         login(request, user)
         return response({'id': str(user.pk), 'username': user.username})
     if not request.user.is_authenticated:
@@ -775,6 +789,7 @@ def account_data(request):
     expected = expected_revision(payload)
     if expected != stored.revision:
         raise RevisionConflict(stored.revision)
+    throttle_success(request)  # re-authenticated
     owned = {'attempts': stored.attempts.all(), 'plans': AcademicPlan.objects.filter(owner=request.user),
              'scenarios': Scenario.objects.filter(owner=request.user), 'import_previews': ImportPreview.objects.filter(owner=request.user),
              'approval_evidence': ApprovalEvidence.objects.filter(owner=request.user)}

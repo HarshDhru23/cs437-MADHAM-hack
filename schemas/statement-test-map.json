@@ -18,7 +18,7 @@
         "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, each group opening to its courses"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement group before any history or sign-in, each as a button that opens it",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 public mode (CP-01) > shows every requirement group before any history or sign-in, each as a button that opens it",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > opens a group to list its courses with titles: Institute core, HSS and Mathematics",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > lists physical education and the viva in plain words, with no policy codes"
       ]
@@ -73,9 +73,9 @@
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",
         "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > names the semesters still missing a viva pass from the server result, and never shows surplus jargon"
       ]
@@ -720,7 +720,7 @@
         "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
         "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — stale record (CP-29) > after a 409 from analysis, \"Try again\" reloads the record and asks with its current revision"
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 stale record (CP-29) > after a 409 from analysis, \"Try again\" reloads the record and asks with its current revision"
       ]
     },
     {
@@ -797,6 +797,10 @@
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
         "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_logins_from_one_address_never_lock_it",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_a_success_does_not_wipe_earlier_failures",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_sign_ups_do_not_lock_out_the_network",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_deletion_rechecks_do_not_count",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_40_mb_upload_is_refused_without_touching_disk",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_an_upload_just_over_10_mb_is_refused_without_touching_disk",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory"
@@ -1057,7 +1061,9 @@
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_issued_for_another_app_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_an_expired_token_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
-        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused"
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_twelve_students_on_one_network_all_sign_in",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten"
       ],
       "browser_tests": [],
       "frontend_tests": [
