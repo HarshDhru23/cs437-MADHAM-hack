@@ -391,8 +391,9 @@ def _validate_payload(owner, payload, simple_load=False):
     from coursepath.identity import identity_map
     record = AcademicRecord.objects.get(owner=owner)
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
-    return validate_plan({'attempts': record_data(record)['attempts'], 'catalogue': _recommendations(), 'identity': identity, 'standing': record.profile.get('standing', 'unknown'),
-                          'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+    data = record_data(record)
+    return validate_plan({'attempts': data['attempts'], 'current_enrolment': data['current_enrolment'], 'catalogue': _recommendations(), 'identity': identity,
+                          'standing': record.profile.get('standing', 'unknown'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)
