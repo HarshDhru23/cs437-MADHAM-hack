@@ -811,6 +811,9 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
+        "server.records.test_api_not_found.UnknownApiPathTests.test_an_unknown_api_path_returns_the_json_envelope_with_not_found",
+        "server.records.test_api_not_found.UnknownApiPathTests.test_a_nested_unknown_api_path_and_a_signed_in_caller_get_the_same_answer",
+        "server.records.test_api_not_found.UnknownApiPathTests.test_known_routes_are_unchanged",
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
