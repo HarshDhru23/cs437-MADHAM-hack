@@ -249,8 +249,10 @@ def import_preview(request):
     from coursepath.imports.reconcile import reconcile_import
     stored = get_object_or_404(AcademicRecord, owner=request.user)
     if request.content_type == 'multipart/form-data':
-        revision = int(request.POST.get('expected_revision', '-1'))
         upload = request.FILES.get('file')
+        if getattr(request, 'upload_too_large', False):  # set by server.api.uploads, which stopped before storing the excess
+            return response(issues=[issue('INPUT_LIMIT', 'PDF exceeds 10 MB.', 'error')], status=413)
+        revision = int(request.POST.get('expected_revision', '-1'))
         if upload is None:
             raise ValueError('Missing PDF')
         if upload.size > 10 * 1024 * 1024:
