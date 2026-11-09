@@ -8,7 +8,7 @@ const SHOWN = new Set(['error', 'warning', 'approval_required']);
 /** Guidance about a usual semester size is not a problem the student has to act on; the 28-credit limit is the only load message. */
 const HIDDEN_CODES = new Set(['LOAD_GUIDANCE']);
 
-const COURSE_CODE = /^[A-Z]{2,5} \d{2,4}[A-Z]?(?:\([^)]{1,20}\))?$/;
+const COURSE_CODE = /^[A-Z]{2,5} \d{2,4}(?:[A-Z]|-[A-Z0-9]{1,6})?(?:\([^)]{1,20}\))?$/;
 const TERM_ID = /^20\d\d-\d\d-(?:I|II|SUMMER)$/;
 
 /** What the plan words say for each issue code: the course codes the issue is about (in order, no repeats) and its severity. */
