@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { accountEndpoints, calendarEndpoints, endpoints, scenarioEndpoints } from '../../api/endpoints';
 import { useResource, useResourceCache } from '../../api/resources';
-import type { AcademicPlan, InternshipInput, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
+import type { AcademicPlan, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
 import { PLAN_TABS, SubNav } from '../../app/AppShell';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
