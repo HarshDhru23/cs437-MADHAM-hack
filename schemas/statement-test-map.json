@@ -575,7 +575,9 @@
         "tests.domain.test_following_terms.FollowingTerms.test_a_course_is_confirmed_in_a_later_term_and_never_borrowed_across_semesters",
         "tests.domain.test_following_terms.FollowingTerms.test_clash_checking_works_in_a_derived_term_and_is_not_reported_as_unchecked",
         "tests.domain.test_following_terms.FollowingTerms.test_an_unreviewed_snapshot_is_not_carried_forward",
-        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_snapshot_must_be_a_later_year_of_the_same_semester"
+        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_snapshot_must_be_a_later_year_of_the_same_semester",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp23_es242n_is_offered_as_es242",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp23_a_code_listed_under_its_own_name_is_never_swapped_for_its_identity"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -626,7 +628,8 @@
         "tests.reference.test_nov3_regression.DocumentedClashTests.test_no_snapshot_is_not_checked_never_clear",
         "tests.reference.test_nov3_regression.IntervalEdgeTests.test_touching_endpoints_do_not_clash",
         "tests.reference.test_nov3_regression.IntervalEdgeTests.test_same_slot_in_different_halves_of_term_does_not_clash",
-        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error"
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp24_es242n_and_cs331_clash_on_their_shared_lectures_never_clear"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
