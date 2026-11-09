@@ -843,7 +843,8 @@
         "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_deletion_rechecks_do_not_count",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_40_mb_upload_is_refused_without_touching_disk",
         "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_an_upload_just_over_10_mb_is_refused_without_touching_disk",
-        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory"
+        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory",
+        "tests.tooling.test_package_azure.AzurePackagePrivacyTests.test_cp32_only_tracked_source_and_built_frontend_enter_the_bundle"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
