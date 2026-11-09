@@ -803,6 +803,12 @@
         "e2e/tests/scenarios.spec.ts::scenarios and internship comparison > the scenario screen fits a 390 px phone without horizontal scrolling (CP-31)"
       ],
       "frontend_tests": [
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > the close button puts focus back on the button that opened the dialog",
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > an action button that closes the dialog does too",
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > Escape (the dialog cancel event) does too",
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > a confirm dialog returns focus after Cancel",
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > focus stays where it is while the dialog is open",
+        "frontend/src/components/dialogFocus.test.tsx::dialogs return focus to their opener > an opener that has left the page is not an error, and nothing else is focused instead",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > moves a course with a keyboard-accessible select and button, and can undo"
       ],
       "release_evidence_note": "UI-only statement (implementation_scope frontend): tests-green comes from its browser tests on the real stack, all of which must run and pass. The observed user session (M09) is still required as release evidence."
