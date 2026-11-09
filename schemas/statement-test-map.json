@@ -1011,6 +1011,7 @@
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_the_check_reports_how_many_online_credits_count_and_warns_when_some_do_not",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_generation_with_lighten_returns_a_lighter_plan_and_what_it_replaced",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp35_a_plan_lightened_with_online_courses_puts_at_most_8_online_credits_on_cse_general",
         "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_goes_into_the_earliest_semester_with_room_and_the_plan_ends_a_semester_early",
         "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_is_placed_in_the_first_term_where_it_fits",
         "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_packed_plan_validates_and_stays_deterministic",
@@ -1041,7 +1042,12 @@
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_removing_a_course_leaves_credits_uncovered_and_the_plan_not_valid",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_an_error_makes_the_plan_not_valid_even_when_nothing_is_uncovered",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_is_not_valid_is_still_saved_and_listed_with_its_status",
-        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving"
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_online_credits_over_the_8_credit_discipline_cap_count_as_open_electives_not_cse_general",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_online_credits_within_the_cap_stay_in_cse_general",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_an_online_course_aimed_at_a_required_course_counts_only_as_an_open_elective",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp36_online_credits_over_the_discipline_cap_leave_cse_general_uncovered_and_the_plan_not_valid",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp36_eight_online_credits_and_two_more_elective_credits_cover_cse_general"
       ],
       "browser_tests": [
         "e2e/tests/saved-plans.spec.ts::saved plans > each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking"
