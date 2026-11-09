@@ -811,6 +811,12 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_a_rule_admitting_all_of_azure_fails_and_is_named",
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_specific_addresses_and_ranges_pass",
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_an_end_address_of_zero_also_fails",
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_an_empty_rule_list_passes",
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_unreadable_input_is_not_a_pass",
+        "tests.tooling.test_check_azure_firewall.AzureFirewallCheck.test_a_missing_az_command_is_not_a_pass",
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
