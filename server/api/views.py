@@ -507,7 +507,7 @@ def _plan_check(user, stored, payload):
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
     validation = _validate_payload(user, payload, simple_load=True)
-    validation['issues'] = validation['issues'] + online['issues']
+    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit)
     load = {}
     for term, row in validation['workload'].items():
         limit = term_cap(term)
@@ -516,6 +516,24 @@ def _plan_check(user, stored, payload):
     return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
             'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
             'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+
+
+def _incomplete_noncredit_issues(rules, audit):
+    """CR-104: a plan is not valid while a requirement that asks for no credits, such as the comprehensive viva, is still incomplete."""
+    from coursepath.degree_audit import incomplete_zero_credit
+    found = []
+    for row in incomplete_zero_credit(rules, audit['projected']):
+        if row['id'] == 'viva':
+            count = len(row['missing_terms'])
+            text = (f'The comprehensive viva is still pending: your record has no viva pass (P) for {count} of your semesters.' if count != 1
+                    else 'The comprehensive viva is still pending: your record has no viva pass (P) for one of your semesters.')
+            action = 'Add the missing viva records to your record, then check the plan again.'
+        else:
+            done, needed = row['counted_courses'], row['required_courses']
+            text = f"{row['label']} is not complete yet" + (f': {done} of {needed} courses done.' if needed else '.')
+            action = 'Complete it, or add the missing courses to your plan.'
+        found.append(issue('NONCREDIT_REQUIREMENT_PENDING', text, 'error', row['missing_terms'], [], action))
+    return found
 
 
 def plan_status(check):
