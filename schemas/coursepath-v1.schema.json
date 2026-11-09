@@ -604,6 +604,10 @@
               "selected_credits": {
                 "$ref": "#/$defs/decimal"
               },
+              "enrolled_credits": {
+                "$ref": "#/$defs/decimal",
+                "description": "Credits of confirmed current enrolment in this term that are not also in the plan; they count toward target_credits."
+              },
               "placeholder_credits": {
                 "$ref": "#/$defs/decimal"
               },
