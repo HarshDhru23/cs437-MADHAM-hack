@@ -4,7 +4,7 @@ from coursepath.serialization import decimal_value, decimal_string
 from coursepath.models import term_key
 from coursepath.eligibility import evaluate_prerequisite
 from coursepath.issues import issue
-from coursepath.offerings import offering_availability, snapshot_for_term
+from coursepath.offerings import matching_offerings, offering_availability, pattern_snapshot, snapshot_for_term
 from coursepath.timetable import check_meetings
 from coursepath.identity import canonical_code
 
@@ -72,7 +72,7 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
                 elif not metadata['repeatable'] or not course.get('instance_id'):
                     issues.append(issue('DUPLICATE_COURSE', 'Already completed/selected or missing repeat instance evidence.', 'error', [entity] + previous))
             seen.setdefault(current, []).append(entity)
-            availability = offering_availability(offering_snapshot, term, code)
+            availability = offering_availability(offering_snapshot, term, _listed_code(offering_snapshot, term, code, current))
             issues.extend(availability['issues'])
             ids = availability['offering_ids']
             chosen = course.get('offering_id') if course.get('offering_id') in ids else ids[0] if len(ids) == 1 and not course.get('offering_id') else None
@@ -83,7 +83,9 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
                                         'warning', [entity], [r['id'] for r in offered.get('source_refs', [])[:1]]))
             per_course.append({'id': entity, 'term_id': term, 'eligibility': eligibility['status'], 'prerequisite_proof': eligibility,
                                'offering_status': availability['status'], 'offering_ids': availability['offering_ids']})
-        check = check_meetings([{**c, 'id': c.get('id', c.get('normalized_code', c.get('course_id'))), 'normalized_code': c.get('normalized_code', c.get('course_id'))}
+        check = check_meetings([{**c, 'id': c.get('id', c.get('normalized_code', c.get('course_id'))),
+                                 'normalized_code': _listed_code(offering_snapshot, term, c.get('normalized_code', c.get('course_id')),
+                                                                 canonical_code(c.get('normalized_code', c.get('course_id')), identity))}
                                 for c in semester.get('courses', [])], snapshot_for_term(offering_snapshot, term))
         issues.extend(check['issues'])
         status = check['status']
@@ -97,6 +99,16 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     overall = 'conflicts' if 'conflicts' in statuses else 'clear' if statuses and set(statuses) == {'clear'} else 'not_checked'
     return {'workload': workload, 'per_course': per_course, 'issues': issues, 'meeting_check_status': overall,
             'meeting_checks': meeting_checks, 'completion_term': None}
+
+
+def _listed_code(snapshots, term, code, current):
+    """D-04: find a course under the code the student typed; if that code is not listed, under its identity (ES 242(N) -> ES 242)."""
+    if current == code:
+        return code
+    snapshot = snapshot_for_term(snapshots, term) or pattern_snapshot(snapshots, term)
+    if snapshot and not matching_offerings(snapshot, code) and matching_offerings(snapshot, current):
+        return current
+    return code
 
 
 def _is_project(code):

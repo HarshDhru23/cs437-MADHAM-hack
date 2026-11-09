@@ -12,7 +12,17 @@ describe('client-side checks mirror the server', () => {
     expect(isCourseCode(code)).toBe(false);
   });
 
+  // Special-topics sections carry a suffix on real transcripts (D-01, D-06: the full code is the course).
+  it.each(['CS 392-I', 'MS 491-VIII', 'cs691-xii'])('accepts suffixed special-topics code %s', (code) => {
+    expect(isCourseCode(code)).toBe(true);
+  });
+
+  it.each(['CS 392-', 'CS 392--I', '392-I'])('rejects malformed suffixed code %s', (code) => {
+    expect(isCourseCode(code)).toBe(false);
+  });
+
   it('normalizes spacing like the server', () => {
+    expect(normalizeCode('cs691-xii')).toBe('CS 691-XII');
     expect(normalizeCode('cs330')).toBe('CS 330');
     expect(normalizeCode('  es   242 (n) ')).toBe('ES 242(N)');
     expect(normalizeCode('PE 101')).toBe('PE 101');

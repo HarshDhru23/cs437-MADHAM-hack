@@ -18,7 +18,7 @@
         "e2e/tests/public.spec.ts::public requirements are browsable before sign-in, each group opening to its courses"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — public mode (CP-01) > shows every requirement group before any history or sign-in, each as a button that opens it",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 public mode (CP-01) > shows every requirement group before any history or sign-in, each as a button that opens it",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > opens a group to list its courses with titles: Institute core, HSS and Mathematics",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > lists physical education and the viva in plain words, with no policy codes"
       ]
@@ -28,7 +28,8 @@
       "oct27_target": true,
       "tests": [
         "tests.test_academic_history.AcademicHistoryTests.test_cp02_record_all_supported_attempt_statuses",
-        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history"
+        "server.records.test_imports.ImportAPITests.test_record_edit_requires_justification_and_preserves_source_history",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp02_manual_entry_accepts_a_suffixed_code_and_still_rejects_malformed_ones"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -59,7 +60,9 @@
         "tests.domain.test_degree_totals.DegreeTotals.test_a_planned_course_counts_only_in_the_projected_view",
         "tests.domain.test_degree_totals.RequirementRows.test_an_empty_record_lists_38_requirements_asking_for_170_credits",
         "tests.domain.test_degree_totals.RequirementRows.test_the_hand_counted_record_leaves_exactly_the_open_requirements",
-        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group"
+        "tests.domain.test_degree_totals.RequirementRows.test_a_row_names_its_top_level_group",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp03_a_pending_group_never_counts_a_childs_surplus_toward_its_shortfall",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp03_group_counts_agree_with_the_degree_total"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -72,9 +75,9 @@
         "e2e/tests/student-flow.spec.ts::student flow > sign up, paste IMS grades, review, correct and confirm (CP-07/08/12/13)"
       ],
       "frontend_tests": [
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > never calls an audit complete just because zero credits remain: the server decides",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows what was counted for a course: the course taken and its grade",
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 personal audit (CP-03, CP-13, CP-20) > shows credits counted against the degree total and the credits remaining, as reported by the server",
         "frontend/src/test/contract.test.tsx::shared contract examples render in the UI > examples/audit.json",
         "frontend/src/features/requirements/reviewed.test.tsx::Requirements view on the reviewed ADV13 rules (A05) > names the semesters still missing a viva pass from the server result, and never shows surplus jargon"
       ]
@@ -138,7 +141,14 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp06_coordinate_blocks_wrapped_titles_and_controls",
-        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle"
+        "tests.imports.test_pdf.PDFTests.test_cp06_synthetic_39_row_sample_layout_matches_independent_oracle",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_the_printed_cse_discipline_establishes_the_programme_without_any_cs_course_title",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_another_discipline_is_not_cse_even_with_a_computer_science_course_title",
+        "tests.reference.test_transcript_profile.ProgrammeFromTheHeader.test_cp06_spelled_out_and_abbreviated_cse_programme_lines_are_recognised",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_pdf_keeps_suffixed_special_topics_rows_and_their_wrapped_titles",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_wrapped_title_never_attaches_to_the_row_above",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_code_as_wide_as_its_column_is_split_from_the_title_it_touches",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -166,7 +176,8 @@
         "tests.imports.test_ims.IMSTests.test_cp07_cp10_all_rows_terms_variants_repeats_and_provenance",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_parser_recovers_every_oracle_row_in_its_term",
         "tests.reference.test_import_oracle.SyntheticImsParserTests.test_term_credit_sums_and_ims_difference",
-        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically"
+        "tests.reference.test_import_oracle.SyntheticImsParserTests.test_crlf_and_non_breaking_space_variants_parse_identically",
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp07_ims_paste_accepts_suffixed_codes_in_any_spacing_and_case"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -261,7 +272,12 @@
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_swaps_earlier_imported_rows_for_the_new_import",
         "tests.imports.test_reconcile.ReconcileTests.test_cp11_replace_mode_keeps_a_row_left_out_of_the_review_and_a_changed_manual_row_still_conflicts",
         "server.records.test_imports.ReimportReplacesTests.test_changed_grade_and_a_dropped_row_need_no_resolution",
-        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive"
+        "server.records.test_imports.ReimportReplacesTests.test_the_same_paste_twice_and_a_student_typed_row_survive",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d44_same_row_formatted_differently_keeps_the_correction",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d44_a_real_change_formatted_differently_still_replaces",
+        "tests.reference.test_reimport_normalized_compare.ReimportKeepsCorrectionTests.test_d10_two_cs299_registrations_stay_two_attempts_when_reformatted",
+        "tests.reference.test_reimport_normalized_compare.TypedRowNumericCreditsTests.test_d44_typed_row_with_the_same_values_is_unchanged",
+        "tests.reference.test_reimport_normalized_compare.TypedRowNumericCreditsTests.test_d44_typed_row_the_import_changes_still_conflicts"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -414,7 +430,8 @@
         "tests.domain.test_identity.CourseIdentityTests.test_cp17_variant_satisfies_core_while_cs203_stays_a_different_course",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_cs203_is_not_cs202_and_counts_only_as_an_elective",
         "tests.domain.test_curriculum_adv13.Adv13CurriculumTests.test_cp17_surplus_is_reported_and_courses_are_never_split",
-        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases"
+        "tests.domain.test_allocation_optimality.AllocationOptimalityTests.test_cp17_pruned_search_matches_brute_force_on_random_cases",
+        "tests.reference.test_group_counted_cap.GroupCountedCapTests.test_cp17_a_satisfied_group_still_reports_its_surplus"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -527,7 +544,11 @@
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_repeat_checks_compare_resolved_identities",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_a_planned_variant_counts_as_earlier_preparation",
         "tests.domain.test_recommended_prerequisites.RecommendedPrerequisiteTests.test_cp22_loader_rejects_duplicate_or_malformed_entries",
-        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp22_current_enrolment_in_the_same_term_is_not_earlier_preparation"
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp22_current_enrolment_in_the_same_term_is_not_earlier_preparation",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_corequisite_passed_in_the_same_term_is_eligible",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_plain_prerequisite_passed_in_the_same_term_is_still_missing",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_corequisite_failed_in_the_same_term_or_passed_later_is_missing",
+        "tests.reference.test_corequisite_same_term.SameTermCorequisiteTests.test_cp22_plan_validation_accepts_the_same_term_corequisite_on_the_record"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -561,7 +582,9 @@
         "tests.domain.test_following_terms.FollowingTerms.test_a_course_is_confirmed_in_a_later_term_and_never_borrowed_across_semesters",
         "tests.domain.test_following_terms.FollowingTerms.test_clash_checking_works_in_a_derived_term_and_is_not_reported_as_unchecked",
         "tests.domain.test_following_terms.FollowingTerms.test_an_unreviewed_snapshot_is_not_carried_forward",
-        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_snapshot_must_be_a_later_year_of_the_same_semester"
+        "tests.domain.test_following_terms.FollowingTerms.test_a_derived_snapshot_must_be_a_later_year_of_the_same_semester",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp23_es242n_is_offered_as_es242",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp23_a_code_listed_under_its_own_name_is_never_swapped_for_its_identity"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -612,7 +635,8 @@
         "tests.reference.test_nov3_regression.DocumentedClashTests.test_no_snapshot_is_not_checked_never_clear",
         "tests.reference.test_nov3_regression.IntervalEdgeTests.test_touching_endpoints_do_not_clash",
         "tests.reference.test_nov3_regression.IntervalEdgeTests.test_same_slot_in_different_halves_of_term_does_not_clash",
-        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error"
+        "tests.reference.test_nov3_regression.IntervalEdgeTests.test_dated_overlapping_required_meetings_are_a_certain_error",
+        "tests.reference.test_identity_offerings.IdentityBeforeOfferingMatch.test_cp24_es242n_and_cs331_clash_on_their_shared_lectures_never_clear"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -658,7 +682,10 @@
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_apply_pins_the_compared_scenario_revision_and_the_plan_revision",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_record_change_after_compare_asks_for_a_rebase_not_a_reload",
         "server.records.test_scenarios.ScenarioAPITests.test_cp28_foreign_scenario_mutations_are_not_found_and_change_nothing",
-        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp28_scenario_validation_counts_confirmed_current_enrolment"
+        "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp28_scenario_validation_counts_confirmed_current_enrolment",
+        "tests.reference.test_scenario_downstream.ScenarioDownstreamTests.test_cp28_a_worsened_prerequisite_warning_is_downstream",
+        "tests.reference.test_scenario_downstream.ScenarioDownstreamTests.test_cp28_unchanged_warnings_are_not_downstream",
+        "server.records.test_apply_noop_regression.ApplyNoPlanEditTests.test_cp28_apply_without_plan_edits_keeps_the_plan_revision"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -714,7 +741,7 @@
         "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
         "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",
-        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage — stale record (CP-29) > after a 409 from analysis, \"Try again\" reloads the record and asks with its current revision"
+        "frontend/src/features/requirements/requirements.test.tsx::RequirementsPage \u2014 stale record (CP-29) > after a 409 from analysis, \"Try again\" reloads the record and asks with its current revision"
       ]
     },
     {
@@ -728,7 +755,9 @@
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_rejects_rows_the_record_editor_would_reject",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_keeps_justified_history_and_owned_verified_approvals",
         "server.records.test_export.ExportRestoreTests.test_cp30_restore_accepts_only_well_formed_reported_controls",
-        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans"
+        "server.records.test_export.ExportRestoreTests.test_cp30_restoring_a_backup_twice_does_not_duplicate_plans",
+        "server.records.test_restore_totals_regression.RestoreReportedTotalsDiffTests.test_cp30_restore_diff_names_a_change_to_the_printed_totals",
+        "server.records.test_restore_totals_regression.RestoreReportedTotalsDiffTests.test_cp30_honest_backup_diff_reports_the_printed_totals_unchanged"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -790,7 +819,14 @@
         "server.records.test_privacy.DataDeletionTests.test_cp32_a_verifier_account_is_kept_with_a_json_conflict",
         "server.records.test_privacy.PreviewExpiryTests.test_cp32_expired_previews_are_purged_with_their_grades",
         "server.records.test_privacy.ProductionSettingsTests.test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks",
-        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials"
+        "server.records.test_export.ExportRestoreTests.test_cp30_export_is_versioned_owned_and_free_of_credentials",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_logins_from_one_address_never_lock_it",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_a_success_does_not_wipe_earlier_failures",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_sign_ups_do_not_lock_out_the_network",
+        "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_deletion_rechecks_do_not_count",
+        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_40_mb_upload_is_refused_without_touching_disk",
+        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_an_upload_just_over_10_mb_is_refused_without_touching_disk",
+        "server.records.test_upload_limit_regression.UploadLimitTests.test_cp32_a_file_of_exactly_10_mb_is_accepted_in_memory"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -982,7 +1018,12 @@
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_online_placeholders_are_accepted_by_the_plan_save_path_and_must_be_true_or_false",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_the_check_reports_how_many_online_credits_count_and_warns_when_some_do_not",
         "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_generation_with_lighten_returns_a_lighter_plan_and_what_it_replaced",
-        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400"
+        "server.records.test_plan_generation.OnlineManualAPITests.test_cp35_a_non_boolean_lighten_option_is_a_400",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp35_a_plan_lightened_with_online_courses_puts_at_most_8_online_credits_on_cse_general",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_goes_into_the_earliest_semester_with_room_and_the_plan_ends_a_semester_early",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_project_is_placed_in_the_first_term_where_it_fits",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_the_packed_plan_validates_and_stays_deterministic",
+        "tests.reference.test_project_packing.ProjectPackingTests.test_cp35_a_lightened_plan_keeps_the_project_within_the_lighter_target"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -1009,7 +1050,12 @@
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_removing_a_course_leaves_credits_uncovered_and_the_plan_not_valid",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_an_error_makes_the_plan_not_valid_even_when_nothing_is_uncovered",
         "server.records.test_plan_status.PlanStatusAPITests.test_cp36_a_plan_that_is_not_valid_is_still_saved_and_listed_with_its_status",
-        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving"
+        "server.records.test_plan_status.PlanStatusAPITests.test_cp36_the_status_follows_the_record_not_the_moment_of_saving",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_online_credits_over_the_8_credit_discipline_cap_count_as_open_electives_not_cse_general",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_online_credits_within_the_cap_stay_in_cse_general",
+        "tests.reference.test_online_cap_by_requirement.OnlineCreditsByRequirement.test_an_online_course_aimed_at_a_required_course_counts_only_as_an_open_elective",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp36_online_credits_over_the_discipline_cap_leave_cse_general_uncovered_and_the_plan_not_valid",
+        "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp36_eight_online_credits_and_two_more_elective_credits_cover_cse_general"
       ],
       "browser_tests": [
         "e2e/tests/saved-plans.spec.ts::saved plans > each saved plan says Valid or Not valid beside its name, and the list deletes one plan after asking"
@@ -1048,7 +1094,9 @@
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_issued_for_another_app_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_an_expired_token_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
-        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused"
+        "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_twelve_students_on_one_network_all_sign_in",
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten"
       ],
       "browser_tests": [],
       "frontend_tests": [

@@ -6,12 +6,14 @@ def requirement_result(rule, totals, counts, ledger, review=False, conditional=F
     children = [requirement_result(child, totals, counts, ledger, review, conditional) for child in rule.get('children', [])]
     required = decimal_value(rule.get('minimum_credits', '0'))
     if children:
+        # A group counts each child at most up to what the child asks for: a child's surplus never hides another's shortfall (D-07).
+        capped = [min(decimal_value(c['counted_credits']), decimal_value(c['required_credits'])) for c in children]
         if rule['type'] == 'any_of':
-            selected = max(children, key=lambda c: (c['status'] in {'satisfied', 'conditional'}, decimal_value(c['counted_credits'])))
-            counted = decimal_value(selected['counted_credits'])
-            met = selected['status'] in {'satisfied', 'conditional'}
+            chosen = max(range(len(children)), key=lambda i: (children[i]['status'] in {'satisfied', 'conditional'}, decimal_value(children[i]['counted_credits'])))
+            counted, surplus = capped[chosen], decimal_value(children[chosen]['surplus_credits'])
+            met = children[chosen]['status'] in {'satisfied', 'conditional'}
         else:
-            counted = sum((decimal_value(c['counted_credits']) for c in children), Decimal(0))
+            counted, surplus = sum(capped, Decimal(0)), sum((decimal_value(c['surplus_credits']) for c in children), Decimal(0))
             met = all(c['status'] in {'satisfied', 'conditional'} for c in children) and counted >= required
         count = sum(c['counted_courses'] for c in children)
     else:
@@ -19,13 +21,14 @@ def requirement_result(rule, totals, counts, ledger, review=False, conditional=F
         count = counts.get(rule['id'], 0)
         minimum_count = rule.get('minimum_courses', 1 if rule['type'] in {'mandatory_course', 'noncredit'} else 0)
         met = counted >= required and count >= minimum_count
+        surplus = max(Decimal(0), counted - required)
     unknown_child = any(c['status'] == 'needs_review' for c in children) and (rule['type'] != 'any_of' or not met)
     unlisted = not children and rule.get('course_ids', []) is None and not (rule.get('course_prefixes') or rule.get('course_patterns') or rule.get('any_course'))
     status = 'needs_review' if review or unknown_child or unlisted else ('conditional' if met and conditional else 'satisfied' if met else 'pending')
     return {'id': rule['id'], 'label': rule.get('label', rule['id']), 'status': status,
             'required_credits': decimal_string(required), 'counted_credits': decimal_string(counted),
             'remaining_credits': decimal_string(max(Decimal(0), required - counted)), 'counted_courses': count,
-            'surplus_credits': decimal_string(max(Decimal(0), counted - required)) if met else '0',
+            'surplus_credits': decimal_string(surplus) if met else '0',
             'required_courses': rule.get('minimum_courses'),
             'allocation_ids': [a['id'] for a in ledger if a['requirement_id'] == rule['id']],
             'source_refs': rule.get('source_refs', []), 'children': children}
