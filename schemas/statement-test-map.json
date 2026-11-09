@@ -849,6 +849,8 @@
         "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > another account never sees the first account's data or restores its backup (CP-32)"
       ],
       "frontend_tests": [
+        "frontend/src/app/sessionKeptScenarioDrafts.test.tsx::kept scenario drafts and the session > signing out forgets every kept scenario draft, so the next sign-in never sees them",
+        "frontend/src/app/sessionKeptScenarioDrafts.test.tsx::kept scenario drafts and the session > a session that merely expires keeps the drafts for the same account",
         "frontend/src/app/session.test.tsx::SessionProvider > sign-out removes cached personal data and the import draft; the next user never sees it",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > explains what is removed and quotes the documented retention",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > needs the typed phrase, then a wrong password is refused and nothing is claimed deleted",

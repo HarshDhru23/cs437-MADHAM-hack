@@ -10,6 +10,7 @@ import { useResourceCache } from '../api/resources';
 import { saveRegistry } from '../api/saveRegistry';
 import type { SessionUser, SignInOptions } from '../api/types';
 import { importDraftStore } from '../features/import/draftStore';
+import { resetKeptScenarioDrafts } from '../features/scenarios/keptDrafts';
 import { previewStore } from '../features/import/previewStore';
 
 export interface SessionValue {
@@ -129,6 +130,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
     importDraftStore.clear();
     previewStore.clear();
     saveRegistry.clear();
+    resetKeptScenarioDrafts();
     await api.bootstrap().catch(() => undefined);
   }, [api]);
 
