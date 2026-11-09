@@ -163,6 +163,21 @@ class TestRunnerTests(unittest.TestCase):
             if old is not None:
                 os.environ["COURSEPATH_E2E_API_PORT"] = old
 
+    def test_e2e_preview_port_follows_the_playwright_setting(self):
+        # e2e/playwright.config.ts reads COURSEPATH_E2E_WEB_PORT for the preview; the busy-port check must look at the same port.
+        old = {k: os.environ.pop(k, None) for k in ("COURSEPATH_E2E_API_PORT", "COURSEPATH_E2E_WEB_PORT")}
+        try:
+            self.assertEqual(self.t.e2e_ports(), (8000, 4173))
+            os.environ["COURSEPATH_E2E_WEB_PORT"] = "4174"
+            self.assertEqual(self.t.e2e_ports(), (8000, 4174))
+            os.environ["COURSEPATH_E2E_API_PORT"] = "8010"
+            self.assertEqual(self.t.e2e_ports(), (8010, 4174))
+        finally:
+            for key, value in old.items():
+                os.environ.pop(key, None)
+                if value is not None:
+                    os.environ[key] = value
+
 
 class RunScriptTests(unittest.TestCase):
     @classmethod
