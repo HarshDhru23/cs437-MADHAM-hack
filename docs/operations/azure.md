@@ -56,13 +56,27 @@ az webapp config appsettings set --resource-group coursepath-rg --name coursepat
 
 While it is set, password sign-up and sign-in are off. To keep password sign-in for accounts made before this change (never for new ones), also set `COURSEPATH_ALLOW_PASSWORD_LOGIN=1`. Remove the client ID setting to go back to username and password.
 
-## Every release
+## Automatic releases
+
+`.github/workflows/ci.yml` deploys main automatically. Only a `push` to `refs/heads/main` can enter **Deploy production**, and it depends on both the `test` and `postgres` jobs succeeding. The test job packages its checked-out revision after the full suites and statement report pass, then uploads a commit-named artifact. Production downloads that exact artifact; it does not build a different branch.
+
+Authentication is passwordless GitHub OIDC through the user-assigned managed identity `coursepath-github-actions`. Its federated credential accepts issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`, and only subject `repo:HarshDhru23/cs437-MADHAM-hack:ref:refs/heads/main`. Its Website Contributor role is scoped to the `coursepath-iitgn` web app, not the resource group or database. The deploy job requests `id-token: write`; PR jobs do not. It deliberately has no GitHub Environment, so the OIDC subject remains bound to the branch rather than an environment name.
+
+The repository variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` contain public identifiers for `azure/login@v2`. No publish-profile credential or client secret is exported or saved. Database and Django secrets stay in Azure app settings; deployment does not change those settings.
+
+Main CI/release runs are not cancelled by a newer push, and production jobs are serialized. When reviewing several PRs, wait for each merged revision's deploy to succeed before merging the next. This gives each accepted merge its own test and deployment evidence and prevents an older Azure build finishing over a newer one.
+
+The artifact includes `frontend/dist/release.json` with the tested commit SHA. After Azure accepts the deployment, the job waits for `/api/v1/health` to report a healthy database and for `/release.json` to return that SHA. Check the latest successful **Deploy production** job in GitHub Actions for the commit and live URL. A failed test or PostgreSQL rehearsal never starts deployment.
+
+## Manual recovery release
+
+Use this only for a deliberate recovery after tests pass. Normal reviewed merges use the automatic workflow above.
 
 ```powershell
-git switch main; git pull
+git switch main; git pull --ff-only
 cd frontend; npm ci; npm run build; cd ..
 python scripts/package_azure.py                      # coursepath-azure.zip: git-tracked files + frontend/dist only
-az webapp deploy --resource-group coursepath-rg --name coursepath-iitgn --src-path coursepath-azure.zip --type zip
+az webapp deploy --resource-group coursepath-rg --name coursepath-iitgn --src-path coursepath-azure.zip --type zip --async true
 ```
 
 The startup command runs `migrate` on every start. Back the database up first once real users exist (`scripts/backup.py dump`, see runbook section 4.2, with the `COURSEPATH_DB_*` settings pointing at the Azure database and a firewall rule for your own IP).
