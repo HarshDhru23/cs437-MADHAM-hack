@@ -306,3 +306,98 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     expect(after.some((c) => /^\/(record|plans|analysis|logout)/.test(c.path))).toBe(false);
   });
 });
+
+/** CR-102 (CP-32, CP-37): a Google-only account has no password, so it confirms deletion with a fresh Google credential instead. */
+describe('AccountPage data deletion for a Google-only account (CP-32, CP-37)', () => {
+  const CLIENT = 'synthetic-client.apps.googleusercontent.com';
+  const GOOGLE_SESSION = {
+    csrf_token: 'test-token',
+    user: { id: '1', username: 'student.one@iitgn.ac.in' },
+    sign_in: { google_client_id: CLIENT, google_domain: 'iitgn.ac.in', password: false },
+  };
+  const PASSWORD_SESSION = { ...GOOGLE_SESSION, sign_in: { google_client_id: null, google_domain: 'iitgn.ac.in', password: true } };
+  let handler: ((response: { credential?: string }) => void) | null = null;
+
+  beforeEach(() => {
+    handler = null;
+    window.google = {
+      accounts: {
+        id: {
+          initialize: vi.fn((config) => {
+            handler = config.callback;
+          }),
+          renderButton: vi.fn((parent: HTMLElement) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Continue with Google';
+            button.onclick = () => handler?.({ credential: 'synthetic.google.credential.token' });
+            parent.appendChild(button);
+          }),
+        },
+      },
+    };
+  });
+
+  afterEach(() => {
+    delete window.google;
+  });
+
+  it('asks for a Google confirmation instead of a password, and sends only the Google credential', async () => {
+    let cleared = false;
+    const { fetchImpl, calls } = fakeApi({
+      'GET /session': () => ({ data: GOOGLE_SESSION }),
+      'GET /record': () => ({ data: cleared ? { ...record, revision: 4, attempts: [], reported_controls: [] } : record }),
+      'DELETE /account/data': () => {
+        cleared = true;
+        return { data: { deleted, account_deleted: false, record_revision: 4, retention: RETENTION } };
+      },
+    });
+    renderApp(<AccountPage />, { fetchImpl });
+    const submit = await screen.findByRole('button', { name: 'Delete my data…' });
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(screen.queryByLabelText('Current password for deletion')).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/to confirm$/), 'delete my data');
+
+    await userEvent.click(submit);
+    expect(await screen.findByText('Confirm with your IITGN Google account first.')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(calls.filter((c) => c.method === 'DELETE')).toEqual([]);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }));
+    expect(await screen.findByText(/Confirmed with your Google account/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Delete my data…' }));
+    await confirmDeletion();
+    expect(await screen.findByText(/Your data was deleted\./)).toBeInTheDocument();
+    const body = calls.find((c) => c.method === 'DELETE')?.body as Record<string, unknown>;
+    expect(body).toEqual({ expected_revision: 3, google_credential: 'synthetic.google.credential.token', confirm: 'delete my data', delete_account: false });
+    expect(body).not.toHaveProperty('password');
+  });
+
+  it('says Google did not confirm (not "password") when the server refuses, and asks again before another attempt', async () => {
+    const { fetchImpl, calls } = fakeApi({
+      'GET /session': () => ({ data: GOOGLE_SESSION }),
+      'GET /record': () => ({ data: record }),
+      'DELETE /account/data': () => ({ status: 403, issues: [issue('REAUTH_FAILED', 'error', [], 'Confirm with your IITGN Google account to delete data.')] }),
+    });
+    renderApp(<AccountPage />, { fetchImpl });
+    const submit = await screen.findByRole('button', { name: 'Delete my data…' });
+    await waitFor(() => expect(submit).toBeEnabled());
+    await userEvent.type(screen.getByLabelText(/to confirm$/), 'delete my data');
+    await userEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete my data…' }));
+    await confirmDeletion();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Google could not confirm that this is your account. Nothing was deleted.');
+    expect(alert).not.toHaveTextContent(/password/i);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete my data…' }));
+    expect(await screen.findByText('Confirm with your IITGN Google account first.')).toBeInTheDocument();
+    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+  });
+
+  it('keeps the password form, and no Google button, for an account that has a password', async () => {
+    const { fetchImpl } = fakeApi({ 'GET /session': () => ({ data: PASSWORD_SESSION }), 'GET /record': () => ({ data: record }) });
+    renderApp(<AccountPage />, { fetchImpl });
+    expect(await screen.findByLabelText('Current password for deletion')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument();
+  });
+});

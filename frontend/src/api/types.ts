@@ -633,7 +633,9 @@ export interface BackupCommitPayload {
 
 export interface DeleteDataPayload {
   expected_revision: number;
-  password: string;
+  /** A password account confirms with its password; a Google-only account (no password) sends `google_credential` instead. */
+  password?: string;
+  google_credential?: string;
   /** The typed phrase; the server accepts only "delete my data". */
   confirm: string;
   delete_account: boolean;
