@@ -419,6 +419,9 @@
         "e2e/tests/student-flow.spec.ts::student flow > performance shows server values and reasons (CP-15/16)"
       ],
       "frontend_tests": [
+        "frontend/src/components/issueWords.test.tsx::student wording of issues > the additional-learning policy note reads as a plain sentence in the list",
+        "frontend/src/components/issueWords.test.tsx::student wording of issues > studentMessage uses the plain sentence for that code and the cleaned server message for any other",
+        "frontend/src/components/issueWords.test.tsx::student wording of issues > the button that shows the affected items is named with the same plain words",
         "frontend/src/features/performance/performance.test.tsx::PerformancePage (A07, CP-15/16) > lists per-term SPI; a zero denominator shows a dash with a reason"
       ]
     },
