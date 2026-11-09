@@ -8,6 +8,10 @@ from coursepath.imports.normalization import TERM, CODE, candidate, candidate_is
 from coursepath.issues import issue
 
 
+# "Comp Science & Engg" is how IITGN transcripts print the discipline.
+CSE_DISCIPLINE = r'\bComp(?:uter|\.)?\s+Sci(?:ence|\.)?\s*(?:&|and)\s*Eng(?:g|ineering|\.)?\b|\bCSE\b'
+
+
 def lines_from_words(words):
     rows = []
     for word in sorted(words, key=lambda w: (round(w['top'] / 3), w['x0'])):
@@ -49,7 +53,9 @@ def extract_pdf(data, source, max_pages):
             text = page.extract_text() or ''
             profile = result.setdefault('profile_candidates', {'programme': None, 'admission_year': None})
             if re.search(r'B\.?\s*Tech|Bachelor\s+of\s+Technology', text, re.I):
-                profile['programme'] = 'BTECH_CSE' if re.search(r'Computer\s+Science|\bCSE\b', text, re.I) else 'BTECH'
+                # Only the DISCIPLINE/PROGRAMME header decides; course titles ("Special Topics in Computer Science") never do.
+                header = '\n'.join(line for line in text.splitlines() if re.search(r'\b(?:DISCIPLINE|PROGRAMME)\b', line, re.I))
+                profile['programme'] = 'BTECH_CSE' if re.search(CSE_DISCIPLINE, header, re.I) else 'BTECH'
             admission = re.search(r'(?:MONTH\s*&\s*YEAR\s*OF\s*ADMISSION|ADMISSION(?:\s*YEAR)?)\s*:?\s*(?:[A-Za-z]+\s+)?(20\d{2})', text, re.I)
             if admission:
                 profile['admission_year'] = int(admission[1])
