@@ -730,7 +730,7 @@ def backup_preview(request):
     shared = incoming.keys() & existing.keys()
     diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
             'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
-            'current_enrolment_changed': enrolment != stored.current_enrolment, 'plans_to_create': len(plans),
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'reported_controls_changed': reported != stored.reported_controls, 'plans_to_create': len(plans),
             'plans_skipped_existing': sorted({m for m in matches if m is not None}), 'scenarios_not_restored': len(scenarios)}
     issues = []
     if backup.get('rule_version') != _curriculum_for(stored)['version']:
