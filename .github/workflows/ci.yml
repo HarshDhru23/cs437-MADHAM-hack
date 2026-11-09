@@ -166,6 +166,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: coursepath-iitgn
+          resource-group-name: coursepath-rg
           package: coursepath-azure.zip
 
       - name: Verify database health and deployed revision
