@@ -101,7 +101,11 @@ Runs the tests named in `schemas/statement-test-map.json` and shows, per stateme
 
 ## Operations, backup and demo
 
-CoursePath runs on localhost only; there is no hosted deployment, so saving across devices is shown with two browsers against one local server. How to start it, the environment settings, migrations, backup and restore (SQLite file copy, `scripts/backup.py`, and the in-app JSON backup) and the backup rules are in [docs/operations/runbook.md](docs/operations/runbook.md). Variable names (no values) are in `.env.example`.
+The live app is **[coursepath-iitgn.azurewebsites.net](https://coursepath-iitgn.azurewebsites.net)**: Azure App Service (Linux, Python 3.13) serves Django and the built frontend from one HTTPS origin; Azure Database for PostgreSQL stores accounts, records and plans. Local development uses SQLite. Hosting details and the recovery procedure are in [docs/operations/azure.md](docs/operations/azure.md).
+
+Every reviewed merge to `main` starts [CI](https://github.com/HarshDhru23/cs437-MADHAM-hack/actions/workflows/ci.yml). After all suites, the statement report, PostgreSQL tests and backup/restore rehearsal pass, its **Deploy production** job deploys the package built from that same commit. It then checks database health and `/release.json` against the tested commit. PR and feature-branch checks never deploy. Main release runs finish in order; do not manually deploy another branch over them. The latest successful deploy job is the release evidence.
+
+Deployment uses passwordless GitHub OIDC: an Azure managed identity trusts only this repository's `main` branch and has Website Contributor access scoped to this web app. The GitHub variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` are identifiers, not credentials. No publish profile or client secret is stored in GitHub; database and Django secrets remain in Azure app settings. Backup and restore commands (SQLite file copy, `scripts/backup.py`, and the in-app JSON backup) and the backup rules are in [docs/operations/runbook.md](docs/operations/runbook.md). Variable names, without values, are in `.env.example`.
 
 ```sh
 python scripts/backup.py summary
