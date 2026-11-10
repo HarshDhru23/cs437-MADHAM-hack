@@ -856,6 +856,10 @@
         "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_google_being_unreachable_is_a_503_and_deletes_nothing",
         "server.records.test_google_delete_regression.GoogleAccountDeletionTests.test_cp32_google_rechecks_are_throttled_like_password_ones",
         "server.records.test_google_delete_regression.PasswordAccountDeletionTests.test_cp32_a_password_account_cannot_swap_its_password_for_a_google_credential",
+        "server.records.test_google_delete_regression.ReauthMethodTests.test_cp32_a_legacy_password_account_is_told_to_confirm_with_its_password_even_when_google_is_configured",
+        "server.records.test_google_delete_regression.ReauthMethodTests.test_cp32_a_google_only_account_is_told_to_confirm_with_google",
+        "server.records.test_google_delete_regression.ReauthMethodTests.test_cp32_signing_in_with_a_password_reports_the_same_method_as_the_session",
+        "server.records.test_google_delete_regression.ReauthMethodTests.test_cp32_signed_out_has_no_account_and_so_no_method",
         "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_logins_from_one_address_never_lock_it",
         "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_a_success_does_not_wipe_earlier_failures",
         "server.records.test_signin_throttle_regression.PasswordSignInThrottleTests.test_cp32_successful_sign_ups_do_not_lock_out_the_network",
@@ -879,6 +883,7 @@
       },
       "academic_data": "not_a_rule_certification",
       "browser_tests": [
+        "e2e/tests/google-delete.spec.ts::a Google-only account deletes its data with a Google credential and no password (CP-32, CP-37)",
         "e2e/tests/student-flow.spec.ts::student flow > another account cannot see the first account's plan; sign-out clears personal state (CP-32 foundation)",
         "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting with a wrong password deletes nothing; the right password empties the record (CP-32)",
         "e2e/tests/account-data.spec.ts::account data: backup, restore, report and deletion > deleting the account signs out and returns to the public requirements (CP-32)",
@@ -892,6 +897,11 @@
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > a 409 ACCOUNT_HAS_VERIFICATIONS refusal shows the server issue and claims nothing",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting data shows the server counts and retention, and reloads the empty record",
         "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion (A11, CP-32) > deleting the account clears personal state and goes to the public home page",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion for a Google-only account (CP-32, CP-37) > asks for a Google confirmation instead of a password, and sends only the Google credential",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion for a Google-only account (CP-32, CP-37) > says Google did not confirm (not \"password\") when the server refuses, and asks again before another attempt",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion for a Google-only account (CP-32, CP-37) > keeps the password form, and no Google button, for an account that has a password",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion for a Google-only account (CP-32, CP-37) > keeps the password form and sends the password, never a Google credential, for a legacy password account on a Google-configured site",
+        "frontend/src/features/account/yourData.test.tsx::AccountPage data deletion for a Google-only account (CP-32, CP-37) > uses the account, not the site, to choose: the same Google-configured site gives a Google-only account the Google button",
         "frontend/src/features/report/report.test.tsx::ReportPage (A11, CP-30) > a plan that is missing or belongs to someone else shows not found, not data"
       ],
       "release_evidence_note": "Browser flow covers isolation, own export, deletion with re-authentication and account deletion (A11); human review and merge are still pending."
