@@ -54,7 +54,7 @@ Only IITGN Google accounts can sign in. Create the OAuth client in the Google Cl
 az webapp config appsettings set --resource-group coursepath-rg --name coursepath-iitgn --settings COURSEPATH_GOOGLE_CLIENT_ID=<client id>.apps.googleusercontent.com
 ```
 
-While it is set, password sign-up and sign-in are off. To keep password sign-in for accounts made before this change (never for new ones), also set `COURSEPATH_ALLOW_PASSWORD_LOGIN=1`. Remove the client ID setting to go back to username and password.
+In production this setting is required: the server refuses to start without it, so a lost or mistyped value stops the site instead of opening it to username and password sign-up. Password sign-up and sign-in are never on in production, and `COURSEPATH_ALLOW_PASSWORD_LOGIN` is ignored there. Check that the setting is present before every release (`az webapp config appsettings list ... --query "[?name=='COURSEPATH_GOOGLE_CLIENT_ID']"`).
 
 ## Automatic releases
 

@@ -90,7 +90,18 @@ def spa(request, path=''):
 def sign_in_options():
     """What the sign-in page offers (D-46). A configured Google client ID turns Google sign-in on and password sign-up off."""
     client = settings.COURSEPATH_GOOGLE_CLIENT_ID
-    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
+    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client and not settings.COURSEPATH_PRODUCTION}
+
+
+def password_sign_in_allowed(action):
+    """Whether password sign-up (`signup`) or sign-in (`login`) may run (D-46, CR-140). Never in production, whatever is or is not configured: every
+    production sign-in is a verified IITGN Google account. In development and tests the forms work without a client ID; with one, only the legacy
+    switch keeps `login` (never `signup`) for accounts made before Google sign-in."""
+    if settings.COURSEPATH_PRODUCTION:
+        return False
+    if not settings.COURSEPATH_GOOGLE_CLIENT_ID:
+        return True
+    return action == 'login' and settings.COURSEPATH_ALLOW_PASSWORD_LOGIN
 
 
 def account_summary(user):
@@ -215,7 +226,7 @@ def auth(request, action):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
         return _google_sign_in(request, payload.get('credential'))
     if action in {'signup', 'login'}:
-        if google and (action == 'signup' or not settings.COURSEPATH_ALLOW_PASSWORD_LOGIN):
+        if not password_sign_in_allowed(action):
             return response(issues=[issue('PASSWORD_SIGN_IN_DISABLED', f'Sign in with your IITGN Google account (name@{settings.COURSEPATH_GOOGLE_DOMAIN}).', 'error')], status=403)
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
