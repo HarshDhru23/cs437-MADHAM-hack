@@ -508,6 +508,13 @@ export interface MeetingGroup {
   source_refs?: SnapshotSourceRef[];
 }
 
+/** The course-plan cell of the official timetable: `target` is null when the cell has text but no hyperlink. */
+export interface CoursePlanLink {
+  target: string | null;
+  display_text?: string | null;
+  locator?: string | null;
+}
+
 export interface CourseOffering {
   id: string;
   term_id?: string;
@@ -521,6 +528,8 @@ export interface CourseOffering {
   meeting_groups: MeetingGroup[];
   availability_status?: string;
   remarks?: string | null;
+  /** The link to the course's course plan in the official timetable; null when the timetable has none for this course. */
+  course_plan_link?: CoursePlanLink | null;
   source_refs?: SnapshotSourceRef[];
 }
 

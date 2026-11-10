@@ -1420,6 +1420,34 @@
         "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > says on Your Data that the sample is not real and offers no deletion or restore",
         "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > still offers the deletion form to a real student on Your Data"
       ]
+    },
+    {
+      "id": "CP-43",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_course_plan_link.CoursePlanLinkTests.test_cp43_a_course_with_a_hyperlink_in_the_course_plan_column_carries_its_target",
+        "server.records.test_course_plan_link.CoursePlanLinkTests.test_cp43_a_cell_with_text_but_no_hyperlink_has_no_target",
+        "server.records.test_course_plan_link.CoursePlanLinkTests.test_cp43_a_later_odd_year_keeps_the_links_of_the_semester_it_follows"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > a course the timetable gives a course plan for links to it, opening in a new tab",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > shows each course its own link or its own \"not available yet\", never one taken from another course",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > the timetable cell had text but no hyperlink: not available yet, and no link",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > a link that is not an ordinary web address is never offered",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > a course the timetable does not list at all is not available yet",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > with two timetable versions of a course, the link of the chosen version is used",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > says nothing while the timetable is loading or when it could not be loaded, instead of claiming the course plan is missing",
+        "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > links a course that has a course plan and says \"not available yet\" for one that has none, in the draft table",
+        "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > asks for the timetable of each semester once, however many courses it has"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

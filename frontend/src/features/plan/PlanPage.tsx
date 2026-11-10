@@ -21,6 +21,7 @@ import { latestCompletedTerm, moveTargets, nextRegularTerm } from '../../lib/ter
 import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
 import type { SectionChoice } from './SectionPicker';
+import { useCoursePlans } from './CoursePlan';
 import { GeneratePlanPanel } from './GeneratePlanPanel';
 import { PlanStatusBadge } from './PlanStatusNote';
 import { useDeletePlan, UnsavedChangesError } from './deletePlan';
@@ -575,6 +576,7 @@ function SemesterTable({
 }) {
   const headingId = useId();
   const label = formatTerm(semester.term_id);
+  const coursePlan = useCoursePlans(semester.term_id, validation?.per_course);
   const workload = validation?.workload[semester.term_id];
   const planned = workload ? (workload.target_credits ?? workload.selected_credits) : undefined;
   const termIssues = issues.filter((i) => i.entityRefs.includes(semester.term_id));
@@ -636,6 +638,7 @@ function SemesterTable({
                   <th scope="row" data-label="Course" className="pb-code">
                     <span className="mono">{c.normalized_code}</span>
                     {titleOf(c.normalized_code) ? <div className="muted">{titleOf(c.normalized_code)}</div> : null}
+                    <div className="pb-courseplan">{coursePlan(c)}</div>
                   </th>
                   <td className="num pb-cr" data-label="Credits">
                     {formatCredits(c.credits)}

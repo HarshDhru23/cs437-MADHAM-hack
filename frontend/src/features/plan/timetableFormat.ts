@@ -67,3 +67,23 @@ export function chosenOffering(course: PlannedCourse, offerings: CourseOffering[
   if (course.offering_id) return offerings.find((o) => o.id === course.offering_id) ?? null;
   return offerings.length === 1 ? offerings[0]! : null;
 }
+
+/**
+ * The course plan for a planned course: the link the official timetable gives for the chosen version (or, with no version chosen, the
+ * first version that has one). Only an ordinary web address is offered; anything else (a `javascript:` or `data:` address, text that is
+ * not an address) counts as no link, so the student is never sent somewhere unexpected.
+ */
+export function coursePlanUrl(course: PlannedCourse, offerings: CourseOffering[]): string | null {
+  const chosen = course.offering_id ? offerings.filter((o) => o.id === course.offering_id) : offerings;
+  for (const o of chosen) {
+    const target = o.course_plan_link?.target;
+    if (!target) continue;
+    try {
+      const url = new URL(target);
+      if (url.protocol === 'https:' || url.protocol === 'http:') return url.href;
+    } catch {
+      // not an address: treated as no link
+    }
+  }
+  return null;
+}
