@@ -75,6 +75,7 @@ Use this only for a deliberate recovery after tests pass. Normal reviewed merges
 ```powershell
 git switch main; git pull --ff-only
 cd frontend; npm ci; npm run build; cd ..
+python -m whitenoise.compress frontend/dist             # gzip copies, served by WhiteNoise to browsers that accept gzip
 python scripts/package_azure.py                      # coursepath-azure.zip: git-tracked files + frontend/dist only
 az postgres flexible-server firewall-rule list --resource-group coursepath-rg --server-name coursepath-db-isc --output json | python scripts/check_azure_firewall.py -   # must pass once the plan in "Database access" is done
 az webapp deploy --resource-group coursepath-rg --name coursepath-iitgn --src-path coursepath-azure.zip --type zip --async true

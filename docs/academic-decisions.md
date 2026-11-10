@@ -286,6 +286,8 @@ Recorded 7 Nov 2026 by Harsh, after the hosted app showed an "unknown" on almost
 - **Passwords.** While Google is configured, password sign-up is off and password sign-in is off too, unless `COURSEPATH_ALLOW_PASSWORD_LOGIN=1` keeps it for accounts made before this change (never for new ones). Without a client ID (local development, tests, the browser suite) the username and password forms work as before. Google accounts have no password to change, so the Account page hides that form for them.
 - **Not decided here.** Existing password accounts are not linked to Google accounts; nothing moves data between them.
 
+**D-47. SPI is capped at 10, like CPI** (TEAM, Harsh, 10 Nov). Answers the question in issue #122 (CR-110 item 1). The grade table gives A+ eleven points, so a term of only A+ averages 11; the displayed SPI is capped at 10, the same as the CPI (D-27, D-28). The exact value stays available as `unrounded_value`. `data/grading/reported-v1.json` sets `spi_cap` to `"10"`. This rests on the team's decision; if the institute's rule differs, change the file and this entry together.
+
 ## Implementation follow-ups
 
 Each item goes through the normal reviewed PR. Owners are from `docs/team/README.md`.

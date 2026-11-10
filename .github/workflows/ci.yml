@@ -61,6 +61,7 @@ jobs:
           from pathlib import Path
           Path('frontend/dist/release.json').write_text(json.dumps({'commit': os.environ['GITHUB_SHA']}), encoding='utf-8')
           PY
+          python -m whitenoise.compress frontend/dist   # gzip copies of the build files; WhiteNoise serves them to browsers that accept gzip
           python scripts/package_azure.py
 
       - name: Keep the tested release package

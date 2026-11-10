@@ -1,6 +1,6 @@
 # CoursePath operations runbook (M08)
 
-Status 3 Nov 2026, checked against `main` at `5d3cdfd`. **There is no hosted deployment.** CoursePath runs on localhost only. The team has nothing to host on yet, so production serving and a managed PostgreSQL database are on hold (team decision, 3 Nov). Saving across devices is shown only on one local server: two browsers, or two browser profiles, signed in to the same account against that one server. Nothing here claims hosted persistence. Steps marked *verified* were run on 3 Nov; the rest are procedures.
+Status 3 Nov 2026, checked against `main` at `5d3cdfd`. **CoursePath is hosted on Azure App Service** (`coursepath-iitgn`, with Azure Database for PostgreSQL; see `docs/operations/azure.md`), and every merge to `main` that passes the tests deploys automatically. The sections below were written on 3 Nov for local runs; where they say "localhost" they describe a local server, not production. Steps marked *verified* were run on 3 Nov; the rest are procedures.
 
 ## 1. Start it
 
@@ -119,7 +119,7 @@ Proposed by Manashree and agreed by Harsh in the review of PR #36. They apply to
 2. Use synthetic accounts for development, demos and user sessions. A database or backup that holds a real student's record stays on that student's own machine and account.
 3. Keep backups outside the repository, never in Git, CI artifacts, chat or a shared drive. `server/.local/` and `*.sqlite3` are git-ignored; a backup copied elsewhere is not.
 4. A backup holds password hashes and every account's records. Delete it like the original when it is no longer needed.
-5. "Delete my data" removes data from the running database immediately. A copy made earlier under rule 1 still holds it until that copy is deleted, which rule 1 limits to 7 days. The deletion message ("this repository configures no database backups") is accurate for localhost: the repository configures none, and these copies are taken by hand. Revisit the message only if a hosted database with backups is ever set up.
+5. "Delete my data" removes data from the running database immediately. A copy made earlier under rule 1 still holds it until that copy is deleted, which rule 1 limits to 7 days. On the hosted site the Azure database also keeps automatic backups for 7 days (geo-redundant backup off), so a deleted account can remain in a backup until it expires; the deletion message says so. Copies taken by hand under rule 1 are the operator's to delete. If the retention setting changes, update the message in `server/api/views.py`, `YourData.tsx` and `server/README.md` together.
 
 ## 6. Demo and user sessions
 
