@@ -91,7 +91,7 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 | CP-12 | A student can see discrepancies between source totals, extracted rows and degree-countable credits. | PDF 104 vs paste 105; separate classification, no forced equality. |
 | CP-13 | A student can inspect source evidence and unresolved catalogue/equivalence matches for imported rows. | CS 203/202 stays unresolved without approval. |
 | CP-14 | A student's earned-credit, prerequisite-exposure and performance status follow separate approved grade policies. | P/D/E/F/unknown/blank matrix and zero-credit obligations. |
-| CP-15 | A student can inspect CPI and its counted credits/points, with discrepancies or incomplete policies identified. | Sample 849/92 -> 9.23; P exclusion, cap/rounding and repeat-policy cases. |
+| CP-15 | A student can inspect CPI and its counted credits/points, with discrepancies or incomplete policies identified. | The sample record's totals reproduced from its graded rows; P exclusion, cap/rounding and repeat-policy cases. |
 | CP-16 | A student can inspect term SPI with its counted attempts and calculation. | Independently calculated terms, fail/repeat/withdrawal policy tests. |
 | CP-17 | A student's mandatory choices and overlapping basket requirements are evaluated without prohibited double counting. | Alternative allocations, narrow-basket adversary, total conservation. |
 | CP-18 | A student can see project/online/exposure caps and excluded credits, including approved exceptions. | 8-credit combined cap, project cap, quad/exposure limits and evidence. |

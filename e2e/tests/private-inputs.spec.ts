@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { signup, uniqueUser } from './helpers';
 
@@ -16,7 +16,9 @@ import { signup, uniqueUser } from './helpers';
  * account actions per IP per 15 minutes and the rest of the suite uses 9.
  */
 const directory = process.env.COURSEPATH_REAL_INPUT_DIR;
-const pdfPath = directory ? path.join(directory, '24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf') : '';
+// The transcript PDF is named after the student's roll number, so it is found by pattern.
+const pdfName = directory && existsSync(directory) ? readdirSync(directory).find((name) => /^\d.*B\.Tech.*\.pdf$/.test(name)) : undefined;
+const pdfPath = directory && pdfName ? path.join(directory, pdfName) : '';
 const imsPath = directory ? path.join(directory, 'copied_input.txt') : '';
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' });

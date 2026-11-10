@@ -826,6 +826,10 @@
       "id": "CP-32",
       "oct27_target": false,
       "tests": [
+        "tests.tooling.test_private_names.PrivateFileNames.test_preflight_refuses_every_private_file_name",
+        "tests.tooling.test_private_names.PrivateFileNames.test_preflight_does_not_refuse_ordinary_files",
+        "tests.tooling.test_private_names.PrivateFileNames.test_gitignore_ignores_every_private_file_name_and_nothing_ordinary",
+        "tests.tooling.test_private_names.PrivateFileNames.test_no_roll_number_shaped_literal_is_left_in_the_committed_text_of_the_scripts",
         "server.records.test_api_not_found.UnknownApiPathTests.test_an_unknown_api_path_returns_the_json_envelope_with_not_found",
         "server.records.test_api_not_found.UnknownApiPathTests.test_a_nested_unknown_api_path_and_a_signed_in_caller_get_the_same_answer",
         "server.records.test_api_not_found.UnknownApiPathTests.test_known_routes_are_unchanged",

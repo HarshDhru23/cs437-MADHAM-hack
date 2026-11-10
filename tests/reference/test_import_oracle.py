@@ -25,7 +25,7 @@ from coursepath.performance import calculate_performance
 ROOT = Path(__file__).resolve().parents[2]
 ORACLE = json.loads((ROOT / "tests" / "reference_fixtures" / "synthetic_transcript_rows.json").read_text(encoding="utf-8"))
 REAL_DIR = Path(os.environ.get("COURSEPATH_REAL_INPUT_DIR") or ROOT)
-REAL_PDF = REAL_DIR / "24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf"
+REAL_PDF = next(REAL_DIR.glob("[0-9]*B.Tech*.pdf"), REAL_DIR / "sample_transcript.pdf")   # named after the roll number: matched by pattern
 REAL_IMS = REAL_DIR / "copied_input.txt"
 REAL_ORACLE_PATH = REAL_DIR / "real_transcript_oracle.json"
 REAL_ORACLE = json.loads(REAL_ORACLE_PATH.read_text(encoding="utf-8")) if REAL_ORACLE_PATH.is_file() else None
