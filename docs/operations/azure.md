@@ -135,6 +135,13 @@ It exits 1 while a `0.0.0.0` rule exists. **Run it in every release; once the pl
 
 Every HTML page the app serves carries a `Content-Security-Policy` header (`server/api/csp.py`): scripts only from the app itself, Google's sign-in script (`https://accounts.google.com/gsi/client`) and the one inline theme script in `index.html`, allowed by its SHA-256 hash (computed from the built file, so editing that script cannot leave the policy stale); frames only from `https://accounts.google.com/gsi/`; no `eval`, no plugins, no framing of the app. Inline **styles** are allowed because Google's script injects the sign-in button's CSS inline (with them blocked the button renders unstyled); inline CSS cannot run script. If a real page is ever blocked, set the app setting `COURSEPATH_CSP_REPORT_ONLY=1` and restart: the same policy is then sent as `Content-Security-Policy-Report-Only` (the browser reports violations in its console and enforces nothing), which is a way back without a deploy. After any change to `index.html`, a script or the sign-in, open `/login` and the main pages in a browser and check the console for violations.
 
+## Client address behind App Service (CR-107, not yet verified)
+
+The sign-in limit counts failures per client address. In production (`not DEBUG`) `server/api/views.py::client_address` takes the **last** `X-Forwarded-For` entry as the client, on the assumption that App Service's front end appends the address it saw (with a port) and leaves anything the client sent in front of it. That assumption is **not yet confirmed**: the tests build the header themselves and prove only the parsing, not what the real ingress sends, and nobody has observed a live request. Check it once after the next deploy, before relying on the limit:
+
+1. From a known address, send a request with a made-up header, for example `curl -H 'X-Forwarded-For: 198.51.100.9' https://coursepath-iitgn.azurewebsites.net/api/v1/session`, and look at what the app receives (a temporary log line, or `az webapp log tail`).
+2. The **last** entry must be your own address. If it is the made-up one, or the front end's, the limit can be dodged or shared by the whole site, and `client_address` must change.
+
 ## Smoke test (deploy.md step 5)
 
 1. `GET https://coursepath-iitgn.azurewebsites.net/api/v1/health` returns `{"status":"ok","database":"ok"}`.
