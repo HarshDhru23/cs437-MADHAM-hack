@@ -36,7 +36,7 @@ Build the mapping from the sheet, not from these examples. Preserve all source c
 
 ## Example graduation plan
 
-Source: `24110107_Graduation Plan.xlsx`. The three sheets are `Graduation Plan`, `Course Basket Summary till 4th ` (trailing space) and `Sheet1`. Retain original sheet names in provenance even if display names are trimmed.
+Source: the example graduation plan workbook (a private local file). The three sheets are `Graduation Plan`, `Course Basket Summary till 4th ` (trailing space) and `Sheet1`. Retain original sheet names in provenance even if display names are trimmed.
 
 - `Graduation Plan!A2:E8` schedules seven four-credit courses in semester 5: HS 151, CS 330, CS 331, CS 202, CS 329, ES 667 and PH 202. **28 credits**.
 - `A9:E14` schedules six four-credit rows in semester 6: ES 301, CS 421, CS 303, an online-credit HSS placeholder, a science-basket placeholder and a BS-elective placeholder. **24 credits**.

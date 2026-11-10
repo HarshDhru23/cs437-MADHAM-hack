@@ -44,7 +44,7 @@ Files: `coursepath/imports/pdf_transcript.py`, `pdf_layout.py`, parser tests und
 4. Handle continuation pages with inherited block term only when evidence is unambiguous. Reject/flag unknown layouts instead of silently dropping rows. Preserve raw code `(N)` and decimal credit values, zero-credit PE/viva and separate CS 299 registrations.
 5. Return candidate rows with page/block/line/box provenance, normalized term, raw grade and all unparsed course-looking candidates. Parsing does not decide official basket equivalence.
 
-Independent fixture controls: 39 attempts, chronological term counts 10/10/10/9, term credits 28/22/28/26, total 104, performance credits 92, points 849, CPI 9.23. Original sample stays local; use anonymized/synthetic-layout committed fixtures agreed with Manashree. Include title wrapping, shifted spacing, extra page/repeated header, missing grade, duplicate text layers and corrupted file tests.
+Independent fixture controls: 39 attempts, chronological term counts 10/10/10/9, term credits 28/22/28/26, total 104, and the sample record's performance credits, points and CPI (kept local). Original sample stays local; use anonymized/synthetic-layout committed fixtures agreed with Manashree. Include title wrapping, shifted spacing, extra page/repeated header, missing grade, duplicate text layers and corrupted file tests.
 
 Acceptance: CP-06,09,10,12,13. Adapter does not mutate records; parse totals cannot be made correct by discarding a row. Give Aaryan a real preview endpoint/response for the sample when the corresponding slice is ready in the first-release block, no later than27 Oct.
 
@@ -58,7 +58,7 @@ Files: `coursepath/imports/ims.py`, `normalization.py`, `grades.py`, parser test
 4. Grade map: letter passing through D, E/F failed, P completed but performance-excluded; blank/unknown symbols remain reviewable. An E exposure rule belongs to prerequisite evaluation. Current enrolment must be confirmed separately.
 5. Use one canonical normalization/grade layer for PDF and paste; keep independent adapter extraction tests to avoid a shared bug hiding format differences.
 
-Tests: sample 40 attempts/105 raw credits/92 performance credits/849 points; SC 372 preserved but classification unresolved; two CS 299 attempts retained; ES 242(N) unchanged; whitespace/line break/ampersand/zero-credit/missing-header/missing-field/unknown-grade/large-input cases. A malformed row must appear in issues, not disappear from the record without disclosure.
+Tests: sample 40 attempts/105 raw credits and the sample record's performance credits and points; SC 372 preserved but classification unresolved; two CS 299 attempts retained; ES 242(N) unchanged; whitespace/line break/ampersand/zero-credit/missing-header/missing-field/unknown-grade/large-input cases. A malformed row must appear in issues, not disappear from the record without disclosure.
 
 Acceptance: CP-07,10,14. No guessed graduation allocation during parsing.
 
@@ -116,7 +116,7 @@ Tests: existing matrix, nested expression truth tables, unknown vs empty, comple
 
 Files: `coursepath/performance.py`, grading policy schema/data and domain/API tests.
 
-Use Decimal points/credits; reproduce 849/92→9.23. Points: A+11,A10,A-9,B8,B-7,C6,C-5,D4,E2,F0; P excluded. Display source-reported and recalculated values distinctly. CPI cap10 follows source; SPI cap/rounding/repeat/withdrawal behavior must come from evaluation policy, not inference. Unknown repeat/substitution inclusion prevents a verified recalculation for affected records. Never discard a failed attempt from performance solely because it earns no credits.
+Use Decimal points/credits; reproduce the sample record's CPI from its points and credits. Points: A+11,A10,A-9,B8,B-7,C6,C-5,D4,E2,F0; P excluded. Display source-reported and recalculated values distinctly. CPI cap10 follows source; SPI cap/rounding/repeat/withdrawal behavior must come from evaluation policy, not inference. Unknown repeat/substitution inclusion prevents a verified recalculation for affected records. Never discard a failed attempt from performance solely because it earns no credits.
 
 Return per-term and cumulative contributing attempts/numerators/denominators, exclusions, policy/source and incomplete status; no denominator yields unavailable. Hypothetical scenario grades stay separately labeled and do not predict actual grades. Tests: independently calculated term SPI, weighted versus unweighted mean, P/zero-credit exclusion, E/F denominator, A+ and CPI cap, rounding boundaries, repeated project vs retake and unknown special grade. CP-14,15,16.
 

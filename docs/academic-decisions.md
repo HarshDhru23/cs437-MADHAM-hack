@@ -150,6 +150,11 @@ Grade points stay as in `data/grading/reported-v1.json` (A+ = 11 through F = 0, 
 
 **D-16. The comprehensive viva needs a P in every active semester** (TEAM; stricter than the literal ADV13 p. 4, item 18(d)). An F or a missing viva grade in any active semester leaves the requirement unsatisfied, and the student must clear it in the next active semester (p. 4, item 18(b)). *Open:* confirm that IN 101 to IN 104 on the transcript are the per-semester viva records.
 
+**D-16 reconciliation, 10 Nov 2026 (PR #113, CR-104; review by Harsh against ADV13, 28 Jan 2026).** ADV13 p. 4, item 18(d) makes a recorded **Pass or Fail** grade for the comprehensive viva in every active semester mandatory for graduation; item 18(b) concerns a failure to receive a grade. D-16 is stricter than that text, so the two are separated:
+- **Plan validity (D-45, CP-36) follows item 18(d).** A recorded P or F viva grade in an active semester satisfies the plan check; a missing grade does not, and the plan is then "Not valid" with a problem that names the viva and the semesters without a grade. A recorded F never makes a plan not valid by itself.
+- **The audit keeps D-16.** The viva requirement stays `pending` for an F or a missing grade and the audit results do not change; only the plan's validity gate is relaxed.
+- *Open for Harsh:* whether D-16 itself should be loosened to item 18(d); until then the audit and the plan check intentionally differ for a recorded F.
+
 ## 6. Prerequisites
 
 **D-17. Prerequisites are team recommendations, not institute rules** (TEAM). Neither ADV13, CSE-CAT nor the institute catalogue publishes prerequisites. CoursePath uses a team-curated list:

@@ -11,7 +11,7 @@ import { analysis, curriculum, plan, preview, record } from '../../test/fixtures
 import type { AcademicPlan, AcademicRecord } from '../types';
 
 export function createMockFetch(): typeof fetch {
-  let user: { id: string; username: string } | null = null;
+  let user: { id: string; username: string; reauth: 'password' | 'google' } | null = null;
   let rec: AcademicRecord = { ...structuredClone(record), attempts: [], revision: 0, reported_controls: [] };
   let plans: AcademicPlan[] = [structuredClone(plan)];
   const reply = (data: unknown, status = 200, issues: unknown[] = []) =>
@@ -27,7 +27,7 @@ export function createMockFetch(): typeof fetch {
     const key = `${method} ${path}`;
     if (key === 'GET /session') return reply({ csrf_token: 'mock-token', user });
     if (key === 'POST /auth/signup' || key === 'POST /auth/login') {
-      user = { id: 'mock-1', username: String(body.username ?? 'mock-student') };
+      user = { id: 'mock-1', username: String(body.username ?? 'mock-student'), reauth: 'password' };
       return reply(user, key.endsWith('signup') ? 201 : 200);
     }
     if (key === 'POST /auth/logout') {

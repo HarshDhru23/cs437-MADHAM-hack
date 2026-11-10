@@ -19,6 +19,9 @@ def course_code(value):
     return normalize_code(value)
 
 
+MAX_PLACEHOLDER_CREDITS = 100   # a term is at most 28 credits (D-36); the schema bound of 10,000 only guards the decimal type
+
+
 def plan_payload(payload):
     if not isinstance(payload, dict) or set(payload) - {'semesters', 'label', 'expected_revision'}:
         raise ValueError('Unsupported plan fields')
@@ -63,6 +66,8 @@ def plan_payload(payload):
                         raise ValueError('online must be true or false')
                     text(item['requirement_id'])
                     item['desired_credits'] = decimal_string(decimal_value(item['desired_credits']))
+                    if decimal_value(item['desired_credits']) > MAX_PLACEHOLDER_CREDITS:
+                        raise ValueError(f'A placeholder holds at most {MAX_PLACEHOLDER_CREDITS} credits')
     return result
 
 

@@ -34,8 +34,8 @@ Neither official source file is newly authored or modified by the planning work.
 
 These three inputs contain a student's academic record and now have exact `.gitignore` entries:
 
-- `24110107-B.Tech-ASSISTANTREGISTRAR(ACADEMICS)AT.pdf`.
-- `24110107_Graduation Plan.xlsx`.
+- the sample transcript PDF (named after the roll number; matched by `[0-9]*B.Tech*.pdf`).
+- the example graduation plan workbook (matched by `[0-9]*_Graduation Plan.xlsx`).
 - `copied_input.txt`.
 
 Use consented anonymized fixtures in tests instead. Paths to private inputs in the planning documents identify local review sources; do not expect those links to resolve in a fresh public clone. The plan explicitly requires synthetic/anonymized committed fixtures during implementation.

@@ -48,7 +48,16 @@ export function loadGoogleIdentity(): Promise<GoogleIdentity> {
  * Google's own "Sign in with Google" button. It hands back a signed ID token, which goes to the server; the server checks it with Google
  * and accepts only IITGN accounts. Nothing here decides who may sign in.
  */
-export function GoogleSignIn({ clientId, onCredential }: { clientId: string; onCredential: (credential: string) => void }) {
+export function GoogleSignIn({
+  clientId,
+  onCredential,
+  text = 'signin_with',
+}: {
+  clientId: string;
+  onCredential: (credential: string) => void;
+  /** Google's button wording: `continue_with` where the student is confirming, not signing in. */
+  text?: 'signin_with' | 'continue_with';
+}) {
   const holder = useRef<HTMLDivElement>(null);
   const callback = useRef(onCredential);
   callback.current = onCredential;
@@ -74,7 +83,7 @@ export function GoogleSignIn({ clientId, onCredential }: { clientId: string; onC
           type: 'standard',
           theme: 'filled_black',
           size: 'large',
-          text: 'signin_with',
+          text,
           shape: 'rectangular',
           logo_alignment: 'left',
           width: 280,
@@ -86,7 +95,7 @@ export function GoogleSignIn({ clientId, onCredential }: { clientId: string; onC
     return () => {
       active = false;
     };
-  }, [clientId, attempt]);
+  }, [clientId, text, attempt]);
 
   return (
     <div className="google-signin">

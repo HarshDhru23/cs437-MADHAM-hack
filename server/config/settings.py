@@ -39,6 +39,7 @@ if not DEBUG:  # static files of the React build (assets/, index.html); the plat
     MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')   # after the CSP and security middleware, which wrap it
     # Safe only because the platform proxy overwrites this header on every request (Azure App Service does).
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+COURSEPATH_TRUST_FORWARDED_FOR = not DEBUG   # behind the platform proxy the client's address is the last X-Forwarded-For entry (see client_address)
 SECURE_REDIRECT_EXEMPT = [r'^api/v1/health$']  # the platform's readiness probe is plain HTTP
 DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': LOCAL_DIR / 'coursepath.sqlite3', 'OPTIONS': {'timeout': 20}}}
 if DEBUG and os.getenv('COURSEPATH_SQLITE_PATH'):

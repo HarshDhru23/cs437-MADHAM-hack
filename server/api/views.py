@@ -93,9 +93,16 @@ def sign_in_options():
     return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
 
 
+def account_summary(user):
+    """The account as the client sees it. `reauth` is how THIS account proves itself before deleting data: a legacy password account with its password,
+    a Google-only account (D-46: no usable password) with a fresh Google credential. It follows the account, not the site's sign-in options, so a password
+    account never gets offered a Google credential that the server refuses (`account_data` branches on the same `has_usable_password`)."""
+    return {'id': str(user.pk), 'username': user.username, 'reauth': 'password' if user.has_usable_password() else 'google'}
+
+
 @endpoint({'GET'}, public=True)
 def session(request):
-    return response({'csrf_token': get_token(request), 'user': {'id': str(request.user.pk), 'username': request.user.username} if request.user.is_authenticated else None,
+    return response({'csrf_token': get_token(request), 'user': account_summary(request.user) if request.user.is_authenticated else None,
                      'sign_in': sign_in_options()})
 
 
@@ -116,6 +123,10 @@ def iitgn_email(claims):
     return email.lower()
 
 
+def _throttled_response():
+    return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
+
+
 def _google_sign_in(request, credential):
     from google.auth.exceptions import GoogleAuthError, TransportError
     domain = settings.COURSEPATH_GOOGLE_DOMAIN
@@ -127,9 +138,16 @@ def _google_sign_in(request, credential):
         return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
     except (ValueError, GoogleAuthError):
         return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
+    # Google verified this token, so it is not a forgery and not a guess: whatever is decided about the account below must not use up the shared
+    # address's failure allowance (a campus network is one address). A Google account that keeps being refused has an allowance of its own.
+    throttle_success(request)
+    subject = str(claims.get('sub', ''))
     email = iitgn_email(claims)
     if email is None:
+        if throttled(request, subject=subject):
+            return _throttled_response()
         return response(issues=[issue('NOT_IITGN_ACCOUNT', f'Sign in with your IITGN Google account (name@{domain}).', 'error')], status=403)
+    conflict = False
     with transaction.atomic():
         user = User.objects.filter(username=email).first()
         if user is None:
@@ -138,22 +156,41 @@ def _google_sign_in(request, credential):
             created = True
         else:
             created = False
-            if user.has_usable_password():
-                return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
-    throttle_success(request)
+            conflict = user.has_usable_password()
+    if conflict:
+        # A verified but refused account: counted against this Google account like a wrong-domain one, so it stays bounded now that the address's count is back.
+        if throttled(request, subject=subject):
+            return _throttled_response()
+        return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
     login(request, user)
-    return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
+    return response(account_summary(user), status=201 if created else 200)
 
 
-def _throttle_key(request):
-    return hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+def client_address(request):
+    """The address the request came from. Behind the hosting proxy REMOTE_ADDR is the proxy's own address, which every client shares, so there
+    (`COURSEPATH_TRUST_FORWARDED_FOR`) the client's address is the LAST entry of X-Forwarded-For: the proxy appends the address it saw (with a port),
+    while anything a client sends itself stays in front of it and is ignored. Without a trusted proxy the header is never read."""
+    connecting = request.META.get('REMOTE_ADDR', '')
+    if not settings.COURSEPATH_TRUST_FORWARDED_FOR:
+        return connecting
+    last = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[-1].strip()
+    if not last:
+        return connecting
+    if last.startswith('['):   # [::1]:1234
+        return last[1:].split(']')[0]
+    return last.rsplit(':', 1)[0] if last.count(':') == 1 else last   # 203.0.113.7:1234, or a bare IPv4/IPv6 address
+
+
+def _throttle_key(request, subject=None):
+    return hashlib.sha256((f'google-account:{subject}' if subject else client_address(request)).encode()).hexdigest()
 
 
 @transaction.atomic
-def throttled(request):
-    """Count this attempt against the address (10 per 15 minutes, then 429). Counting before the check keeps a burst of parallel guesses
-    inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only failures lock an address out."""
-    key = _throttle_key(request)
+def throttled(request, subject=None):
+    """Count this attempt against the address (10 per 15 minutes, then 429), or against one Google account when `subject` is given. Counting before
+    the check keeps a burst of parallel guesses inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only
+    failures lock an address out."""
+    key = _throttle_key(request, subject)
     now = timezone.now()
     entry, _ = LoginThrottle.objects.get_or_create(key=key, defaults={'window_start': now})
     LoginThrottle.objects.filter(pk=key, window_start__lt=now - timedelta(minutes=15)).update(attempts=0, window_start=now)
@@ -197,13 +234,13 @@ def auth(request, action):
                 raise ValueError('Account unavailable')
             throttle_success(request)
             login(request, user)
-            return response({'id': str(user.pk), 'username': user.username}, status=201)
+            return response(account_summary(user), status=201)
         user = authenticate(request, username=username, password=password)
         if user is None:
             return response(issues=[issue('INVALID_CREDENTIALS', 'Sign-in details were not accepted.', 'error')], status=401)
         throttle_success(request)
         login(request, user)
-        return response({'id': str(user.pk), 'username': user.username})
+        return response(account_summary(user))
     if not request.user.is_authenticated:
         return response(status=401)
     if action == 'logout':
@@ -244,12 +281,23 @@ def validated_plan(payload):
     return plan_payload(payload)
 
 
+MAX_SAVED_PLANS = 50   # the same bound a backup may restore
+
+
+def _require_room_for_plans(user, adding):
+    """Every list call checks each saved plan (CR-103), so an account keeps at most MAX_SAVED_PLANS: refuse what would take it over, creating or restoring."""
+    if AcademicPlan.objects.filter(owner=user).count() + adding > MAX_SAVED_PLANS:
+        raise ValueError(f'At most {MAX_SAVED_PLANS} saved plans; delete one first')
+
+
 @endpoint({'GET', 'POST'})
 def plans(request):
     record = get_object_or_404(AcademicRecord, owner=request.user)
     if request.method == 'GET':
         return response([_plan_with_status(request.user, record, p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
-    stored = AcademicPlan.objects.create(owner=request.user, payload=validated_plan(request.payload))
+    payload = validated_plan(request.payload)
+    _require_room_for_plans(request.user, 1)
+    stored = AcademicPlan.objects.create(owner=request.user, payload=payload)
     return response({**_plan_with_status(request.user, record, stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
 
 
@@ -527,7 +575,7 @@ def _plan_check(user, stored, payload):
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
     validation = _validate_payload(user, payload, simple_load=True)
-    validation['issues'] = validation['issues'] + online['issues']
+    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
     load = {}
     for term, row in validation['workload'].items():
         limit = term_cap(term)
@@ -536,6 +584,32 @@ def _plan_check(user, stored, payload):
     return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
             'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
             'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+
+
+def _incomplete_noncredit_issues(rules, audit, record):
+    """CR-104: a plan is not valid while a requirement that asks for no credits is still incomplete. The viva follows ADV13 (28 Jan 2026) p. 4,
+    item 18(d): a recorded Pass or Fail grade in every active semester satisfies the plan check, a missing grade does not (D-16 reconciliation,
+    10 Nov 2026). The audit itself still asks for a P (D-16)."""
+    from coursepath.degree_audit import incomplete_zero_credit
+    from coursepath.rules.allocation import viva_terms_without_grade
+    ungraded = viva_terms_without_grade(rules, record['attempts'])
+    found = []
+    for row in incomplete_zero_credit(rules, audit['projected']):
+        if row['id'] == 'viva':
+            terms = ungraded.get('viva', row['missing_terms'])
+            if not terms and row['required_courses']:   # every active semester has a recorded P or F
+                continue
+            count = len(terms)
+            text = (f'The comprehensive viva is still pending: your record has no viva grade (P or F) for {count} of your semesters.' if count != 1
+                    else 'The comprehensive viva is still pending: your record has no viva grade (P or F) for one of your semesters.')
+            action = 'Add the missing viva records to your record, then check the plan again.'
+            row = {**row, 'missing_terms': terms}
+        else:
+            done, needed = row['counted_courses'], row['required_courses']
+            text = f"{row['label']} is not complete yet" + (f': {done} of {needed} courses done.' if needed else '.')
+            action = 'Complete it, or add the missing courses to your plan.'
+        found.append(issue('NONCREDIT_REQUIREMENT_PENDING', text, 'error', row['missing_terms'], [], action))
+    return found
 
 
 def plan_status(check):
@@ -792,6 +866,10 @@ def _restore_backup(request, preview, stored, expected):
     rejected = _backup_rejection(request, stored, payload['attempts'])
     if rejected:
         return rejected
+    # Counted here, not at preview: the account may have saved plans since the preview, or committed other previews. The record row is locked so two
+    # commits for one account cannot both pass the count; a refusal rolls the whole restore back.
+    AcademicRecord.objects.select_for_update().get(pk=stored.pk)
+    _require_room_for_plans(request.user, len(payload['plans']))
     restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
     _spend_preview(preview)
