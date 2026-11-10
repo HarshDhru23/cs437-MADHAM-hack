@@ -399,6 +399,8 @@ export interface PerCourseValidation {
 
 export interface TermWorkload {
   selected_credits: DecimalString;
+  /** Confirmed current enrolment in this term that is not also in the plan; included in `target_credits`. */
+  enrolled_credits?: DecimalString;
   placeholder_credits: DecimalString;
   target_credits?: DecimalString;
 }
