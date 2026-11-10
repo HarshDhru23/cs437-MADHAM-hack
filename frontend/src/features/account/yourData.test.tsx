@@ -312,10 +312,21 @@ describe('AccountPage data deletion for a Google-only account (CP-32, CP-37)', (
   const CLIENT = 'synthetic-client.apps.googleusercontent.com';
   const GOOGLE_SESSION = {
     csrf_token: 'test-token',
-    user: { id: '1', username: 'student.one@iitgn.ac.in' },
+    user: { id: '1', username: 'student.one@iitgn.ac.in', reauth: 'google' },
     sign_in: { google_client_id: CLIENT, google_domain: 'iitgn.ac.in', password: false },
   };
-  const PASSWORD_SESSION = { ...GOOGLE_SESSION, sign_in: { google_client_id: null, google_domain: 'iitgn.ac.in', password: true } };
+  const PASSWORD_SESSION = {
+    ...GOOGLE_SESSION,
+    user: { ...GOOGLE_SESSION.user, reauth: 'password' },
+    sign_in: { google_client_id: null, google_domain: 'iitgn.ac.in', password: true },
+  };
+  // What the real /session returns for a legacy password account on a site with Google configured and COURSEPATH_ALLOW_PASSWORD_LOGIN on:
+  // the site-wide flag says "no password forms", but this account's own method is still its password (D-46 never links it to Google).
+  const LEGACY_PASSWORD_ON_GOOGLE_SITE = {
+    ...GOOGLE_SESSION,
+    user: { ...GOOGLE_SESSION.user, reauth: 'password' },
+    sign_in: { google_client_id: CLIENT, google_domain: 'iitgn.ac.in', password: false },
+  };
   let handler: ((response: { credential?: string }) => void) | null = null;
 
   beforeEach(() => {
@@ -399,5 +410,33 @@ describe('AccountPage data deletion for a Google-only account (CP-32, CP-37)', (
     renderApp(<AccountPage />, { fetchImpl });
     expect(await screen.findByLabelText('Current password for deletion')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the password form and sends the password, never a Google credential, for a legacy password account on a Google-configured site', async () => {
+    const { fetchImpl, calls } = fakeApi({
+      'GET /session': () => ({ data: LEGACY_PASSWORD_ON_GOOGLE_SITE }),
+      'GET /record': () => ({ data: record }),
+      'DELETE /account/data': () => ({ data: { deleted, account_deleted: false, record_revision: 4, retention: RETENTION } }),
+    });
+    renderApp(<AccountPage />, { fetchImpl });
+    const password = await screen.findByLabelText('Current password for deletion');
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument();
+    await userEvent.type(password, 'the-owners-password');
+    await userEvent.type(screen.getByLabelText(/to confirm$/), 'delete my data');
+    const submit = screen.getByRole('button', { name: 'Delete my data…' });
+    await waitFor(() => expect(submit).toBeEnabled());
+    await userEvent.click(submit);
+    await confirmDeletion();
+    expect(await screen.findByText(/Your data was deleted\./)).toBeInTheDocument();
+    const body = calls.find((c) => c.method === 'DELETE')?.body as Record<string, unknown>;
+    expect(body).toEqual({ expected_revision: 3, password: 'the-owners-password', confirm: 'delete my data', delete_account: false });
+    expect(body).not.toHaveProperty('google_credential');
+  });
+
+  it('uses the account, not the site, to choose: the same Google-configured site gives a Google-only account the Google button', async () => {
+    const { fetchImpl } = fakeApi({ 'GET /session': () => ({ data: GOOGLE_SESSION }), 'GET /record': () => ({ data: record }) });
+    renderApp(<AccountPage />, { fetchImpl });
+    expect(await screen.findByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Current password for deletion')).not.toBeInTheDocument();
   });
 });

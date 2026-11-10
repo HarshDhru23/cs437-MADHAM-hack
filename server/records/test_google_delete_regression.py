@@ -3,7 +3,7 @@ A password account still needs its password. Google is never reached: only `serv
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
-from server.records.models import AcademicPlan
+from server.records.models import AcademicPlan, AcademicRecord
 from server.records.testing import AccountAPIMixin
 from server.records.test_google_sign_in import CLIENT_ID, CREDENTIAL, claims
 from tests.imports.test_ims import TABLE
@@ -98,3 +98,47 @@ class PasswordAccountDeletionTests(AccountAPIMixin, TestCase):
             self.assertEqual((refused.status_code, [i['code'] for i in refused.json()['issues']]), (403, ['REAUTH_FAILED']))
             accepted = self.request(owner, 'delete', '/account/data', {**body, 'password': self.password})
         self.assertEqual(accepted.status_code, 200, accepted.content)
+
+
+@override_settings(COURSEPATH_GOOGLE_CLIENT_ID=CLIENT_ID, COURSEPATH_ALLOW_PASSWORD_LOGIN=True)
+class ReauthMethodTests(AccountAPIMixin, TestCase):
+    """CR-102 review: /session says how THIS account re-authenticates before deleting, because the site-wide `sign_in.password` flag cannot (a Google
+    client can be configured while a supported legacy password account still signs in). The advertised method must be the one the server accepts."""
+
+    def session_user(self, client):
+        return client.get('/api/v1/session').json()['data']['user']
+
+    def test_cp32_a_legacy_password_account_is_told_to_confirm_with_its_password_even_when_google_is_configured(self):
+        owner = Client(enforce_csrf_checks=True)
+        owner.get('/api/v1/session')
+        AcademicRecord.objects.create(owner=User.objects.create_user(username=OWNER, password=self.password))  # a password account from before Google sign-in (D-46 never links it)
+        self.assertEqual(self.request(owner, 'post', '/auth/login', {'username': OWNER, 'password': self.password}).status_code, 200)
+        data = owner.get('/api/v1/session').json()['data']
+        self.assertEqual(data['sign_in']['google_client_id'], CLIENT_ID)
+        self.assertIs(data['sign_in']['password'], False)  # the site-wide flag alone would wrongly say "Google"
+        self.assertEqual(data['user']['reauth'], 'password')
+        # the advertised method is the one that works: Google alone is refused, the password is accepted
+        body = {'expected_revision': 0, 'confirm': 'delete my data'}
+        with patch('server.api.views.verify_google_credential', return_value=claims()):
+            refused = self.request(owner, 'delete', '/account/data', {**body, 'google_credential': CREDENTIAL})
+        self.assertEqual((refused.status_code, [i['code'] for i in refused.json()['issues']]), (403, ['REAUTH_FAILED']))
+        self.assertEqual(self.request(owner, 'delete', '/account/data', {**body, 'password': self.password}).status_code, 200)
+
+    def test_cp32_a_google_only_account_is_told_to_confirm_with_google(self):
+        owner = Client(enforce_csrf_checks=True)
+        owner.get('/api/v1/session')
+        with patch('server.api.views.verify_google_credential', return_value=claims()):
+            signed_in = self.request(owner, 'post', '/auth/google', {'credential': CREDENTIAL})
+        self.assertEqual((signed_in.status_code, signed_in.json()['data']['reauth']), (201, 'google'))
+        self.assertEqual(self.session_user(owner)['reauth'], 'google')
+
+    def test_cp32_signing_in_with_a_password_reports_the_same_method_as_the_session(self):
+        owner = Client(enforce_csrf_checks=True)
+        owner.get('/api/v1/session')
+        User.objects.create_user(username='older', password=self.password)
+        login = self.request(owner, 'post', '/auth/login', {'username': 'older', 'password': self.password})
+        self.assertEqual((login.status_code, login.json()['data']['reauth']), (200, 'password'))
+        self.assertEqual(self.session_user(owner)['reauth'], 'password')
+
+    def test_cp32_signed_out_has_no_account_and_so_no_method(self):
+        self.assertIsNone(self.session_user(Client()))

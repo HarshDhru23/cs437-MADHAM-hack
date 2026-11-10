@@ -93,9 +93,16 @@ def sign_in_options():
     return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
 
 
+def account_summary(user):
+    """The account as the client sees it. `reauth` is how THIS account proves itself before deleting data: a legacy password account with its password,
+    a Google-only account (D-46: no usable password) with a fresh Google credential. It follows the account, not the site's sign-in options, so a password
+    account never gets offered a Google credential that the server refuses (`account_data` branches on the same `has_usable_password`)."""
+    return {'id': str(user.pk), 'username': user.username, 'reauth': 'password' if user.has_usable_password() else 'google'}
+
+
 @endpoint({'GET'}, public=True)
 def session(request):
-    return response({'csrf_token': get_token(request), 'user': {'id': str(request.user.pk), 'username': request.user.username} if request.user.is_authenticated else None,
+    return response({'csrf_token': get_token(request), 'user': account_summary(request.user) if request.user.is_authenticated else None,
                      'sign_in': sign_in_options()})
 
 
@@ -142,7 +149,7 @@ def _google_sign_in(request, credential):
                 return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
     throttle_success(request)
     login(request, user)
-    return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
+    return response(account_summary(user), status=201 if created else 200)
 
 
 def _throttle_key(request):
@@ -197,13 +204,13 @@ def auth(request, action):
                 raise ValueError('Account unavailable')
             throttle_success(request)
             login(request, user)
-            return response({'id': str(user.pk), 'username': user.username}, status=201)
+            return response(account_summary(user), status=201)
         user = authenticate(request, username=username, password=password)
         if user is None:
             return response(issues=[issue('INVALID_CREDENTIALS', 'Sign-in details were not accepted.', 'error')], status=401)
         throttle_success(request)
         login(request, user)
-        return response({'id': str(user.pk), 'username': user.username})
+        return response(account_summary(user))
     if not request.user.is_authenticated:
         return response(status=401)
     if action == 'logout':

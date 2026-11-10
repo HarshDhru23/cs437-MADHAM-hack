@@ -849,7 +849,8 @@
       "type": "object",
       "required": [
         "id",
-        "username"
+        "username",
+        "reauth"
       ],
       "properties": {
         "id": {
@@ -857,6 +858,13 @@
         },
         "username": {
           "type": "string"
+        },
+        "reauth": {
+          "enum": [
+            "password",
+            "google"
+          ],
+          "description": "How this account proves itself before deleting data (D-46): a password account sends its password; a Google-only account (no usable password) sends a fresh google_credential. Follows the account, not the site's sign-in options."
         }
       },
       "additionalProperties": false

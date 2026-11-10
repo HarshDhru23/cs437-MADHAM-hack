@@ -32,6 +32,7 @@ test('a Google-only account deletes its data with a Google credential and no pas
   await page.route('**/api/v1/session', async (route) => {
     const response = await route.fetch();
     const json = await response.json();
+    json.data.user.reauth = 'google';   // this account has no password, so the server would say so (the real sign-up above made a password account)
     json.data.sign_in = { google_client_id: 'stub-client.apps.googleusercontent.com', google_domain: 'iitgn.ac.in', password: false };
     await route.fulfill({ response, json });
   });

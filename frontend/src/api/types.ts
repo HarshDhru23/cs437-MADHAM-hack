@@ -29,6 +29,11 @@ export interface Envelope<T> {
 export interface SessionUser {
   id: string;
   username: string;
+  /**
+   * How THIS account proves itself before deleting data (D-46): `password` sends its password; `google` (no usable password) sends a fresh Google
+   * credential. It follows the account, not `sign_in`, which is site-wide: a legacy password account stays `password` while Google is configured.
+   */
+  reauth: 'password' | 'google';
 }
 
 /** What the sign-in page offers (D-46). With a Google client ID only IITGN Google accounts sign in and the password forms are off. */

@@ -399,8 +399,9 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
   const phraseId = useId();
   const accountId = useId();
   const [password, setPassword] = useState('');
-  // A Google-only account has no password: it confirms with a fresh Google credential instead (the server checks it).
-  const googleClientId = session.signIn.password ? null : session.signIn.google_client_id;
+  // The account says how it re-authenticates (`reauth`); the site-wide sign-in options only say whether Google is available. A Google-only account has
+  // no password and confirms with a fresh Google credential; a legacy password account always keeps its password, even where Google is configured.
+  const googleClientId = session.user?.reauth === 'google' ? session.signIn.google_client_id : null;
   const googleOnly = googleClientId !== null;
   const [googleCredential, setGoogleCredential] = useState('');
   const proof = googleOnly ? googleCredential : password;
