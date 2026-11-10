@@ -20,11 +20,12 @@ export function AppShell() {
   const [commandOpen, setCommandOpen] = useState(false);
   const { theme, toggle } = useTheme();
 
+  const sample = session.user?.demo === true;
   const signOut = async () => {
     setSigningOut(true);
     try {
       await session.logout();
-      navigate('/');
+      navigate(sample ? '/login' : '/');   // a sample student is removed on leaving; the visitor lands where they can sign in for real
     } finally {
       setSigningOut(false);
     }
@@ -38,6 +39,14 @@ export function AppShell() {
       {session.mock ? (
         <div className="mock-banner" role="note">
           Development mock data — synthetic responses. Nothing here is saved.
+        </div>
+      ) : null}
+      {sample ? (
+        <div className="sample-banner" role="status" aria-label="Sample student">
+          <p>You are looking at a sample student. Every course and grade here is made up and nothing is saved to a real account.</p>
+          <button type="button" className="btn" onClick={signOut} disabled={signingOut}>
+            {signingOut ? 'Leaving…' : 'Leave the sample'}
+          </button>
         </div>
       ) : null}
       <header className="shell-header">
@@ -78,12 +87,20 @@ export function AppShell() {
             </button>
             {session.user ? (
               <>
-                <NavLink to="/account" className="btn btn-quiet" aria-label={`Account (${session.user.username})`}>
-                  Account <span className="mono">{session.user.username}</span>
-                </NavLink>
-                <button type="button" className="btn" onClick={signOut} disabled={signingOut}>
-                  {signingOut ? 'Signing out…' : 'Sign out'}
-                </button>
+                {sample ? (
+                  <NavLink to="/account" className="btn btn-quiet" aria-label="Account (sample student)">
+                    Account <span className="mono">sample student</span>
+                  </NavLink>
+                ) : (
+                  <>
+                    <NavLink to="/account" className="btn btn-quiet" aria-label={`Account (${session.user.username})`}>
+                      Account <span className="mono">{session.user.username}</span>
+                    </NavLink>
+                    <button type="button" className="btn" onClick={signOut} disabled={signingOut}>
+                      {signingOut ? 'Signing out…' : 'Sign out'}
+                    </button>
+                  </>
+                )}
               </>
             ) : (
               <>

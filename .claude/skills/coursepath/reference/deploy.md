@@ -32,7 +32,7 @@ Observed in `server/config/settings.py` on `feature/harsh-oct27-backend` (commit
 
 ## Environment variables (names already used by settings.py)
 
-`COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS`, `COURSEPATH_DB_NAME`, `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, `COURSEPATH_DB_PORT`. Keep `.env.example` listing names and descriptions only. Real values live in the host's secret settings, never in Git, CI logs or screenshots.
+`COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS`, `COURSEPATH_DB_NAME`, `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, `COURSEPATH_DB_PORT`, and `COURSEPATH_GOOGLE_CLIENT_ID` (required: the server refuses to start in production without it; password sign-in is never on in production). Keep `.env.example` listing names and descriptions only. Real values live in the host's secret settings, never in Git, CI logs or screenshots.
 
 ## Choosing a host
 

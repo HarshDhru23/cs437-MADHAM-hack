@@ -80,11 +80,20 @@ SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 CSRF_FAILURE_VIEW = 'server.api.views.csrf_failure'
-# Sign-in (D-46). With a Google OAuth client ID set, only IITGN Google accounts sign in and password sign-up and sign-in are off.
-# Without one (local development, tests) the username and password forms work as before. The domain is fixed on purpose.
+# Sign-in (D-46, CR-140). In production every sign-in is a server-verified IITGN Google account: the server does not start without a Google client ID,
+# and password sign-up and sign-in are never on. The username and password forms exist only in development and tests (no client ID, or the legacy switch).
+COURSEPATH_PRODUCTION = os.getenv('COURSEPATH_ENV', 'development') == 'production'   # not DEBUG; Django's test runner switches DEBUG off, this stays put
+# Without one (local development, tests only) the username and password forms work as before. The domain is fixed on purpose.
 COURSEPATH_GOOGLE_CLIENT_ID = os.getenv('COURSEPATH_GOOGLE_CLIENT_ID', '').strip()
 COURSEPATH_GOOGLE_DOMAIN = 'iitgn.ac.in'
-# Keeps password sign-in for accounts made before Google sign-in (never sign-up). Off unless asked for.
-COURSEPATH_ALLOW_PASSWORD_LOGIN = os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+if COURSEPATH_PRODUCTION and not COURSEPATH_GOOGLE_CLIENT_ID:
+    raise RuntimeError('COURSEPATH_GOOGLE_CLIENT_ID is required in production: every sign-in must be a verified IITGN Google account (D-46)')
+# Keeps password sign-in for accounts made before Google sign-in (never sign-up) on a development server. Off unless asked for, and ignored in production.
+COURSEPATH_ALLOW_PASSWORD_LOGIN = not COURSEPATH_PRODUCTION and os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+# "Try with a sample student" (CR-137): a throw-away account with a made-up record, so a reviewer can see the app working without a real transcript or an
+# IITGN Google account. It is deleted when the visitor leaves it or after COURSEPATH_DEMO_HOURS; COURSEPATH_DEMO=0 turns it off.
+COURSEPATH_DEMO_ENABLED = os.getenv('COURSEPATH_DEMO', '1') != '0'
+COURSEPATH_DEMO_HOURS = 6
+COURSEPATH_DEMO_MAX = 200   # live sample accounts at once; the 201st visitor is told to try again later
 # Google's sign-in button opens a pop-up that talks back to this page; Django's default 'same-origin' would cut that link.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
