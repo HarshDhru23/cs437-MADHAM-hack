@@ -34,6 +34,8 @@ export interface SessionUser {
    * credential. It follows the account, not `sign_in`, which is site-wide: a legacy password account stays `password` while Google is configured.
    */
   reauth: 'password' | 'google';
+  /** Present (true) only for a sample-student account: a made-up record that is removed when the visitor leaves it. */
+  demo?: true;
 }
 
 /** What the sign-in page offers (D-46). With a Google client ID only IITGN Google accounts sign in and the password forms are off. */
@@ -49,6 +51,8 @@ export interface SessionData {
   csrf_token: string;
   user: SessionUser | null;
   sign_in?: SignInOptions;
+  /** Whether the "Try with a sample student" button is offered. */
+  sample_student?: boolean;
 }
 
 export interface SourceReference {
@@ -407,6 +411,8 @@ export interface TermWorkload {
   /** Confirmed current enrolment in this term that is not also in the plan; included in `target_credits`. */
   enrolled_credits?: DecimalString;
   placeholder_credits: DecimalString;
+  /** Online courses held in a regular semester: outside its load, so `target_credits` leaves them out (D-50). */
+  online_credits?: DecimalString;
   target_credits?: DecimalString;
 }
 
@@ -863,6 +869,8 @@ export interface GenerationOptions {
   internship_term?: string | null;
   /** Spread the work evenly over the same semesters and use online credits in the breaks to lower each semester's load. */
   lighten_with_online?: boolean;
+  /** false: plan from the completed courses alone and plan the running semester again; true (the default): count the confirmed current courses as taken. */
+  include_current?: boolean;
 }
 
 /** What online courses in the breaks and the internship semester could do for a plan. */

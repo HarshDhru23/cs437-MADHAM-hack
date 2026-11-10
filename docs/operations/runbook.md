@@ -25,7 +25,8 @@ Nothing needs to be set for a local run. The git-ignored `server/.local/` holds 
 | `COURSEPATH_API_ORIGIN` | Where the Vite proxy sends `/api` (default `http://127.0.0.1:8000`); `run.py` sets it from `--api-port`. |
 | `COURSEPATH_DB_ENGINE=postgresql` with `COURSEPATH_DB_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | Run against a local PostgreSQL instead of SQLite. CI does this in its `postgres` job. |
 | `COURSEPATH_REAL_INPUT_DIR` | Folder of private inputs for the optional real-file tests (README, Test). |
-| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS and a secret key. |
+| `COURSEPATH_DEMO` | `0` turns off "Try with a sample student". On by default. Sample accounts (`sample-` names, a `DemoAccount` row) are deleted when the visitor leaves, and expired ones (6 hours) when the next sample starts; at most 200 at once. |
+| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS, a secret key and `COURSEPATH_GOOGLE_CLIENT_ID` (the server will not start without it). |
 | `COURSEPATH_ALLOWED_HOSTS` | Not needed on localhost: the default is `localhost,127.0.0.1,testserver`. |
 
 Names only are in `.env.example`. Never put a real value in Git, CI logs or screenshots.

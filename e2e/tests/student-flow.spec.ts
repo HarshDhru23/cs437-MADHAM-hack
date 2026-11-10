@@ -115,16 +115,17 @@ test.describe.serial('student flow', () => {
     // A course that is in no timetable is never reported as a clash-free one (the Plan tab no longer prints a 'not checked' note: F2-owned wording).
     await expect(semester(page, '2026–27 Semester I')).not.toContainText(/No clash/i);
 
-    // Keyboard-only move.
+    // Keyboard-only move. A course moves between odd semesters or between even ones (D-50), so Semester I offers Semester I of the next year.
     const select = semester(page, '2026–27 Semester I').getByLabel('Move ZZ 330 to');
+    await expect(select.locator('option')).toHaveText(['2026–27 Semester I', '2027–28 Semester I']);
     await select.focus();
-    await select.selectOption('2026-27-II');
+    await select.selectOption('2027-28-I');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Move ZZ 330', exact: true })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(semester(page, '2026–27 Semester II')).toContainText('ZZ 330');
+    await expect(semester(page, '2027–28 Semester I')).toContainText('ZZ 330');
     await expect(status).toContainText('Saved');
-    await expect(semester(page, '2026–27 Semester II')).toContainText(/Semester total: 4 \/ 28 credits/);
+    await expect(semester(page, '2027–28 Semester I')).toContainText(/Semester total: 4 \/ 28 credits/);
     await expect(page.getByRole('region', { name: 'Plan validation' })).not.toContainText(/PREREQUISITE_UNKNOWN|D-\d\d/);
   });
 
@@ -132,11 +133,11 @@ test.describe.serial('student flow', () => {
     const contextB = await browser.newContext();
     const pageB = await contextB.newPage();
     await login(pageB, owner, new URL(planUrl).pathname);
-    await expect(semester(pageB, '2026–27 Semester II')).toContainText('ZZ 330');
+    await expect(semester(pageB, '2027–28 Semester I')).toContainText('ZZ 330');
     await expect(pageB.getByRole('status', { name: 'Plan save status' })).not.toContainText(/revision/i);
 
     // B saves a change; A is now stale.
-    await semester(pageB, '2026–27 Semester II').getByRole('button', { name: 'Remove ZZ 330' }).click();
+    await semester(pageB, '2027–28 Semester I').getByRole('button', { name: 'Remove ZZ 330' }).click();
     await expect(pageB.getByRole('status', { name: 'Plan save status' })).toContainText('Saved');
 
     await semester(pageA, '2027–28 Semester I').getByRole('button', { name: 'Add course to 2027–28 Semester I' }).click();
@@ -150,7 +151,7 @@ test.describe.serial('student flow', () => {
     await expect(pageA.getByRole('alert').filter({ hasText: 'This was saved elsewhere' })).toContainText('Saved version');
     await pageA.getByRole('button', { name: 'Reload saved version' }).click();
     await expect(semester(pageA, '2027–28 Semester I')).not.toContainText('ZZ 421');
-    await expect(semester(pageA, '2026–27 Semester II')).not.toContainText('ZZ 330');
+    await expect(semester(pageA, '2027–28 Semester I')).not.toContainText('ZZ 330');
     await contextB.close();
   });
 

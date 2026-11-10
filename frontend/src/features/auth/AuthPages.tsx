@@ -150,6 +150,56 @@ function GoogleSection({ defaultNext }: { defaultNext: string }) {
   );
 }
 
+/** What went wrong with starting the sample student, in the student's words. */
+export function sampleFailureMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'Something went wrong. Try again.';
+  if (error.kind === 'network') return 'CoursePath could not be reached.';
+  if (error.kind === 'throttled') return 'Too many tries from this network. Wait 15 minutes, then try again.';
+  if (error.status === 503) return 'The sample student is busy right now. Try again in a few minutes.';
+  if (error.kind === 'conflict') return 'Sign out first to try the sample student.';
+  return 'The sample student is not available right now. Try again in a moment.';
+}
+
+/** "Try with a sample student": a made-up record for a reviewer or a first-time visitor, with no sign-in. Shown on the sign-in and create-account pages. */
+function SampleSection() {
+  const session = useSession();
+  const navigate = useNavigate();
+  const [failure, setFailure] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  if (!session.sampleStudent) return null;
+  const start = async () => {
+    setPending(true);
+    setFailure(null);
+    try {
+      await session.startSample();
+      navigate('/record', { replace: true });
+    } catch (error) {
+      setFailure(sampleFailureMessage(error));
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <section className="sample-start" aria-labelledby="sample-start-title" aria-busy={pending}>
+      <h2 id="sample-start-title">Just looking?</h2>
+      <p className="muted">See CoursePath with a made-up student. No sign-in needed; it is removed when you leave.</p>
+      {failure ? (
+        <p className="callout" data-tone="danger" role="alert">
+          {failure}
+        </p>
+      ) : null}
+      <button type="button" className="btn" onClick={() => void start()} disabled={pending}>
+        Try with a sample student
+      </button>
+      {pending ? (
+        <p role="status" className="muted">
+          Getting the sample ready…
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 export function LoginPage() {
   const session = useSession();
   const navigate = useNavigate();
@@ -206,6 +256,7 @@ export function LoginPage() {
           </p>
         </>
       ) : null}
+      <SampleSection />
     </section>
     </div>
   );
@@ -290,6 +341,7 @@ export function SignupPage() {
       <p className="auth-switch">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>
+      <SampleSection />
     </section>
     </div>
   );

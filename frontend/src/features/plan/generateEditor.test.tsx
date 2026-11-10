@@ -210,14 +210,18 @@ describe('Adding an online course by hand', () => {
     expect(form).not.toHaveTextContent(/hss-other|open-electives|cse-general|bs-elective/);
   });
 
-  it('the credits start at the least of 4, what the requirement needs and what the semester has room for', async () => {
+  it('the credits start at the least of 4 and what the requirement needs: a full semester does not shrink an online course (D-50)', async () => {
+    // Changed on 10 Nov at Manashree's request: online credits are held outside a regular semester's load, so the semester's room no longer
+    // limits them (the test used to expect 1 credit here, from the 1 credit of room).
     const s = server({ check: () => ({ data: checkResult({ load: { '2026-27-I': { planned_credits: '27', limit_credits: '28', available_credits: '1' } } }) }) });
     const draft = await open(s);
     const form = await addForm(draft);
     const credits = within(form).getByLabelText('Credits') as HTMLInputElement;
-    expect(credits.value).toBe('1'); // only 1 credit of room, although HSS electives need 8
+    expect(credits.value).toBe('4'); // 1 credit of room, but online credits are outside the semester's load; HSS electives need 8
+    expect(within(form).queryByText(/has room for/)).not.toBeInTheDocument();
+    expect(within(form).getByText(/not part of the semester.s credit limit/)).toBeInTheDocument();
     await userEvent.selectOptions(within(form).getByLabelText('Counts toward'), 'cse-general');
-    expect(credits.value).toBe('1');
+    expect(credits.value).toBe('2'); // CSE electives need only 2
   });
 
   it('defaults to 4 when the requirement needs more and the semester has room, and to what is needed when that is less', async () => {
