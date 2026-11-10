@@ -527,7 +527,7 @@ def _plan_check(user, stored, payload):
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
     validation = _validate_payload(user, payload, simple_load=True)
-    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit)
+    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
     load = {}
     for term, row in validation['workload'].items():
         limit = term_cap(term)
@@ -538,16 +538,24 @@ def _plan_check(user, stored, payload):
             'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
 
 
-def _incomplete_noncredit_issues(rules, audit):
-    """CR-104: a plan is not valid while a requirement that asks for no credits, such as the comprehensive viva, is still incomplete."""
+def _incomplete_noncredit_issues(rules, audit, record):
+    """CR-104: a plan is not valid while a requirement that asks for no credits is still incomplete. The viva follows ADV13 (28 Jan 2026) p. 4,
+    item 18(d): a recorded Pass or Fail grade in every active semester satisfies the plan check, a missing grade does not (D-16 reconciliation,
+    10 Nov 2026). The audit itself still asks for a P (D-16)."""
     from coursepath.degree_audit import incomplete_zero_credit
+    from coursepath.rules.allocation import viva_terms_without_grade
+    ungraded = viva_terms_without_grade(rules, record['attempts'])
     found = []
     for row in incomplete_zero_credit(rules, audit['projected']):
         if row['id'] == 'viva':
-            count = len(row['missing_terms'])
-            text = (f'The comprehensive viva is still pending: your record has no viva pass (P) for {count} of your semesters.' if count != 1
-                    else 'The comprehensive viva is still pending: your record has no viva pass (P) for one of your semesters.')
+            terms = ungraded.get('viva', row['missing_terms'])
+            if not terms and row['required_courses']:   # every active semester has a recorded P or F
+                continue
+            count = len(terms)
+            text = (f'The comprehensive viva is still pending: your record has no viva grade (P or F) for {count} of your semesters.' if count != 1
+                    else 'The comprehensive viva is still pending: your record has no viva grade (P or F) for one of your semesters.')
             action = 'Add the missing viva records to your record, then check the plan again.'
+            row = {**row, 'missing_terms': terms}
         else:
             done, needed = row['counted_courses'], row['required_courses']
             text = f"{row['label']} is not complete yet" + (f': {done} of {needed} courses done.' if needed else '.')

@@ -2,6 +2,7 @@
 Record: tests/plan_fixtures.synthetic_attempts (four active semesters, each with an IN record and a PE course)."""
 import unittest
 from coursepath.degree_audit import evaluate_audit, incomplete_zero_credit
+from coursepath.rules.allocation import viva_terms_without_grade
 from coursepath.rules.loader import load_curriculum
 from tests.plan_fixtures import synthetic_attempts
 
@@ -34,3 +35,25 @@ class IncompleteZeroCredit(unittest.TestCase):
         # The viva is a pass recorded in each active semester of the record; a plan cannot supply the past ones.
         planned = [{'id': 'v1', 'normalized_code': 'IN 105', 'credits': '0'}]
         self.assertEqual(list(incomplete(without=VIVA, planned=planned)), ['viva'])
+
+
+def ungraded(without=(), grades=None):
+    attempts = synthetic_attempts(without=without)
+    for row in attempts:
+        if row['normalized_code'] in (grades or {}):
+            row['grade'] = grades[row['normalized_code']]
+    return viva_terms_without_grade(CURRICULUM, attempts)['viva']
+
+
+class VivaGradeRecorded(unittest.TestCase):
+    """ADV13 p. 4, item 18(d): a recorded P or F in every active semester is what the viva requires; only a missing grade is unmet."""
+    def test_a_recorded_pass_or_fail_is_a_recorded_grade(self):
+        self.assertEqual(ungraded(), [])
+        self.assertEqual(ungraded(grades={'IN 104': 'F'}), [])
+        self.assertEqual(ungraded(grades={code: 'F' for code in VIVA}), [])
+
+    def test_a_missing_grade_is_named_with_its_semester(self):
+        self.assertEqual(ungraded(without=('IN 102', 'IN 104'), grades={'IN 103': 'F'}), ['2024-25-II', '2025-26-II'])
+
+    def test_a_grade_that_is_neither_pass_nor_fail_is_not_a_recorded_grade(self):
+        self.assertEqual(ungraded(grades={'IN 101': 'W', 'IN 102': ''}), ['2024-25-I', '2024-25-II'])

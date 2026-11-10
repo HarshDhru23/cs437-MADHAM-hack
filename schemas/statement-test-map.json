@@ -1098,6 +1098,14 @@
         "tests.domain.test_incomplete_zero_credit.IncompleteZeroCredit.test_a_missing_viva_is_reported_with_the_semesters_it_lacks",
         "tests.domain.test_incomplete_zero_credit.IncompleteZeroCredit.test_missing_physical_education_is_reported_until_the_plan_adds_it",
         "tests.domain.test_incomplete_zero_credit.IncompleteZeroCredit.test_planned_courses_never_make_up_for_a_missing_viva",
+        "server.records.test_plan_status_viva.VivaGradeRecordedTests.test_cp36_a_recorded_viva_fail_does_not_make_the_plan_not_valid",
+        "server.records.test_plan_status_viva.VivaGradeRecordedTests.test_cp36_a_recorded_viva_fail_in_every_semester_keeps_the_plan_valid",
+        "server.records.test_plan_status_viva.VivaGradeRecordedTests.test_cp36_a_recorded_viva_pass_keeps_the_plan_valid",
+        "server.records.test_plan_status_viva.VivaGradeRecordedTests.test_cp36_a_viva_fail_does_not_hide_a_semester_whose_grade_is_missing",
+        "server.records.test_plan_status_viva.VivaGradeRecordedTests.test_cp36_the_audit_still_calls_a_viva_fail_pending",
+        "tests.domain.test_incomplete_zero_credit.VivaGradeRecorded.test_a_recorded_pass_or_fail_is_a_recorded_grade",
+        "tests.domain.test_incomplete_zero_credit.VivaGradeRecorded.test_a_missing_grade_is_named_with_its_semester",
+        "tests.domain.test_incomplete_zero_credit.VivaGradeRecorded.test_a_grade_that_is_neither_pass_nor_fail_is_not_a_recorded_grade",
         "server.records.test_online_cap_plan_check_regression.OnlineCapPlanCheckTests.test_cp36_eight_online_credits_and_two_more_elective_credits_cover_cse_general"
       ],
       "browser_tests": [

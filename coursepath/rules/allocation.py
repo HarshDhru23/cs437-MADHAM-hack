@@ -65,8 +65,8 @@ def pass_fail_conversions(curriculum, attempts):
     return total
 
 
-def _viva(obligation, attempts, identity):
-    """D-16: a passing viva record in every active (regular) semester of the actual record."""
+def _viva_terms(obligation, attempts, identity, grades):
+    """The active (regular) semesters of the actual record, and those among them with a viva record graded one of `grades`."""
     actual = [a for a in attempts if not a.get('planned') and not a.get('current')]
     active = sorted({a['term_id'] for a in actual if a.get('term_id') and not a['term_id'].endswith('SUMMER')})
     passed = set()
@@ -76,8 +76,26 @@ def _viva(obligation, attempts, identity):
             continue
         if code in (obligation.get('exclude_course_ids') or []) or not matches(obligation, code, identity):
             continue
-        if attempt.get('grade', '').strip().upper() in obligation.get('passing_grades', []):
+        if attempt.get('grade', '').strip().upper() in grades:
             passed.add(attempt['term_id'])
+    return active, passed
+
+
+def viva_terms_without_grade(curriculum, attempts, recorded_grades=('P', 'F')):
+    """ADV13 (28 Jan 2026) p. 4, item 18(d) makes a recorded Pass or Fail grade for the viva in every active semester mandatory. The active
+    semesters of the actual record whose viva has no such grade, per obligation id. The audit keeps D-16 (a P); this is the weaker, source-literal test."""
+    identity = identity_map(curriculum.get('identity_groups'))
+    result = {}
+    for obligation in curriculum.get('noncredit_obligations', []):
+        if obligation.get('completion_policy') == 'pass_each_active_semester':
+            active, graded = _viva_terms(obligation, attempts, identity, recorded_grades)
+            result[obligation['id']] = [t for t in active if t not in graded]
+    return result
+
+
+def _viva(obligation, attempts, identity):
+    """D-16: a passing viva record in every active (regular) semester of the actual record."""
+    active, passed = _viva_terms(obligation, attempts, identity, obligation.get('passing_grades', []))
     missing = [t for t in active if t not in passed]
     status = 'satisfied' if active and not missing else 'pending'
     return {'id': obligation['id'], 'label': obligation.get('label', obligation['id']), 'status': status, 'required_credits': '0', 'counted_credits': '0',
