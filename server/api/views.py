@@ -116,6 +116,10 @@ def iitgn_email(claims):
     return email.lower()
 
 
+def _throttled_response():
+    return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
+
+
 def _google_sign_in(request, credential):
     from google.auth.exceptions import GoogleAuthError, TransportError
     domain = settings.COURSEPATH_GOOGLE_DOMAIN
@@ -130,11 +134,13 @@ def _google_sign_in(request, credential):
     # Google verified this token, so it is not a forgery and not a guess: whatever is decided about the account below must not use up the shared
     # address's failure allowance (a campus network is one address). A Google account that keeps being refused has an allowance of its own.
     throttle_success(request)
+    subject = str(claims.get('sub', ''))
     email = iitgn_email(claims)
     if email is None:
-        if throttled(request, subject=str(claims.get('sub', ''))):
-            return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
+        if throttled(request, subject=subject):
+            return _throttled_response()
         return response(issues=[issue('NOT_IITGN_ACCOUNT', f'Sign in with your IITGN Google account (name@{domain}).', 'error')], status=403)
+    conflict = False
     with transaction.atomic():
         user = User.objects.filter(username=email).first()
         if user is None:
@@ -143,8 +149,12 @@ def _google_sign_in(request, credential):
             created = True
         else:
             created = False
-            if user.has_usable_password():
-                return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
+            conflict = user.has_usable_password()
+    if conflict:
+        # A verified but refused account: counted against this Google account like a wrong-domain one, so it stays bounded now that the address's count is back.
+        if throttled(request, subject=subject):
+            return _throttled_response()
+        return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
     login(request, user)
     return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
 
