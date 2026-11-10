@@ -227,7 +227,10 @@
         "tests.imports.test_pdf.PDFTests.test_cp09_invalid_encrypted_image_only_and_limits",
         "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback",
         "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_pdf_that_always_runs_out_of_time_still_fails_after_one_more_try",
-        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_an_unreadable_pdf_is_not_retried"
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_an_unreadable_pdf_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_worker_that_exits_with_an_error_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_worker_that_prints_garbage_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_process_that_cannot_start_is_not_retried"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {

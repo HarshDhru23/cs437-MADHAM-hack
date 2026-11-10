@@ -39,6 +39,7 @@ class PdfSlowStartTests(unittest.TestCase):
         self.assertEqual(parsed['candidate_attempts'], [])
         self.assertIn('PDF_EXTRACTION_FAILED', [i['code'] for i in parsed['issues']])
         self.assertEqual(len(calls), 2)   # bounded: never a loop
+        self.assertEqual(calls, [20, 20])   # the per-try limit is pinned
 
     def test_cp09_an_unreadable_pdf_is_not_retried(self):
         calls = []
@@ -50,6 +51,40 @@ class PdfSlowStartTests(unittest.TestCase):
             parsed = parse_pdf(transcript(encrypted=True), 'synthetic-pdf')
         self.assertIn('PDF_UNSUPPORTED', [i['code'] for i in parsed['issues']])
         self.assertEqual(len(calls), 1)
+
+    def test_cp09_a_worker_that_exits_with_an_error_is_not_retried(self):
+        calls = []
+
+        def run(*args, **kwargs):
+            calls.append(1)
+            return subprocess.CompletedProcess(args[0], 1, stdout=b'', stderr=b'boom')
+        with mock.patch.object(pdf_transcript.subprocess, 'run', run):
+            parsed = parse_pdf(transcript(), 'synthetic-pdf')
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(parsed['candidate_attempts'], [])
+        self.assertIn('PDF_EXTRACTION_FAILED', [i['code'] for i in parsed['issues']])
+
+    def test_cp09_a_worker_that_prints_garbage_is_not_retried(self):
+        calls = []
+
+        def run(*args, **kwargs):
+            calls.append(1)
+            return subprocess.CompletedProcess(args[0], 0, stdout=b'not json', stderr=b'')
+        with mock.patch.object(pdf_transcript.subprocess, 'run', run):
+            parsed = parse_pdf(transcript(), 'synthetic-pdf')
+        self.assertEqual(len(calls), 1)
+        self.assertIn('PDF_EXTRACTION_FAILED', [i['code'] for i in parsed['issues']])
+
+    def test_cp09_a_process_that_cannot_start_is_not_retried(self):
+        calls = []
+
+        def run(*args, **kwargs):
+            calls.append(1)
+            raise OSError('cannot start')
+        with mock.patch.object(pdf_transcript.subprocess, 'run', run):
+            parsed = parse_pdf(transcript(), 'synthetic-pdf')
+        self.assertEqual(len(calls), 1)
+        self.assertIn('PDF_EXTRACTION_FAILED', [i['code'] for i in parsed['issues']])
 
 
 if __name__ == '__main__':
