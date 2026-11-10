@@ -406,7 +406,9 @@
       "id": "CP-16",
       "oct27_target": true,
       "tests": [
-        "tests.domain.test_performance.PerformanceTests.test_cp16_weighted_terms_failed_denominator_p_and_zero_credit"
+        "tests.domain.test_performance.PerformanceTests.test_cp16_weighted_terms_failed_denominator_p_and_zero_credit",
+        "tests.domain.test_performance.SpiCapTests.test_cp16_a_term_of_all_a_plus_shows_spi_10_not_11",
+        "tests.domain.test_performance.SpiCapTests.test_cp16_the_cap_does_not_change_a_term_below_ten"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -842,6 +844,12 @@
         "server.records.test_api_not_found.UnknownApiPathTests.test_known_routes_are_unchanged",
         "server.records.tests.AccountPersistenceTests.test_two_user_plan_isolation_revision_and_invalid_profile",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deletion_needs_csrf_reauth_confirmation_and_touches_only_the_owner",
+        "server.records.test_deletion_retention.DeletionRetentionMessage.test_cp32_the_message_names_the_seven_day_backup_window",
+        "server.records.test_deletion_retention.DeletionRetentionMessage.test_cp32_the_message_no_longer_claims_there_are_no_backups",
+        "server.records.test_static_assets.StaticAssetTests.test_cp32_a_hashed_asset_is_cached_for_a_year_or_more_and_marked_immutable",
+        "server.records.test_static_assets.StaticAssetTests.test_cp32_index_html_and_unhashed_files_keep_the_short_cache",
+        "server.records.test_static_assets.StaticAssetTests.test_cp32_the_precompressed_copy_is_served_when_the_browser_accepts_gzip",
+        "server.records.test_static_assets.StaticAssetTests.test_cp32_the_immutable_test_only_accepts_hashed_files_under_assets",
         "server.records.test_privacy.DataDeletionTests.test_cp32_deleting_the_account_ends_every_session",
         "server.records.test_privacy.DataDeletionTests.test_cp32_password_rechecks_are_throttled_like_login",
         "server.records.test_privacy.DataDeletionTests.test_cp32_delete_account_must_be_a_json_boolean",

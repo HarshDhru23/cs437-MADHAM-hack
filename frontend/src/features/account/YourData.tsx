@@ -25,7 +25,7 @@ export const DELETE_PHRASE = 'delete my data';
 
 /** Quoted from server/README.md ("Rules and deployment configuration"); not CoursePath policy text of our own. */
 const README_RETENTION =
-  'Data deletion is immediate in the application database; this repository configures no database backups, so any copy the host keeps is outside its control (the deletion response says so).';
+  'Data deletion is immediate in the application database. The hosted database keeps automatic backups for 7 days, so a copy can remain in a backup until it expires (the deletion response says so).';
 
 function asApiError(error: unknown): ApiError {
   return error instanceof ApiError ? error : new ApiError('server', 0, String(error), []);

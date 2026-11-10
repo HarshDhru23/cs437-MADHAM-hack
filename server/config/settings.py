@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 
@@ -28,6 +29,14 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('COURSEPATH_CSRF_
 # One origin: Django serves /api/v1/* and the built React app (frontend/dist). COURSEPATH_FRONTEND_DIR moves the build for tests.
 COURSEPATH_FRONTEND_DIR = Path(os.getenv('COURSEPATH_FRONTEND_DIR') or BASE_DIR / 'frontend' / 'dist')
 WHITENOISE_ROOT = COURSEPATH_FRONTEND_DIR
+
+
+def immutable_asset(path, url):
+    """Vite writes content-hashed files under /assets/ (name-<hash>.js), so a browser may keep them for good; index.html keeps the short default."""
+    return re.match(r'^/assets/.+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$', url) is not None
+
+
+WHITENOISE_IMMUTABLE_FILE_TEST = immutable_asset
 COURSEPATH_CSP_REPORT_ONLY = os.getenv('COURSEPATH_CSP_REPORT_ONLY') == '1'   # send the policy without enforcing it (server/api/csp.py)
 ROOT_URLCONF = 'server.config.urls'
 WSGI_APPLICATION = 'server.config.wsgi.application'

@@ -202,7 +202,7 @@ describe('AccountPage data deletion (A11, CP-32)', () => {
     const section = (await screen.findByRole('heading', { name: 'Delete my data' })).parentElement!;
     for (const text of ['every course attempt', 'confirmed current enrolment', 'source-reported totals', 'plans and scenarios', 'import previews', 'approval evidence'])
       expect(section).toHaveTextContent(text);
-    expect(section).toHaveTextContent('this repository configures no database backups, so any copy the host keeps is outside its control');
+    expect(section).toHaveTextContent('The hosted database keeps automatic backups for 7 days, so a copy can remain in a backup until it expires');
   });
 
   it('needs the typed phrase, then a wrong password is refused and nothing is claimed deleted', async () => {

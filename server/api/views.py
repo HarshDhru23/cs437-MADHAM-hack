@@ -876,8 +876,8 @@ def _restore_backup(request, preview, stored, expected):
     return response(restored)
 
 
-RETENTION = ('Deleted from the CoursePath database immediately. This repository configures no database backups; '
-             'if the hosting provider keeps backups, a copy may remain there until those backups expire under the host\'s retention policy.')
+RETENTION = ('Deleted from the CoursePath database immediately. The hosted database keeps automatic backups for 7 days, '
+             'so a copy of your data can remain in a backup until it expires.')
 
 
 def _google_reauth(user, credential):

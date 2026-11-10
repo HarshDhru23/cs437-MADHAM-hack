@@ -199,7 +199,8 @@ configure the actual proxy and production WSGI server with the hosting team.
 Never set production credentials in committed files. `server.records.test_privacy`
 runs `check --deploy --fail-level WARNING` under production settings and checks
 that DEBUG is off, cookies are secure and a missing secret key stops start-up.
-Data deletion is immediate in the application database; this repository
-configures no database backups, so any copy the host keeps is outside its
-control (the deletion response says so). PostgreSQL concurrency, production
+Data deletion is immediate in the application database. The hosted Azure
+PostgreSQL database keeps automatic backups for 7 days (geo-redundant backup is
+off; read from `az postgres flexible-server show`, 10 Nov), so a copy can remain
+in a backup until it expires (the deletion response says so). PostgreSQL concurrency, production
 serving and hosting are not yet verified here (GAP-13).

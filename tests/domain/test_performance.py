@@ -61,3 +61,25 @@ class BestGradeRepeatTests(unittest.TestCase):
         # Historical SPI keeps the failed attempt in its own term (academic-decisions "Still open": unchanged).
         first = next(t for t in result['terms'] if t['term_id'] == '2024-25-I')
         self.assertIn('f', [c['attempt_id'] for c in first['contributing_attempts']])
+
+
+class SpiCapTests(unittest.TestCase):
+    """CR-110 item 1 / D-47: the shipped grading policy caps SPI at 10, like CPI."""
+
+    @staticmethod
+    def shipped_policy():
+        from pathlib import Path
+        import json
+        return json.loads((Path(__file__).resolve().parents[2] / 'data' / 'grading' / 'reported-v1.json').read_text(encoding='utf-8'))
+
+    def test_cp16_a_term_of_all_a_plus_shows_spi_10_not_11(self):
+        policy = self.shipped_policy()
+        result = calculate_performance([attempt('a', 'ZZ 100', '4', grade='A+'), attempt('b', 'ZZ 200', '4', grade='A+')], policy)
+        self.assertEqual(result['terms'][0]['display_value'], '10.00')
+        self.assertEqual(result['cumulative']['display_value'], '10.00')
+
+    def test_cp16_the_cap_does_not_change_a_term_below_ten(self):
+        # Negative: a cap applied too early (or to the points) would move this 8.67 term.
+        policy = self.shipped_policy()
+        result = calculate_performance([attempt('a', 'ZZ 100', '2', grade='A'), attempt('b', 'ZZ 200', '4', grade='B')], policy)
+        self.assertEqual(result['terms'][0]['display_value'], '8.67')
