@@ -19,6 +19,7 @@ from decimal import Decimal
 from coursepath.serialization import plain, decimal_string, decimal_value
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
 from coursepath.validation import plan_payload, current_enrolment, scenario_payload, reported_controls
+from server.records import demo
 from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts, restore_rejections
 
 
@@ -57,6 +58,16 @@ def endpoint(methods, public=False):
     return decorate
 
 
+def not_for_sample(fn):
+    """The sample student cannot take real data in (uploads, restores) or delete a real account's data (CR-137): it is a sandbox with a made-up record."""
+    @wraps(fn)
+    def wrapped(request, *args, **kwargs):
+        if demo.is_demo(request.user):
+            return response(issues=[issue('DEMO_ACCOUNT', 'The sample student is made-up data and cannot do this. Sign in with your IITGN Google account to use your own record.', 'error')], status=403)
+        return fn(request, *args, **kwargs)
+    return wrapped
+
+
 def csrf_failure(request, reason=''):
     return response(issues=[issue('CSRF_REQUIRED', 'Refresh the session and send the CSRF token.', 'error')], status=403)
 
@@ -90,20 +101,34 @@ def spa(request, path=''):
 def sign_in_options():
     """What the sign-in page offers (D-46). A configured Google client ID turns Google sign-in on and password sign-up off."""
     client = settings.COURSEPATH_GOOGLE_CLIENT_ID
-    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
+    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client and not settings.COURSEPATH_PRODUCTION}
+
+
+def password_sign_in_allowed(action):
+    """Whether password sign-up (`signup`) or sign-in (`login`) may run (D-46, CR-140). Never in production, whatever is or is not configured: every
+    production sign-in is a verified IITGN Google account. In development and tests the forms work without a client ID; with one, only the legacy
+    switch keeps `login` (never `signup`) for accounts made before Google sign-in."""
+    if settings.COURSEPATH_PRODUCTION:
+        return False
+    if not settings.COURSEPATH_GOOGLE_CLIENT_ID:
+        return True
+    return action == 'login' and settings.COURSEPATH_ALLOW_PASSWORD_LOGIN
 
 
 def account_summary(user):
     """The account as the client sees it. `reauth` is how THIS account proves itself before deleting data: a legacy password account with its password,
     a Google-only account (D-46: no usable password) with a fresh Google credential. It follows the account, not the site's sign-in options, so a password
     account never gets offered a Google credential that the server refuses (`account_data` branches on the same `has_usable_password`)."""
-    return {'id': str(user.pk), 'username': user.username, 'reauth': 'password' if user.has_usable_password() else 'google'}
+    summary = {'id': str(user.pk), 'username': user.username, 'reauth': 'password' if user.has_usable_password() else 'google'}
+    if demo.is_demo(user):
+        summary['demo'] = True   # only present for a sample-student account (CR-137): the page labels it and hides what a made-up record cannot do
+    return summary
 
 
 @endpoint({'GET'}, public=True)
 def session(request):
     return response({'csrf_token': get_token(request), 'user': account_summary(request.user) if request.user.is_authenticated else None,
-                     'sign_in': sign_in_options()})
+                     'sign_in': sign_in_options(), 'sample_student': settings.COURSEPATH_DEMO_ENABLED})
 
 
 def verify_google_credential(credential):
@@ -181,22 +206,23 @@ def client_address(request):
     return last.rsplit(':', 1)[0] if last.count(':') == 1 else last   # 203.0.113.7:1234, or a bare IPv4/IPv6 address
 
 
-def _throttle_key(request, subject=None):
-    return hashlib.sha256((f'google-account:{subject}' if subject else client_address(request)).encode()).hexdigest()
+def _throttle_key(request, subject=None, scope=None):
+    who = f'google-account:{subject}' if subject else f'{scope}:{client_address(request)}' if scope else client_address(request)
+    return hashlib.sha256(who.encode()).hexdigest()
 
 
 @transaction.atomic
-def throttled(request, subject=None):
+def throttled(request, subject=None, scope=None, limit=10):
     """Count this attempt against the address (10 per 15 minutes, then 429), or against one Google account when `subject` is given. Counting before
     the check keeps a burst of parallel guesses inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only
     failures lock an address out."""
-    key = _throttle_key(request, subject)
+    key = _throttle_key(request, subject, scope)
     now = timezone.now()
     entry, _ = LoginThrottle.objects.get_or_create(key=key, defaults={'window_start': now})
     LoginThrottle.objects.filter(pk=key, window_start__lt=now - timedelta(minutes=15)).update(attempts=0, window_start=now)
     LoginThrottle.objects.filter(pk=key).update(attempts=F('attempts') + 1)
     entry.refresh_from_db()
-    return entry.attempts > 10
+    return entry.attempts > limit
 
 
 def throttle_success(request):
@@ -214,8 +240,23 @@ def auth(request, action):
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
         return _google_sign_in(request, payload.get('credential'))
+    if action == 'demo':
+        if not settings.COURSEPATH_DEMO_ENABLED:
+            raise Http404
+        if request.user.is_authenticated:
+            # Signing in as the sample would silently end this person's own session.
+            return response(issues=[issue('ALREADY_SIGNED_IN', 'Sign out first to try the sample student.', 'error')], status=409)
+        if throttled(request, scope='demo', limit=30):
+            return _throttled_response()
+        try:
+            user = demo.start_demo()
+        except demo.DemoFull:
+            return response(issues=[issue('DEMO_UNAVAILABLE', 'The sample student is busy right now. Try again in a few minutes.', 'error')], status=503)
+        login(request, user)
+        request.session.set_expiry(settings.COURSEPATH_DEMO_HOURS * 3600)
+        return response(account_summary(user), status=201)
     if action in {'signup', 'login'}:
-        if google and (action == 'signup' or not settings.COURSEPATH_ALLOW_PASSWORD_LOGIN):
+        if not password_sign_in_allowed(action):
             return response(issues=[issue('PASSWORD_SIGN_IN_DISABLED', f'Sign in with your IITGN Google account (name@{settings.COURSEPATH_GOOGLE_DOMAIN}).', 'error')], status=403)
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
@@ -244,7 +285,9 @@ def auth(request, action):
     if not request.user.is_authenticated:
         return response(status=401)
     if action == 'logout':
+        leaving = User.objects.filter(pk=request.user.pk).first()   # a real object: request.user is lazy and is anonymous once logout() has run
         logout(request)
+        demo.leave_demo(leaving)   # a sample account is deleted when its visitor leaves; a real account is only signed out
         return response()
     if action == 'password':
         if not request.user.check_password(payload.get('old_password', '')):
@@ -317,6 +360,7 @@ def plan_detail(request, plan_id):
 
 
 @endpoint({'POST'})
+@not_for_sample
 def import_preview(request):
     from coursepath.imports.ims import parse_ims
     from coursepath.imports.pdf_transcript import parse_pdf
@@ -368,6 +412,7 @@ def _spend_preview(preview):
 
 
 @endpoint({'POST'})
+@not_for_sample
 @transaction.atomic
 def import_commit(request, preview_id):
     from coursepath.imports.reconcile import reconcile_import
@@ -795,6 +840,7 @@ def export(request):
 
 
 @endpoint({'POST'})
+@not_for_sample
 def backup_preview(request):
     """Validate a JSON backup as a candidate restore. Nothing changes until /imports/{id}/commit with confirm=true."""
     stored = get_object_or_404(AcademicRecord, owner=request.user)
@@ -897,6 +943,7 @@ def _google_reauth(user, credential):
 
 
 @endpoint({'DELETE'})
+@not_for_sample
 @transaction.atomic
 def account_data(request):
     """Delete the owner's academic data, or the whole account, after re-authentication."""

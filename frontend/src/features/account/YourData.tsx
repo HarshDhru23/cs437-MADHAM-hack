@@ -592,12 +592,21 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
 
 export function YourData() {
   const record = useRecord();
+  const session = useSession();
   return (
     <section className="panel stack" aria-labelledby="your-data-heading">
       <h2 id="your-data-heading">Your data</h2>
       <DownloadBackup />
-      <RestoreBackup record={record.data} />
-      <DeleteData record={record.data} />
+      {session.user?.demo ? (
+        <div className="callout" role="note">
+          This is a sample student. Nothing here is real. Use Leave the sample to remove it.
+        </div>
+      ) : (
+        <>
+          <RestoreBackup record={record.data} />
+          <DeleteData record={record.data} />
+        </>
+      )}
     </section>
   );
 }

@@ -192,9 +192,13 @@ switches a source off.
 For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 `COURSEPATH_ALLOWED_HOSTS` (comma separated), and `COURSEPATH_DB_NAME`,
 `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, optional
-`COURSEPATH_DB_PORT`. Production requires PostgreSQL and HTTPS/secure cookies;
+`COURSEPATH_DB_PORT`, and `COURSEPATH_GOOGLE_CLIENT_ID` (the server refuses to start without it:
+every production sign-in is a verified IITGN Google account, and password sign-up and
+sign-in are never on in production). Production requires PostgreSQL and HTTPS/secure cookies;
 configure the actual proxy and production WSGI server with the hosting team.
 `COURSEPATH_DB_ENGINE=postgresql` allows PostgreSQL testing in development.
+`COURSEPATH_DEMO=0` turns off "Try with a sample student" (`POST /api/v1/auth/demo`): a visitor gets a throw-away
+account with a made-up record (`data/demo/sample-student.json`), deleted when they leave it or after six hours.
 `COURSEPATH_SQLITE_PATH` selects an isolated development/test database only.
 Never set production credentials in committed files. `server.records.test_privacy`
 runs `check --deploy --fail-level WARNING` under production settings and checks

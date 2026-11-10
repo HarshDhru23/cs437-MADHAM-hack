@@ -148,7 +148,8 @@
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_pdf_keeps_suffixed_special_topics_rows_and_their_wrapped_titles",
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_wrapped_title_never_attaches_to_the_row_above",
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_code_as_wide_as_its_column_is_split_from_the_title_it_touches",
-        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped"
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp06_first_attempt_that_only_ran_out_of_time_is_tried_again"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -224,7 +225,12 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp09_invalid_encrypted_image_only_and_limits",
-        "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback"
+        "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_pdf_that_always_runs_out_of_time_still_fails_after_one_more_try",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_an_unreadable_pdf_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_worker_that_exits_with_an_error_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_worker_that_prints_garbage_is_not_retried",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_process_that_cannot_start_is_not_retried"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -1193,6 +1199,14 @@
         "server.records.test_content_security_policy.ContentSecurityPolicyTests.test_a_report_only_switch_keeps_the_policy_but_does_not_enforce_it",
         "server.records.test_content_security_policy.ContentSecurityPolicyTests.test_api_answers_are_json_and_carry_no_policy",
         "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_the_session_tells_the_page_what_sign_in_offers",
+        "server.records.test_production_sign_in.ProductionStartupTests.test_cp37_production_does_not_start_without_a_google_client_id",
+        "server.records.test_production_sign_in.ProductionStartupTests.test_cp37_a_blank_client_id_is_no_client_id",
+        "server.records.test_production_sign_in.ProductionStartupTests.test_cp37_production_starts_with_a_client_id",
+        "server.records.test_production_sign_in.ProductionStartupTests.test_cp37_development_still_starts_without_a_client_id",
+        "server.records.test_production_sign_in.ProductionStartupTests.test_cp37_the_legacy_password_switch_is_ignored_in_production",
+        "server.records.test_production_sign_in.ProductionPasswordSignInTests.test_cp37_no_client_id_does_not_open_password_sign_up_or_sign_in",
+        "server.records.test_production_sign_in.ProductionPasswordSignInTests.test_cp37_the_legacy_switch_does_not_let_a_password_in",
+        "server.records.test_production_sign_in.ProductionPasswordSignInTests.test_cp37_the_legacy_switch_with_no_client_id_does_not_let_a_password_in_either",
         "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_iitgn_account_signs_in_and_gets_its_own_record",
         "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_signing_in_again_reaches_the_same_account",
         "server.records.test_google_sign_in.GoogleSignInTests.test_cp37_an_account_outside_iitgn_is_refused_and_nothing_is_created",
@@ -1250,6 +1264,105 @@
         "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > defaults to completed + current courses and sends nothing extra",
         "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > \"Completed courses only\" asks the server to leave current courses out",
         "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > changing the choice with a draft on screen builds the draft again from the other starting point"
+      ]
+    },
+    {
+      "id": "CP-39",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "tests": [
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_an_online_course_does_not_raise_a_regular_semesters_load",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_a_placeholder_that_is_not_online_still_counts",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_a_summer_break_holds_only_online_credits_so_they_do_count_toward_its_limit",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_online_courses_are_still_a_placeholder_to_resolve",
+        "tests.domain.test_plan_edit_fixes.MovedCourseTests.test_cp39_a_course_moved_with_the_old_terms_offering_and_sections_is_not_reported_as_unknown",
+        "tests.domain.test_plan_edit_fixes.MovedCourseTests.test_cp39_a_variant_that_belongs_to_this_term_but_does_not_exist_is_still_an_error",
+        "tests.domain.test_plan_edit_fixes.GeneratedPlanLoadAgreesWithTheCheckTests.test_cp39_generated_credits_by_term_match_the_checked_workload_with_online_courses_and_an_internship",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_online_credits_in_a_full_semester_leave_the_load_and_the_status_alone",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_a_project_course_fills_the_open_project_when_it_is_still_open",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_a_second_project_course_counts_as_an_elective_not_as_a_second_open_project",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_counts_online_credits_against_the_gps_limit",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_counts_online_credits_against_the_advisor_cap",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_over_28_with_online_credits_still_needs_overload_approval",
+        "tests.domain.test_plan_edit_fixes.OnlineExemptionIsBoundedTests.test_cp39_only_the_16_credit_online_pool_is_held_outside_the_28_credit_limit",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_two_projects_in_one_plan_are_not_duplicates",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_a_project_after_a_passed_project_of_the_same_code_is_not_a_retake",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_an_ordinary_course_taken_twice_is_still_a_duplicate",
+        "tests.domain.test_plan_edit_fixes.StaleChoiceIsIgnoredForCreditsTests.test_cp39_a_stale_offering_id_does_not_hide_the_new_terms_offering_from_the_credit_check"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > adds a CS project with the credits the student enters, as an arranged course (not from the catalogue)",
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > takes another department, in capitals whatever the student types",
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > refuses a department that is not two to four letters and credits that are not a positive number",
+        "frontend/src/features/plan/planMove.test.tsx::moveTargets > lists the term itself and the other terms of the same kind only",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > offers only the odd semesters for a course in an odd semester",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > offers only the even semesters for a course in an even semester",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > does not carry the old semester's section choice to the new one",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > says that a course moves between odd semesters or between even ones",
+        "frontend/src/features/plan/planMove.test.tsx::Online credits beside the load > names the online credits a semester holds as outside its limit, from the server's numbers"
+      ]
+    },
+    {
+      "id": "CP-42",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": true,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_a_visitor_gets_a_sample_account_with_the_made_up_record",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_audit_and_the_planner_work_on_the_sample",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_sample_record_is_plainly_made_up",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_a_real_account_does_not_show_the_demo_flag",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_session_says_the_sample_is_available_and_when_it_is_off",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_sample_session_ends_after_the_sample_lifetime",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_signing_in_is_refused_for_someone_already_signed_in",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_csrf_check_applies_to_starting_the_sample",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_every_visitor_gets_their_own_account_and_edits_stay_theirs",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_a_real_student_is_untouched_by_sample_accounts_and_cannot_see_them",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_the_sample_account_cannot_be_signed_in_to_with_a_password",
+        "server.records.test_sample_student.SampleGuardTests.test_cp37_the_sample_cannot_import_restore_or_delete_data",
+        "server.records.test_sample_student.SampleGuardTests.test_cp37_a_real_student_still_reaches_those_endpoints",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_leaving_the_sample_deletes_the_account_and_everything_in_it",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_signing_out_of_a_real_account_deletes_nothing",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_old_sample_accounts_are_purged_when_a_new_one_starts_and_real_ones_are_not",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_a_sample_that_is_not_yet_old_is_kept",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_too_many_live_samples_is_a_503_and_a_free_place_works_again",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_one_address_can_start_thirty_samples_in_fifteen_minutes_and_no_more",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_starting_samples_does_not_use_up_the_sign_in_failure_allowance",
+        "server.records.test_sample_student.SampleInProductionTests.test_cp37_in_production_the_sample_works_without_google_and_opens_no_password_path",
+        "server.records.test_sample_student.SampleContractTests.test_cp37_the_sample_account_and_the_session_match_the_published_schema",
+        "server.records.test_sample_student.SampleContractTests.test_cp37_the_schema_refuses_a_demo_flag_that_is_not_true"
+      ],
+      "browser_tests": [
+        "e2e/tests/sample-student.spec.ts::a visitor tries the sample student, sees the requirements and the planner, and leaves (CP-37)",
+        "e2e/tests/sample-student.spec.ts::two visitors get two separate sample accounts, and one leaving does not end the other (CP-37)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the sign-in page of a Google-only site",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the create-account page of a Google-only site",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the sign-in page where the password forms are on, next to them",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the create-account page where the password forms are on, next to them",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is not shown when the server does not offer the sample, or says nothing about it",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > starts the sample with one POST /auth/demo and lands on the record page, labelled as a sample",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > says what went wrong in plain words and stays on the page",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > says CoursePath could not be reached when the network fails",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > shows the banner on every page, with one Leave the sample button that signs out and returns to the sign-in page",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > shows no sample banner, and a normal Sign out, for a real student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > replaces the import forms with a plain notice for the sample student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > keeps the import forms for a real student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > says on Your Data that the sample is not real and offers no deletion or restore",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > still offers the deletion form to a real student on Your Data"
       ]
     }
   ],

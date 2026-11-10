@@ -214,6 +214,18 @@ export function ImportPage() {
     </div>
   );
 
+  if (session.user?.demo) {
+    return (
+      <div className="import-flow">
+        <SubNav label="My record" items={RECORD_TABS} />
+        <h1>Add your academic record</h1>
+        <div className="callout" role="note">
+          The sample student cannot import a record. Sign in with your IITGN Google account to use your own.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="import-flow">
       {session.user ? <SubNav label="My record" items={RECORD_TABS} /> : null}
