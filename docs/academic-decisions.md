@@ -288,6 +288,14 @@ Recorded 7 Nov 2026 by Harsh, after the hosted app showed an "unknown" on almost
 
 **D-47. SPI is capped at 10, like CPI** (TEAM, Harsh, 10 Nov). Answers the question in issue #122 (CR-110 item 1). The grade table gives A+ eleven points, so a term of only A+ averages 11; the displayed SPI is capped at 10, the same as the CPI (D-27, D-28). The exact value stays available as `unrounded_value`. `data/grading/reported-v1.json` sets `spi_cap` to `"10"`. This rests on the team's decision; if the institute's rule differs, change the file and this entry together.
 
+**D-55. "Try with a sample student" is a sandbox, not a way to sign in** (TEAM, Harsh, 10 Nov). Answers issue #137 (Prof. Neeldhara Misra's review: the app is hard to try without sample data). D-46 stands: every sign-in is a verified IITGN Google account. The sample student is not a sign-in with an identity; it is a throw-away account that holds a made-up record.
+- **What it is.** `POST /api/v1/auth/demo` creates a new user named `sample-<random>` with no password and no email, a `DemoAccount` marker, and a record built from `data/demo/sample-student.json` (a student after four regular semesters: real course codes, invented grades, 92 credits). Every visitor gets their own account, so samples never share rows with each other or with a real student.
+- **Why it cannot be misused.** No sign-in form can reach it (no password, and password sign-in is off in production). It cannot import a transcript, restore a backup or delete data (403 `DEMO_ACCOUNT`), so the upload and parsing endpoints stay for IITGN accounts. Someone already signed in cannot start one (409), so a real session is never replaced.
+- **Clearly fake.** Every page shows a banner saying the student is a sample and nothing is real; every course is titled "Sample course (code)".
+- **Bounded.** The session lasts six hours; the account and everything in it are deleted when the visitor leaves it, and expired ones are deleted when the next sample starts. At most 200 live samples (503 after that), and 30 starts per address per 15 minutes, counted apart from sign-in failures so a lecture hall of visitors cannot lock real students out.
+- **Switch.** `COURSEPATH_DEMO=0` turns it off (`GET /session` then says `sample_student: false`).
+- **Not decided here.** A saved plan is not pre-made: the visitor generates it, which is the point of the demo.
+
 ## Implementation follow-ups
 
 Each item goes through the normal reviewed PR. Owners are from `docs/team/README.md`.

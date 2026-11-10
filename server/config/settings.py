@@ -90,5 +90,10 @@ if COURSEPATH_PRODUCTION and not COURSEPATH_GOOGLE_CLIENT_ID:
     raise RuntimeError('COURSEPATH_GOOGLE_CLIENT_ID is required in production: every sign-in must be a verified IITGN Google account (D-46)')
 # Keeps password sign-in for accounts made before Google sign-in (never sign-up) on a development server. Off unless asked for, and ignored in production.
 COURSEPATH_ALLOW_PASSWORD_LOGIN = not COURSEPATH_PRODUCTION and os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+# "Try with a sample student" (CR-137): a throw-away account with a made-up record, so a reviewer can see the app working without a real transcript or an
+# IITGN Google account. It is deleted when the visitor leaves it or after COURSEPATH_DEMO_HOURS; COURSEPATH_DEMO=0 turns it off.
+COURSEPATH_DEMO_ENABLED = os.getenv('COURSEPATH_DEMO', '1') != '0'
+COURSEPATH_DEMO_HOURS = 6
+COURSEPATH_DEMO_MAX = 200   # live sample accounts at once; the 201st visitor is told to try again later
 # Google's sign-in button opens a pop-up that talks back to this page; Django's default 'same-origin' would cut that link.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'

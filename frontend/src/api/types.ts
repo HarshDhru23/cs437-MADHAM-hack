@@ -34,6 +34,8 @@ export interface SessionUser {
    * credential. It follows the account, not `sign_in`, which is site-wide: a legacy password account stays `password` while Google is configured.
    */
   reauth: 'password' | 'google';
+  /** Present (true) only for a sample-student account: a made-up record that is removed when the visitor leaves it. */
+  demo?: true;
 }
 
 /** What the sign-in page offers (D-46). With a Google client ID only IITGN Google accounts sign in and the password forms are off. */
@@ -49,6 +51,8 @@ export interface SessionData {
   csrf_token: string;
   user: SessionUser | null;
   sign_in?: SignInOptions;
+  /** Whether the "Try with a sample student" button is offered. */
+  sample_student?: boolean;
 }
 
 export interface SourceReference {

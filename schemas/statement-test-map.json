@@ -1227,6 +1227,62 @@
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > says only IITGN accounts can sign in when the server refuses the account, and stays on the page",
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > keeps the username and password form, and no Google button, when Google is not configured"
       ]
+    },
+    {
+      "id": "CP-42",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": true,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_a_visitor_gets_a_sample_account_with_the_made_up_record",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_audit_and_the_planner_work_on_the_sample",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_sample_record_is_plainly_made_up",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_a_real_account_does_not_show_the_demo_flag",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_session_says_the_sample_is_available_and_when_it_is_off",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_sample_session_ends_after_the_sample_lifetime",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_signing_in_is_refused_for_someone_already_signed_in",
+        "server.records.test_sample_student.StartingTheSampleTests.test_cp37_the_csrf_check_applies_to_starting_the_sample",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_every_visitor_gets_their_own_account_and_edits_stay_theirs",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_a_real_student_is_untouched_by_sample_accounts_and_cannot_see_them",
+        "server.records.test_sample_student.SampleIsolationTests.test_cp37_the_sample_account_cannot_be_signed_in_to_with_a_password",
+        "server.records.test_sample_student.SampleGuardTests.test_cp37_the_sample_cannot_import_restore_or_delete_data",
+        "server.records.test_sample_student.SampleGuardTests.test_cp37_a_real_student_still_reaches_those_endpoints",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_leaving_the_sample_deletes_the_account_and_everything_in_it",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_signing_out_of_a_real_account_deletes_nothing",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_old_sample_accounts_are_purged_when_a_new_one_starts_and_real_ones_are_not",
+        "server.records.test_sample_student.SampleCleanupTests.test_cp37_a_sample_that_is_not_yet_old_is_kept",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_too_many_live_samples_is_a_503_and_a_free_place_works_again",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_one_address_can_start_thirty_samples_in_fifteen_minutes_and_no_more",
+        "server.records.test_sample_student.SampleLimitTests.test_cp37_starting_samples_does_not_use_up_the_sign_in_failure_allowance",
+        "server.records.test_sample_student.SampleInProductionTests.test_cp37_in_production_the_sample_works_without_google_and_opens_no_password_path",
+        "server.records.test_sample_student.SampleContractTests.test_cp37_the_sample_account_and_the_session_match_the_published_schema",
+        "server.records.test_sample_student.SampleContractTests.test_cp37_the_schema_refuses_a_demo_flag_that_is_not_true"
+      ],
+      "browser_tests": [
+        "e2e/tests/sample-student.spec.ts::a visitor tries the sample student, sees the requirements and the planner, and leaves (CP-37)",
+        "e2e/tests/sample-student.spec.ts::two visitors get two separate sample accounts, and one leaving does not end the other (CP-37)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the sign-in page of a Google-only site",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the create-account page of a Google-only site",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the sign-in page where the password forms are on, next to them",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is shown on the create-account page where the password forms are on, next to them",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > is not shown when the server does not offer the sample, or says nothing about it",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > starts the sample with one POST /auth/demo and lands on the record page, labelled as a sample",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > says what went wrong in plain words and stays on the page",
+        "frontend/src/features/auth/sampleStudent.test.tsx::Try with a sample student: the button > says CoursePath could not be reached when the network fails",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > shows the banner on every page, with one Leave the sample button that signs out and returns to the sign-in page",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > shows no sample banner, and a normal Sign out, for a real student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > replaces the import forms with a plain notice for the sample student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > keeps the import forms for a real student",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > says on Your Data that the sample is not real and offers no deletion or restore",
+        "frontend/src/features/auth/sampleStudent.test.tsx::A sample session in the app > still offers the deletion form to a real student on Your Data"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

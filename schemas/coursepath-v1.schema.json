@@ -865,6 +865,10 @@
             "google"
           ],
           "description": "How this account proves itself before deleting data (D-46): a password account sends its password; a Google-only account (no usable password) sends a fresh google_credential. Follows the account, not the site's sign-in options."
+        },
+        "demo": {
+          "const": true,
+          "description": "Present, and true, only for a sample-student account (\"Try with a sample student\"): a throw-away account with a made-up record, no password and no email, deleted when its visitor leaves or after a few hours. Real accounts omit it."
         }
       },
       "additionalProperties": false
@@ -914,6 +918,10 @@
             }
           },
           "additionalProperties": false
+        },
+        "sample_student": {
+          "type": "boolean",
+          "description": "Whether POST /auth/demo (\"Try with a sample student\") is available."
         }
       },
       "additionalProperties": false

@@ -103,3 +103,10 @@ class LoginThrottle(models.Model):
     key = models.CharField(primary_key=True, max_length=64)
     attempts = models.PositiveIntegerField(default=0)
     window_start = models.DateTimeField()
+
+
+class DemoAccount(Owned):
+    """Marks a "Try with a sample student" account (CR-137). It owns a made-up record, has no password and no email, is never reachable by a real sign-in,
+    and is deleted when the visitor leaves it or after `COURSEPATH_DEMO_HOURS`."""
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
