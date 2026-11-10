@@ -43,7 +43,7 @@ class PrivateFileNames(unittest.TestCase):
 
     def test_no_roll_number_shaped_literal_is_left_in_the_committed_text_of_the_scripts(self):
         text = (ROOT / '.claude' / 'skills' / 'coursepath' / 'scripts' / 'preflight.py').read_text(encoding='utf-8')
-        self.assertNotIn('24110107', text)
+        self.assertNotRegex(text, r'\b2\d{7}\b')
 
 
 if __name__ == '__main__':
