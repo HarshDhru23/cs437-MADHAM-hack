@@ -1235,6 +1235,49 @@
       ]
     },
     {
+      "id": "CP-39",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "tests": [
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_an_online_course_does_not_raise_a_regular_semesters_load",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_a_placeholder_that_is_not_online_still_counts",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_a_summer_break_holds_only_online_credits_so_they_do_count_toward_its_limit",
+        "tests.domain.test_plan_edit_fixes.OnlineOutsideTheLoadTests.test_cp39_online_courses_are_still_a_placeholder_to_resolve",
+        "tests.domain.test_plan_edit_fixes.MovedCourseTests.test_cp39_a_course_moved_with_the_old_terms_offering_and_sections_is_not_reported_as_unknown",
+        "tests.domain.test_plan_edit_fixes.MovedCourseTests.test_cp39_a_variant_that_belongs_to_this_term_but_does_not_exist_is_still_an_error",
+        "tests.domain.test_plan_edit_fixes.GeneratedPlanLoadAgreesWithTheCheckTests.test_cp39_generated_credits_by_term_match_the_checked_workload_with_online_courses_and_an_internship",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_online_credits_in_a_full_semester_leave_the_load_and_the_status_alone",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_a_project_course_fills_the_open_project_when_it_is_still_open",
+        "server.records.test_plan_edit_fixes_api.PlanEditAPITests.test_cp39_a_second_project_course_counts_as_an_elective_not_as_a_second_open_project",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_counts_online_credits_against_the_gps_limit",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_counts_online_credits_against_the_advisor_cap",
+        "tests.domain.test_plan_edit_fixes.SavedPlanKeepsTheAdvisoryLoadRulesTests.test_cp39_a_saved_plan_over_28_with_online_credits_still_needs_overload_approval",
+        "tests.domain.test_plan_edit_fixes.OnlineExemptionIsBoundedTests.test_cp39_only_the_16_credit_online_pool_is_held_outside_the_28_credit_limit",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_two_projects_in_one_plan_are_not_duplicates",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_a_project_after_a_passed_project_of_the_same_code_is_not_a_retake",
+        "tests.domain.test_plan_edit_fixes.ProjectCourseMessagesTests.test_cp39_an_ordinary_course_taken_twice_is_still_a_duplicate",
+        "tests.domain.test_plan_edit_fixes.StaleChoiceIsIgnoredForCreditsTests.test_cp39_a_stale_offering_id_does_not_hide_the_new_terms_offering_from_the_credit_check"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > adds a CS project with the credits the student enters, as an arranged course (not from the catalogue)",
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > takes another department, in capitals whatever the student types",
+        "frontend/src/components/projectCourse.test.tsx::Add a project course > refuses a department that is not two to four letters and credits that are not a positive number",
+        "frontend/src/features/plan/planMove.test.tsx::moveTargets > lists the term itself and the other terms of the same kind only",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > offers only the odd semesters for a course in an odd semester",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > offers only the even semesters for a course in an even semester",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > does not carry the old semester's section choice to the new one",
+        "frontend/src/features/plan/planMove.test.tsx::Moving a planned course > says that a course moves between odd semesters or between even ones",
+        "frontend/src/features/plan/planMove.test.tsx::Online credits beside the load > names the online credits a semester holds as outside its limit, from the server's numbers"
+      ]
+    },
+    {
       "id": "CP-42",
       "oct27_target": false,
       "implementation_scope": "backend_evidence",

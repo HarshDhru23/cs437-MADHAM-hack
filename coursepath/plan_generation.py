@@ -478,7 +478,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
         # still needs; the allocator confirms the caps (8 credits shared with projects, a pool of 16 less pass/fail conversions) let it count in full.
         for term in online_terms:
             while pool_left >= 2:
-                room = limits[term][1] - load_f[term]
+                # D-50: online courses are held outside a regular semester's load (the internship semester); only a summer break's own limit applies.
+                room = limits[term][1] - load_f[term] if term.endswith('SUMMER') else pool_left
                 accepted_row = None
                 for leaf in [l for l in leaves if l['id'] in ONLINE_ORDER]:
                     still_needed = need(leaf)[0] - online_by_leaf.get(leaf['id'], Decimal(0))
@@ -498,7 +499,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
                     break
                 online_rows.append(accepted_row)
                 online_by_leaf[accepted_row['leaf']] = online_by_leaf.get(accepted_row['leaf'], Decimal(0)) + accepted_row['credits']
-                load_f[term] += accepted_row['credits']
+                if term.endswith('SUMMER'):
+                    load_f[term] += accepted_row['credits']
                 pool_left -= accepted_row['credits']
         final = base_final
         try:
@@ -640,7 +642,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
     semesters, placements, unmet, placeholder_rows, complete = outcome['semesters'], outcome['placements'], outcome['unmet'], outcome['placeholder_rows'], outcome['complete']
     placed_credits = sum((p['credits'] for p in planned), Decimal(0))
     arranged = sum((decimal_value(h['desired_credits']) for h in placeholder_rows), Decimal(0)) + sum((m['credits'] for m in modules), Decimal(0))
-    credits_by_term = {s['term_id']: decimal_string(sum([decimal_value(c['credits']) for c in s['courses']] + [decimal_value(p['desired_credits']) for p in s['placeholders']], Decimal(0)))
+    credits_by_term = {s['term_id']: decimal_string(sum([decimal_value(c['credits']) for c in s['courses']]
+                                                         + [decimal_value(p['desired_credits']) for p in s['placeholders'] if not (p.get('online') and not s['term_id'].endswith('SUMMER'))], Decimal(0)))
                        for s in semesters}
     patterns = sorted({p['term'] for p in planned if p['basis'] == 'expected_pattern'})
     assumptions = []

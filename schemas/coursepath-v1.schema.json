@@ -611,6 +611,10 @@
               "placeholder_credits": {
                 "$ref": "#/$defs/decimal"
               },
+              "online_credits": {
+                "$ref": "#/$defs/decimal",
+                "description": "Credits of online courses held in a regular semester. They are outside the semester's load: target_credits does not include them (D-50). In a summer break they are the load, so this is 0 there."
+              },
               "target_credits": {
                 "$ref": "#/$defs/decimal"
               }

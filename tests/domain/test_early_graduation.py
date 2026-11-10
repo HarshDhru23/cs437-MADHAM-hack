@@ -215,7 +215,8 @@ class LightenWithOnlineTests(unittest.TestCase):
         self.assertEqual(lighter['graduation']['last_term'], '2027-28-I')   # still ends with the internship semester
         internship = next(s for s in lighter['semesters'] if s['term_id'] == '2027-28-I')
         self.assertEqual(internship['courses'], [])
-        self.assertEqual(sum(D(p['desired_credits']) for p in internship['placeholders']), D(lighter['summary']['credits_by_term']['2027-28-I']))
+        # D-50 (10 Nov): online credits are outside a regular semester's load, so the internship semester's credits are its modules alone.
+        self.assertEqual(sum(D(p['desired_credits']) for p in internship['placeholders'] if not p.get('online')), D(lighter['summary']['credits_by_term']['2027-28-I']))
         self.assertLessEqual(D(lighter['summary']['credits_by_term']['2027-28-I']), 28)
         online = sum(D(p['desired_credits']) for s in lighter['semesters'] for p in s['placeholders'] if p.get('online'))
         self.assertEqual(online, D(lighter['graduation']['online_credits']))
