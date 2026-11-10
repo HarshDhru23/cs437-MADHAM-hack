@@ -1241,7 +1241,8 @@
         "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_by_default_the_plan_starts_after_the_running_semester",
         "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_completed_only_plans_the_running_semester_again",
         "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_include_current_must_be_a_boolean",
-        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_a_running_course_planned_again_is_one_course_in_the_degree_count"
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_a_running_course_planned_again_is_one_course_in_the_degree_count",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_whose_year_has_passed_goes_in_the_plans_first_year"
       ],
       "browser_tests": [],
       "frontend_tests": [

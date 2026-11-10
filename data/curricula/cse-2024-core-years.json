@@ -1,308 +1,99 @@
 {
   "id": "cse-2024-core-years",
-  "version": "observed-2026-11-10",
+  "version": "adv13-p23-2026-11-10",
   "cohort": "BTECH_CSE-2024",
-  "authority": "observed_timetable_pattern",
+  "authority": "institutional",
   "binding": false,
   "decision_ref": "docs/academic-decisions.md#D-48",
+  "source_refs": [
+    "adv13"
+  ],
+  "source_locator": "p. 23 (CSE sample path: Semester 1-2 = year 1, 3-4 = year 2, 5-6 = year 3)",
   "notes": [
-    "The year in which each CSE core course sits in the institute timetables of 2024-25 (I, II), 2025-26 (I, II) and 2026-27 (II): the semester blocks that list it (First Year, Second Year, and the 5th to 8th Sem Computer Science and Engineering blocks), its year being (semester + 1) // 2; the most frequent year across the listings, the earlier year on a tie.",
-    "A preference for plan generation, never a rule: a course may be taken in another year. 'offered_in' lists the semester parities (I odd, II even) of the 2026-27 snapshots and of those timetables in which the course appears."
+    "The year of each CSE core course in the ADV13 p. 23 sample path (applicable to AY 2022-23 to 2024-25); the year is (semester + 1) // 2. The institute timetables place the same courses in the same years (a cross-check, not the source).",
+    "A preference for plan generation, never a rule: a course may be taken in another year."
   ],
   "courses": {
     "FP 100": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "ES 101": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "ES 112": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "ES 113": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2
-      ]
+      "year": 1
     },
     "ES 114": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        2
-      ]
+      "year": 1
     },
     "ES 115": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "ES 116": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        2
-      ]
+      "year": 1
     },
     "ES 117": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        2
-      ]
+      "year": 1
     },
     "ES 243": {
-      "year": 2,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        3,
-        3,
-        4
-      ]
+      "year": 2
     },
     "BS 192": {
-      "year": 1,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        1,
-        2,
-        5
-      ]
+      "year": 1
     },
     "HS 191": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "HS 192": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        2
-      ]
+      "year": 1
     },
     "HS 151": {
-      "year": 3,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        5,
-        5
-      ]
+      "year": 3
     },
     "HS 221": {
-      "year": 2,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        3,
-        3
-      ]
+      "year": 2
     },
     "HS 201": {
-      "year": 1,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "MA 103": {
-      "year": 1,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        1,
-        1
-      ]
+      "year": 1
     },
     "MA 104": {
-      "year": 1,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        2
-      ]
+      "year": 1
     },
     "MA 203": {
-      "year": 2,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        4,
-        4,
-        4
-      ]
+      "year": 2
     },
     "ES 242": {
-      "year": 2,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        3,
-        3
-      ]
+      "year": 2
     },
     "ES 214": {
-      "year": 2,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        2,
-        2,
-        3,
-        3,
-        4,
-        4
-      ]
+      "year": 2
     },
     "ES 204": {
-      "year": 2,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        3,
-        4
-      ]
+      "year": 2
     },
     "ES 336": {
-      "year": 2,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        4,
-        4,
-        6,
-        6
-      ]
+      "year": 3
     },
     "CS 201": {
-      "year": 2,
-      "offered_in": [
-        "II"
-      ],
-      "listed_semesters": [
-        4,
-        4,
-        4
-      ]
+      "year": 2
     },
     "CS 330": {
-      "year": 3,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        5,
-        6
-      ]
+      "year": 3
     },
     "CS 202": {
-      "year": 3,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        5,
-        5,
-        6
-      ]
+      "year": 3
     },
     "CS 329": {
-      "year": 3,
-      "offered_in": [
-        "I"
-      ],
-      "listed_semesters": [
-        5,
-        5
-      ]
+      "year": 3
     },
     "CS 331": {
-      "year": 3,
-      "offered_in": [
-        "I",
-        "II"
-      ],
-      "listed_semesters": [
-        5,
-        6
-      ]
+      "year": 3
     }
   }
 }

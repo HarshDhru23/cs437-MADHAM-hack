@@ -187,7 +187,12 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
     terms, standing, internship = opts['terms'], opts['standing'], opts['internship']
     core_years = context.get('core_years') if context.get('core_years') is not None else load_core_years()
     regular_done = {r.get('term_id') for r in base_rows if r.get('term_id') and not r['term_id'].endswith('SUMMER')}
-    semester_number = {t: len(regular_done) + 1 + i for i, t in enumerate(opts['terms'])}   # the semester of the programme each planned term is
+    # The semester of the programme each planned term is. Only regular terms are semesters; a summer (possible in an explicit `terms` option) belongs to
+    # the semester before it, so it does not shift the years after it.
+    semester_number, counted = {}, len(regular_done)
+    for t in opts['terms']:
+        counted += 0 if t.endswith('SUMMER') else 1
+        semester_number[t] = max(counted, 1)
     usual_terms = opts['terms']   # the usual horizon; a lightened plan keeps the end of the plan it lightens (end_term)
     if end_term:
         terms = [t for t in terms if term_key(t) <= term_key(end_term)]

@@ -1,7 +1,7 @@
 """CP-38 (D-48, D-49): plan generation keeps the CSE core courses in the year they sit in the institute timetables, warns about missing
 recommended preparation instead of delaying them, and can start from the completed courses alone or from completed + current courses.
 
-Expected values come from data/curricula/cse-2024-core-years.json (read off the 2024-25 to 2026-27 timetables, not from the generator) and
+Expected values come from data/curricula/cse-2024-core-years.json (the ADV13 p. 23 sample path, not from the generator) and
 from the committed 2026-27 snapshots. No private data."""
 import json
 import unittest
@@ -34,18 +34,17 @@ class CoreInItsYearTests(unittest.TestCase):
         # ES 242 is pending and is only a recommended preparation for CS 329, CS 330 and CS 331 (team list). Before the fix those three waited a
         # full year (2027-28-I) for ES 242 to be earlier. Now CS 329 and CS 330 sit in the semester the timetable offers them in, year 3, with a
         # warning. CS 331 meets ES 242 at the same hours (a real clash in the 2026-27 timetable), so it is the one course that has to wait for the
-        # next semester that offers it; it too is warned about, not blocked.
+        # next semester that offers it, which is after ES 242, so nothing is missing for it and there is no warning.
         result = generate_plan(context(synthetic_attempts(without=('ES 242',))))
         placed = term_of(result)
         self.assertEqual(placed['ES 242'], '2026-27-I')
         for code in ('CS 329', 'CS 330'):
             with self.subTest(code=code):
                 self.assertEqual(placed[code], '2026-27-I')
-        self.assertIn('CS 331', placed)
+        self.assertEqual(placed['CS 331'], '2027-28-I')   # the clash with ES 242 (not the missing preparation) is what moves it
         warned = {i['entity_refs'][0]: i for i in result['validation']['issues'] if i['code'] == 'PREREQUISITE_MISSING'}
-        for code in ('CS 329', 'CS 330', 'CS 331'):
-            if code == 'CS 331' and placed[code] != '2026-27-I':
-                continue   # planned after ES 242, so nothing is missing
+        self.assertNotIn(next(p['item_id'] for p in courses(result) if p['normalized_code'] == 'CS 331'), warned)
+        for code in ('CS 329', 'CS 330'):
             item = next(p['item_id'] for p in courses(result) if p['normalized_code'] == code)
             self.assertIn(item, warned)
             self.assertIn('ES 242', warned[item]['message'])    # it says which course is missing
@@ -63,6 +62,14 @@ class CoreInItsYearTests(unittest.TestCase):
         self.assertEqual(placed['ES 242'], '2026-27-I')
         self.assertIn(placed['CS 329'], {'2027-28-I', '2027-28-II'})
         self.assertIn(placed['CS 330'], {'2027-28-I', '2027-28-II'})
+
+    def test_cp38_a_core_course_whose_year_has_passed_goes_in_the_plans_first_year(self):
+        # The plan of a semester-5 student starts in 2026-27 (year 3). A pending year-1 or year-2 core course is late, so it is planned at once.
+        for code, year in (('ES 242', 2), ('HS 191', 1)):
+            with self.subTest(code=code):
+                self.assertLess(CORE_YEARS[code]['year'], 3)
+                result = generate_plan(context(synthetic_attempts(without=(code,))))
+                self.assertIn(term_of(result)[code], {'2026-27-I', '2026-27-II'})
 
     def test_cp38_core_courses_still_respect_the_credit_limit_and_the_timetable(self):
         result = generate_plan(carried(first_year_only()))
