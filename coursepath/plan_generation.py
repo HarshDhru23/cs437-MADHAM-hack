@@ -24,6 +24,8 @@ a fixed rule (surplus credits, then the number of other open requirements the co
 code); the student edits the plan afterwards.
 """
 from decimal import ROUND_CEILING, Decimal
+import json
+from pathlib import Path
 import re
 from coursepath.eligibility import evaluate_prerequisite
 from coursepath.identity import canonical_code, identity_map
@@ -56,8 +58,16 @@ MIN_ELECTIVE_CREDITS = Decimal(2)   # planner preferences, stated in the assumpt
 MIN_ELECTIVE_LEVEL = 100            # courses (numbered below 100, such as "HS 001 Preparatory Course in English") as suggestions
 LOOK_AT = 8                         # feasible candidates compared for timetable clashes per placement
 OPTION_KEYS = {'terms', 'target_credits_per_term', 'max_credits_per_term', 'skip_terms', 'internship_term', 'lighten_with_online'}
+CORE_YEARS_PATH = Path(__file__).resolve().parents[1] / 'data' / 'curricula' / 'cse-2024-core-years.json'
 NOTICE = ('This is a draft. Required courses are placed because the requirements demand them; electives are suggestions chosen by a '
           'fixed rule, not by your preference. Nothing is saved until you save the plan.')
+
+
+def load_core_years(path=None):
+    """D-48: the year (1 to 4) in which each CSE core course sits in the institute timetables, as a {course code: year} map. A preference for
+    where a core course goes in a plan, never a rule; a course missing from the map has no preferred year."""
+    data = json.loads(Path(path or CORE_YEARS_PATH).read_text(encoding='utf-8'))
+    return {code: int(entry['year']) for code, entry in data['courses'].items()}
 
 
 def human_term(term):
@@ -161,10 +171,12 @@ def _level(code):
     return int(match[1]) if match else 0
 
 
-def _generate(context, options=None, force_online=False, end_term=None, busiest_before=None):
+def _generate(context, options=None, force_online=False, end_term=None, busiest_before=None, include_current=True):
     curriculum = validate_curriculum(context['curriculum'])
     attempts = [dict(a) for a in context.get('attempts', [])]
-    enrolment = [dict(r) for r in context.get('current_enrolment', []) if r.get('confirmed')]
+    # D-49: plan from the completed courses and the confirmed current ones (the default), or from the completed courses alone: then the running
+    # semester is planned like a future one and the confirmed current courses are not counted as taken.
+    enrolment = [dict(r) for r in context.get('current_enrolment', []) if r.get('confirmed')] if include_current else []
     catalogue = context.get('catalogue') or {}
     snapshots = [s for s in (context.get('offering_snapshots') or []) if isinstance(s, dict)]
     identity = identity_map(curriculum.get('identity_groups'))
@@ -173,6 +185,14 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
     base_rows = attempts + current_rows
     opts = resolve_options(context, options or {}, base_rows, snapshots)
     terms, standing, internship = opts['terms'], opts['standing'], opts['internship']
+    core_years = context.get('core_years') if context.get('core_years') is not None else load_core_years()
+    regular_done = {r.get('term_id') for r in base_rows if r.get('term_id') and not r['term_id'].endswith('SUMMER')}
+    # The semester of the programme each planned term is. Only regular terms are semesters; a summer (possible in an explicit `terms` option) belongs to
+    # the semester before it, so it does not shift the years after it.
+    semester_number, counted = {}, len(regular_done)
+    for t in opts['terms']:
+        counted += 0 if t.endswith('SUMMER') else 1
+        semester_number[t] = max(counted, 1)
     usual_terms = opts['terms']   # the usual horizon; a lightened plan keeps the end of the plan it lightens (end_term)
     if end_term:
         terms = [t for t in terms if term_key(t) <= term_key(end_term)]
@@ -322,9 +342,27 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
     def items_in(term):
         return [{'id': p['id'], 'normalized_code': p['code']} for p in planned if p['term'] == term]
 
-    def feasible(code, leaf, limit_index, ignore_prerequisites):
+    def year_of(term):
+        return (semester_number[term] + 1) // 2
+
+    def window(leaf):
+        """D-48: the terms a core course goes in before the plan falls back to any term: those of the year it sits in the institute timetables or,
+        when that year is already past, of the plan's first year. Not a rule: a course the window cannot hold still goes where it fits."""
+        year = core_years.get(canonical_code(leaf['course_id'], identity)) if leaf['type'] == 'mandatory_course' else None
+        if year is None or not plan_terms:
+            return plan_terms
+        wanted = max(year, year_of(plan_terms[0]))
+        return [t for t in plan_terms if year_of(t) == wanted] or plan_terms
+
+    def missing_preparation(code, term):
+        entry = catalogue.get(canonical_code(code, identity))
+        expression = entry.get('prerequisites') if entry and entry.get('prerequisite_known') else None
+        found = evaluate_prerequisite(expression, term, base_rows, [{'id': p['id'], 'normalized_code': p['code'], 'term_id': p['term']} for p in planned], identity)
+        return found['missing'] if found['status'] == 'ineligible' else []
+
+    def feasible(code, leaf, limit_index, ignore_prerequisites, candidate_terms=None):
         """The earliest (term, credits, basis, possible clashes) that works for this course, or None."""
-        for term in plan_terms:
+        for term in (plan_terms if candidate_terms is None else candidate_terms):
             basis, found = availability(code, term)
             credits = credits_in(code, term)
             if basis is None or credits is None or load[term] + credits > limits[term][limit_index]:
@@ -409,13 +447,15 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
         ranked = sorted(sizes[leaf['id']], key=lambda c: (max(Decimal(0), min(decimal_value(o['credits']) for o in offered[c].values()) - remaining_credits)
                                                            if leaf['type'] != 'mandatory_course' else Decimal(0), other_leaves(c, leaf, candidates), _level(c), c))
         accepted = None
-        passes = ((0, False), (1, False)) + (((1, True),) if leaf['type'] == 'mandatory_course' else ())
-        for limit_index, ignore in passes:
+        # D-17, D-48: a core course is never moved to a later term because its recommended preparation is missing (the plan check warns and names
+        # the missing course instead), and it keeps to its year before it is allowed anywhere else.
+        passes = ((0, True, window(leaf)), (1, True, window(leaf)), (1, True, plan_terms)) if leaf['type'] == 'mandatory_course' else ((0, False, plan_terms), (1, False, plan_terms))
+        for limit_index, ignore, candidate_terms in passes:
             options_found = []
             for code in ranked:
                 if code in rejected.get(leaf['id'], set()):
                     continue
-                found = feasible(code, leaf, limit_index, ignore)
+                found = feasible(code, leaf, limit_index, ignore, candidate_terms)
                 if found:
                     options_found.append((found['possible'], len(options_found), code, found))
                     if len(options_found) >= LOOK_AT:
@@ -596,7 +636,10 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
                         pattern = (pattern_snapshot(snapshots, term) or {}).get('term_id', 'an earlier year')
                         why = f"expected from the same-semester pattern of {pattern}"
                     mandatory = leaf_by_id[requirement]['type'] == 'mandatory_course' if requirement in leaf_by_id else False
-                    reason = (f"Mandatory {labels[requirement]} course still pending; {why}." if mandatory else
+                    missing = missing_preparation(p['code'], term) if mandatory else []
+                    reason = (f"Mandatory {labels[requirement]} course still pending; {why}."
+                              + (f" Recommended preparation not in place before it: {', '.join(missing)}. This is a warning only; the course stays in this term." if missing else '')
+                              if mandatory else
                               f"Suggested for {labels[requirement]}; {why}. Chosen by a fixed rule (least surplus, fewest competing requirements, lower level), not by your preference; swap it freely.")
                     courses.append({'id': p['id'], 'normalized_code': p['code'], 'credits': decimal_string(p['credits']),
                                     'offering_id': p['offering_ids'][0] if len(p['offering_ids']) == 1 else None, 'intended_allocation': requirement,
@@ -648,7 +691,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
     patterns = sorted({p['term'] for p in planned if p['basis'] == 'expected_pattern'})
     assumptions = []
     if not enrolment:
-        assumptions.append(f"No current enrolment is recorded, so planning starts at {terms[0] if terms else 'the first term'}. Add your confirmed current courses first if you are already registered.")
+        assumptions.append(f"{'No current enrolment is recorded' if include_current else 'Your current courses are left out, as you asked'}, so planning starts at {terms[0] if terms else 'the first term'}."
+                           + (' Add your confirmed current courses first if you are already registered.' if include_current else ''))
     assumptions.append('Required and basket courses follow the timetable; elective credits are held as placeholders you fill with any course that counts.')
     assumptions.append('Recommended preparation was used only to order courses; it never blocks a plan.')
     if patterns:
@@ -690,7 +734,7 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
             'assumptions': assumptions,
             'options': {'terms': usual_terms, 'target_credits_per_term': decimal_string(opts['target']),
                         'max_credits_per_term': decimal_string(opts['maximum']), 'skip_terms': opts['skip_terms'], 'internship_term': internship,
-                        'lighten_with_online': busiest_before is not None},
+                        'lighten_with_online': busiest_before is not None, 'include_current': include_current},
             'graduation': graduation, 'online_potential': online_potential, 'notice': NOTICE, 'validation': validation, 'issues': issues}
 
 
@@ -702,14 +746,17 @@ def generate_plan(context, options=None):
     lighten = options.pop('lighten_with_online', False)
     if not isinstance(lighten, bool):
         raise ValueError('lighten_with_online must be true or false')
-    base = _generate(context, options)
+    include_current = options.pop('include_current', True)
+    if not isinstance(include_current, bool):
+        raise ValueError('include_current must be true or false')
+    base = _generate(context, options, include_current=include_current)
     end = base['graduation']['last_term']
     if not lighten or not base['summary']['complete'] or not end:
         return base
     # Lighten the plan (D-42): keep its last semester, use the online pool in the breaks and the internship semester, then spread the regular work evenly
     # over the same semesters. The lighter plan is returned only if it is complete and its busiest semester is lower; otherwise the plan as it was.
     busiest_base = decimal_value(base['summary']['busiest_semester_credits'])
-    first = _generate(context, options, force_online=True, end_term=end)
+    first = _generate(context, options, force_online=True, end_term=end, include_current=include_current)
     internship = first['options']['internship_term']
     regular = [t for t in first['options']['terms'] if term_key(t) <= term_key(end) and t != internship]
     if not first['summary']['complete'] or not regular:
@@ -718,7 +765,7 @@ def generate_plan(context, options=None):
     target = (total / len(regular)).to_integral_value(rounding=ROUND_CEILING)
     if target <= 0 or target >= busiest_base:
         return base
-    lighter = _generate(context, {**options, 'target_credits_per_term': decimal_string(target)}, force_online=True, end_term=end, busiest_before=busiest_base)
+    lighter = _generate(context, {**options, 'target_credits_per_term': decimal_string(target)}, force_online=True, end_term=end, busiest_before=busiest_base, include_current=include_current)
     if lighter['summary']['complete'] and decimal_value(lighter['summary']['busiest_semester_credits']) < busiest_base:
         return lighter
     return base

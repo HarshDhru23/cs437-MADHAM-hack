@@ -1235,6 +1235,38 @@
       ]
     },
     {
+      "id": "CP-38",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "tests": [
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_missing_preparation_warns_and_the_core_course_is_not_delayed",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_waits_for_its_own_year_when_the_student_is_ahead",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_core_courses_still_respect_the_credit_limit_and_the_timetable",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_offered_only_in_one_parity_goes_in_that_parity",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_completed_and_current_is_the_default_and_starts_after_the_running_semester",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_completed_only_plans_the_running_semester_again",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_include_current_must_be_true_or_false",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_by_default_the_plan_starts_after_the_running_semester",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_completed_only_plans_the_running_semester_again",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_include_current_must_be_a_boolean",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_a_running_course_planned_again_is_one_course_in_the_degree_count",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_whose_year_has_passed_goes_in_the_plans_first_year"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > is offered only when the student has confirmed current courses",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > defaults to completed + current courses and sends nothing extra",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > \"Completed courses only\" asks the server to leave current courses out",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > changing the choice with a draft on screen builds the draft again from the other starting point"
+      ]
+    },
+    {
       "id": "CP-39",
       "oct27_target": false,
       "implementation_scope": "backend_evidence",

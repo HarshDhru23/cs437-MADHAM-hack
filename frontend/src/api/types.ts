@@ -851,6 +851,8 @@ export interface GenerationOptions {
   internship_term?: string | null;
   /** Spread the work evenly over the same semesters and use online credits in the breaks to lower each semester's load. */
   lighten_with_online?: boolean;
+  /** false: plan from the completed courses alone and plan the running semester again; true (the default): count the confirmed current courses as taken. */
+  include_current?: boolean;
 }
 
 /** What online courses in the breaks and the internship semester could do for a plan. */

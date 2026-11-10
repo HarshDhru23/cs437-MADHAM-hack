@@ -111,12 +111,17 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
   const internshipId = useId();
   const loadId = useId();
   const semesterId = useId();
+  const basisId = useId();
   const nameId = useId();
   const [generating, setGenerating] = useState(false);
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [staleRecord, setStaleRecord] = useState(false);
   const [draft, setDraft] = useState<PlanGeneration | null>(null);
+  // D-49: plan from the completed and current courses (the default), or from the completed courses alone. A ref so a request made in the same
+  // event as the change already sees it.
+  const [includeCurrent, setIncludeCurrent] = useState(true);
+  const includeCurrentRef = useRef(true);
   const [draftNumber, setDraftNumber] = useState(0);
   const [semesters, setSemesters] = useState<PlannedSemester[]>([]);
   const [chosen, setChosen] = useState<Generation>({ internship: '', lighter: false, lighten: false });
@@ -169,6 +174,7 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
     const options = {
       ...(next.internship ? { internship_term: next.internship } : {}),
       ...(next.lighten ? { lighten_with_online: true } : next.lighter ? { target_credits_per_term: LIGHTER_TARGET } : {}),
+      ...(includeCurrentRef.current ? {} : { include_current: false }),
     };
     try {
       const result = await endpoints.generatePlan(api, record.revision, Object.keys(options).length > 0 ? options : undefined, { signal: request.signal });
@@ -323,6 +329,13 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
   const unplaced = draft && !draft.summary.complete ? draft.unmet.filter((u) => u.reason_code === 'NO_CAPACITY' || u.reason_code === 'NO_OFFERED_COURSE') : [];
   const early = draft?.graduation.early === true;
   const noRecord = record.attempts.length === 0 && (record.current_enrolment?.length ?? 0) === 0;
+  const hasCurrent = (record.current_enrolment ?? []).some((r) => r.confirmed);
+  const chooseBasis = (value: string) => {
+    const next = value !== 'completed';
+    includeCurrentRef.current = next;
+    setIncludeCurrent(next);
+    if (draft) void generate(chosen);   // a draft on screen is rebuilt from the other starting point
+  };
   const busy = generating || saving;
 
   // The command bar opens /plan?generate=1: start one generation as if "Generate plan" was clicked, then let the page drop the parameter
@@ -351,7 +364,20 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
         <button ref={openerRef} type="button" className="btn btn-primary" onClick={() => void generate({ internship: '', lighter: false, lighten: false })} disabled={noRecord || saving} aria-busy={generating}>
           Generate plan
         </button>
-        <span className="muted">Builds a plan for your remaining semesters. You can change it before saving.</span>
+        {hasCurrent ? (
+          <div className="field">
+            <label htmlFor={basisId}>Plan from</label>
+            <select id={basisId} value={includeCurrent ? 'current' : 'completed'} disabled={generating || saving} onChange={(e) => chooseBasis(e.target.value)}>
+              <option value="current">Completed + current courses</option>
+              <option value="completed">Completed courses only</option>
+            </select>
+          </div>
+        ) : null}
+        <span className="muted">
+          {hasCurrent && !includeCurrent
+            ? 'Builds a plan that starts with your running semester, leaving your current courses out. You can change it before saving.'
+            : 'Builds a plan for your remaining semesters. You can change it before saving.'}
+        </span>
       </div>
       {noRecord ? (
         <p className="muted">
