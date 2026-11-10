@@ -25,5 +25,6 @@ urlpatterns = [
     path('api/v1/scenarios/compare', views.scenarios_compare),
     path('api/v1/scenarios/<uuid:scenario_id>', views.scenario_detail),
     path('api/v1/scenarios/<uuid:scenario_id>/apply-plan', views.scenario_apply),
+    re_path(r'^api/.*$', views.api_not_found),  # an unknown API path answers in the JSON envelope, not with an HTML page
     re_path(r'^(?!api/|assets/).*$', views.spa),  # deep links such as /plan/<id> load the React app; registered after every API route
 ]

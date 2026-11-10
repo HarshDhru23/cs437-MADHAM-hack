@@ -32,14 +32,20 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     planned = [{**c, 'normalized_code': c.get('normalized_code', c.get('course_id')), 'term_id': semester['term_id']}
                for semester in plan.get('semesters', []) for c in semester.get('courses', [])]
     # CP-05: confirmed current enrolment is preparation taken earlier but not yet passed, so like an earlier planned course it is conditional.
-    planned += [r for r in context.get('current_enrolment') or [] if r.get('confirmed')]
+    enrolment = [r for r in context.get('current_enrolment') or [] if r.get('confirmed')]
+    planned += enrolment
     seen = {}
     for semester in sorted(plan.get('semesters', []), key=lambda s: term_key(s['term_id'])):
         term = semester['term_id']
         selected = sum((decimal_value(c['credits']) for c in semester.get('courses', [])), Decimal(0))
+        # CR-105 (CP-21, CP-24): confirmed enrolment in this very term takes load and meeting time too. A course both enrolled and planned is one course.
+        in_plan = {canonical_code(c.get('normalized_code', c.get('course_id')), identity) for c in semester.get('courses', [])}
+        enrolled_here = [r for r in enrolment if r.get('term_id') == term and canonical_code(r['normalized_code'], identity) not in in_plan]
+        enrolled = sum((decimal_value(r['credits']) for r in enrolled_here), Decimal(0))
         placeholders = sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', [])), Decimal(0))
-        workload[term] = {'selected_credits': decimal_string(selected), 'placeholder_credits': decimal_string(placeholders), 'target_credits': decimal_string(selected + placeholders)}
-        issues.extend(_load_issues(context, term, selected + placeholders))
+        workload[term] = {'selected_credits': decimal_string(selected), 'enrolled_credits': decimal_string(enrolled), 'placeholder_credits': decimal_string(placeholders),
+                          'target_credits': decimal_string(selected + enrolled + placeholders)}
+        issues.extend(_load_issues(context, term, selected + enrolled + placeholders))
         if placeholders:
             issues.append(issue('PLACEHOLDER_UNRESOLVED', 'Select actual courses before eligibility or completion can be established.', entities=[p['id'] for p in semester['placeholders']]))
         for course in semester.get('courses', []):
@@ -86,7 +92,10 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
         check = check_meetings([{**c, 'id': c.get('id', c.get('normalized_code', c.get('course_id'))),
                                  'normalized_code': _listed_code(offering_snapshot, term, c.get('normalized_code', c.get('course_id')),
                                                                  canonical_code(c.get('normalized_code', c.get('course_id')), identity))}
-                                for c in semester.get('courses', [])], snapshot_for_term(offering_snapshot, term))
+                                for c in semester.get('courses', [])]
+                               + [{'id': r['normalized_code'], 'normalized_code': _listed_code(offering_snapshot, term, r['normalized_code'], canonical_code(r['normalized_code'], identity)),
+                                   'section_ids': r.get('section_ids')} for r in enrolled_here],
+                               snapshot_for_term(offering_snapshot, term), reference_ids=[r['normalized_code'] for r in enrolled_here])
         issues.extend(check['issues'])
         status = check['status']
         if status == 'clear' and semester.get('placeholders'):  # placeholders beside clash-free courses are still unchecked

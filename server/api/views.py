@@ -71,6 +71,11 @@ def health(request):
     return response({'status': 'ok', 'database': 'ok'})
 
 
+@endpoint({'GET', 'POST', 'PUT', 'PATCH', 'DELETE'}, public=True)
+def api_not_found(request):
+    raise Http404   # the endpoint wrapper answers with the NOT_FOUND envelope
+
+
 def spa(request, path=''):
     if request.method not in ('GET', 'HEAD'):
         return HttpResponseNotAllowed(['GET', 'HEAD'])
@@ -299,12 +304,25 @@ def import_preview(request):
     if not parsed['candidate_attempts']:
         return response(parsed, parsed['issues'], 422)
     proposed = reconcile_import(record_data(stored), parsed, {}, replace_imported=True)
-    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
+    _purge_expired_previews()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision,
                                            payload=parsed, expires_at=timezone.now() + timedelta(hours=1))
     data = {k: v for k, v in parsed.items() if k != 'issues'}
     data.update({'id': str(preview.pk), 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': proposed['diff']})
     return response(data, parsed['issues'] + proposed['issues'], 201)
+
+
+def _purge_expired_previews(keep=None):
+    """CR-109: a preview holds every parsed grade, so expired ones of every student go whenever anyone imports or commits (a cheap query on the
+    indexed `expires_at`). Production also runs `purge_previews` at start-up; nothing else runs it on a schedule."""
+    ImportPreview.objects.filter(expires_at__lte=timezone.now()).exclude(pk=keep).delete()
+
+
+def _spend_preview(preview):
+    """Once a preview is committed it keeps only its marker: the row stays so a second commit is refused (409), but the grades are no longer needed."""
+    preview.payload = {}
+    preview.committed_at = timezone.now()
+    preview.save(update_fields=['payload', 'committed_at'])
 
 
 @endpoint({'POST'})
@@ -316,6 +334,7 @@ def import_commit(request, preview_id):
     expected = expected_revision(request.payload)
     if preview.committed_at or expected != stored.revision or preview.base_record_revision != expected:
         raise RevisionConflict(stored.revision)
+    _purge_expired_previews(keep=preview.pk)
     if preview.expires_at <= timezone.now():
         return response(issues=[issue('PREVIEW_EXPIRED', 'Create a new preview.', 'error')], status=422)
     if preview.payload.get('kind') == 'backup':
@@ -336,8 +355,7 @@ def import_commit(request, preview_id):
         reported.append({'preview_id': str(preview.pk), 'record_revision_at_import': expected + 1, 'controls': preview.payload['reported_controls'],
                          'source_refs': list({r['id'] for a in candidates for r in a['source_refs']})})
     accepted = replace_record(stored, expected, result['record']['attempts'], reported_controls=reported)
-    preview.committed_at = timezone.now()
-    preview.save(update_fields=['committed_at'])
+    _spend_preview(preview)
     return response(accepted, result['issues'])
 
 
@@ -406,7 +424,9 @@ def _validate_payload(owner, payload, simple_load=False):
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
     data = record_data(record)
     return validate_plan({'attempts': data['attempts'], 'current_enrolment': data['current_enrolment'], 'catalogue': _recommendations(), 'identity': identity,
-                          'standing': record.profile.get('standing', 'unknown'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+                          'standing': record.profile.get('standing', 'unknown'),
+                          # CR-106: a saved plan keeps the advisor cap (ADV13 p. 7, D-36); a draft check (simple_load) has one 28-credit limit.
+                          'advisor_cap': None if simple_load else record.profile.get('advisor_cap'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)
@@ -752,7 +772,7 @@ def backup_preview(request):
         issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
     if scenarios:
         issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
-    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
+    _purge_expired_previews()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
                                            payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
     return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
@@ -780,8 +800,7 @@ def _restore_backup(request, preview, stored, expected):
         return rejected
     restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
-    preview.committed_at = timezone.now()
-    preview.save(update_fields=['committed_at'])
+    _spend_preview(preview)
     return response(restored)
 
 
