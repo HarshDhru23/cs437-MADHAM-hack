@@ -57,6 +57,7 @@ class AzureFirewallCheck(unittest.TestCase):
             self.assertEqual(CHECK.main(['check_azure_firewall.py']), 0, out.getvalue())
         command = seen[0]
         self.assertEqual(command[:4], ['az', 'postgres', 'flexible-server', 'firewall-rule'])
+        self.assertIn('--server-name', command)
         self.assertEqual(command[command.index('--server-name') + 1], 'coursepath-db-isc')
         self.assertNotIn('--name', command)
 
