@@ -1125,6 +1125,90 @@
               "type": "null"
             }
           ]
+        },
+        "plan_holds": {
+          "type": "object",
+          "description": "Only with a plan (D-53): the credits the plan keeps in placeholders. degree is the degree total with them counted; requirements holds, for each requirement or group with credits kept (or a placeholder aimed at it), the credits kept (never more than it can still take) and the placeholders that keep them.",
+          "required": [
+            "degree",
+            "requirements"
+          ],
+          "properties": {
+            "degree": {
+              "type": "object",
+              "required": [
+                "total_credits",
+                "counted_credits",
+                "held_credits",
+                "remaining_credits"
+              ],
+              "properties": {
+                "total_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "counted_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "held_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "remaining_credits": {
+                  "$ref": "#/$defs/decimal"
+                }
+              },
+              "additionalProperties": false
+            },
+            "requirements": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "held_credits",
+                  "placeholders"
+                ],
+                "properties": {
+                  "held_credits": {
+                    "$ref": "#/$defs/decimal"
+                  },
+                  "placeholders": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "desired_credits",
+                        "term_id",
+                        "online"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "desired_credits": {
+                          "$ref": "#/$defs/decimal"
+                        },
+                        "term_id": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "online": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

@@ -1,5 +1,6 @@
 import { createContext, useContext, useId, useState } from 'react';
-import type { Allocation, CatalogueCourse, Curriculum, RequirementDefinition, RequirementResult, RequirementStatus } from '../../api/types';
+import type { Allocation, CatalogueCourse, Curriculum, PlanHolds, RequirementDefinition, RequirementResult, RequirementStatus } from '../../api/types';
+import { formatTerm } from '../../lib/format';
 import { Badge } from '../../components/StatusBadge';
 import { formatCredits, humanize } from '../../lib/format';
 import './requirements.css';
@@ -37,12 +38,14 @@ interface Ctx {
   ledger: Allocation[];
   sources: Map<string, CountedSource>;
   catalogue: CatalogueCourse[];
+  /** What the plan keeps in placeholders, per requirement (D-53); empty outside the "With my plan" view. */
+  holds: PlanHolds['requirements'];
   /** The group the ring is pointing at (top-level rows only), and how to point at one. */
   activeId: string | null;
   onActive: (id: string | null) => void;
 }
 
-const TreeContext = createContext<Ctx>({ definitions: new Map(), ledger: [], sources: new Map(), catalogue: [], activeId: null, onActive: () => undefined });
+const TreeContext = createContext<Ctx>({ definitions: new Map(), ledger: [], sources: new Map(), catalogue: [], holds: {}, activeId: null, onActive: () => undefined });
 
 const MARK: Record<RequirementStatus, { tone: 'success' | 'warning' | 'scenario' | 'neutral'; symbol: string; label: string }> = {
   satisfied: { tone: 'success', symbol: '✓', label: 'Done' },
@@ -70,6 +73,8 @@ interface TreeProps {
   ledger?: Allocation[];
   sources?: Map<string, CountedSource>;
   catalogue?: CatalogueCourse[];
+  /** The "With my plan" view: the credits the plan keeps in placeholders (D-53). */
+  holds?: PlanHolds['requirements'];
   label?: string;
   /** Pointing at a group row highlights its arc in the ring, and the other way round. */
   activeId?: string | null;
@@ -84,8 +89,8 @@ export function shownGroups(definitions: Map<string, RequirementDefinition>, def
   return items.filter((i) => i.def && i.def.type !== 'noncredit') as { id: string; result: RequirementResult | undefined; def: RequirementDefinition }[];
 }
 
-export function RequirementTree({ definitions, defs, results, ledger = [], sources, catalogue = [], label, activeId = null, onActive = () => undefined }: TreeProps) {
-  const value: Ctx = { definitions, ledger, sources: sources ?? new Map(), catalogue, activeId, onActive };
+export function RequirementTree({ definitions, defs, results, ledger = [], sources, catalogue = [], holds = {}, label, activeId = null, onActive = () => undefined }: TreeProps) {
+  const value: Ctx = { definitions, ledger, sources: sources ?? new Map(), catalogue, holds, activeId, onActive };
   const shown = shownGroups(definitions, defs, results);
   return (
     <TreeContext.Provider value={value}>
@@ -112,14 +117,23 @@ function progressText(def: RequirementDefinition, result: RequirementResult): st
 }
 
 /** How much of a requirement's bar to fill: a drawing detail, the counted credits themselves come from the server. */
-function meterPercent(def: RequirementDefinition, result?: RequirementResult): number {
+function meterPercent(def: RequirementDefinition, result?: RequirementResult, held?: string): number {
   const required = Number(def.minimum_credits ?? result?.required_credits);
-  const counted = Number(result?.counted_credits);
+  const counted = Number(result?.counted_credits) + (held ? Number(held) : 0);
   return Number.isFinite(required) && required > 0 && Number.isFinite(counted) ? Math.max(0, Math.min(100, (counted / required) * 100)) : 0;
 }
 
+/** "4 credits kept in placeholders": the credits a plan keeps for a requirement, and that a course still has to be chosen for them. */
+const heldText = (held: string): string => `${formatCredits(held)} ${Number(held) === 1 ? 'credit' : 'credits'} kept in placeholders`;
+
 function RequirementRow({ id, result, def, top = false }: { id: string; result?: RequirementResult; def: RequirementDefinition; top?: boolean }) {
-  const { catalogue, ledger, sources, definitions, activeId, onActive } = useContext(TreeContext);
+  const { catalogue, ledger, sources, definitions, activeId, onActive, holds } = useContext(TreeContext);
+  const hold = holds[id];
+  const held = hold && Number(hold.held_credits) > 0 ? hold.held_credits : undefined;
+  // Only placeholders the server counted here are listed: one aimed at a requirement that is already met, or at a group, keeps nothing.
+  const kept = held && hold ? hold.placeholders : [];
+  // A placeholder keeps no more than the requirement can still take (D-07); say so when the amounts listed are more than the amount kept.
+  const capped = kept.reduce((sum, p) => sum + Number(p.desired_credits), 0) > Number(held ?? 0);
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const name = requirementLabel(def, result);
@@ -145,6 +159,7 @@ function RequirementRow({ id, result, def, top = false }: { id: string; result?:
           ) : taken?.grade ? (
             <span className="muted"> grade {taken.grade}</span>
           ) : null}
+          {kept.length > 0 ? <span className="muted req-held"> · placeholder kept: {kept.map((p) => `${formatCredits(p.desired_credits)} credits in ${formatTerm(p.term_id)}`).join(', ')}{capped ? `; ${formatCredits(held ?? '0')} counted` : ''}</span> : null}
         </div>
       </li>
     );
@@ -171,15 +186,34 @@ function RequirementRow({ id, result, def, top = false }: { id: string; result?:
             </span>
             <span className="req-name">{name}</span>
             <span className="req-meter" aria-hidden="true" data-done={result?.status === 'satisfied' ? 'true' : undefined}>
+              {result && held ? <i className="held" style={{ width: `${meterPercent(def, result, held)}%` }} /> : null}
               {result ? <i style={{ width: `${meterPercent(def, result)}%` }} /> : null}
             </span>
-            <span className="req-credits num">{progress ?? creditsText(def, result)}</span>
+            <span className="req-credits num">
+              {progress ?? creditsText(def, result)}
+              {held ? <span className="req-held">{` + ${heldText(held)}`}</span> : null}
+            </span>
             {result ? <StatusMark status={result.status} /> : null}
           </button>
         </h3>
         {open ? (
           <div className="req-details" id={panelId}>
             {hint ? <p className="muted">{hint}</p> : null}
+            {kept.length > 0 ? (
+              <>
+                <h4>Placeholder kept</h4>
+                {capped ? <p className="muted">{`${formatCredits(held ?? '0')} credits are counted here: a placeholder keeps no more than this requirement can still take.`}</p> : null}
+                <ul>
+                  {kept.map((p) => (
+                    <li key={p.id}>
+                      {formatCredits(p.desired_credits)} {Number(p.desired_credits) === 1 ? 'credit' : 'credits'} in {formatTerm(p.term_id)}
+                      {p.label ? `: ${p.label}` : ''}
+                      {p.online ? ' (online)' : ''} — you still choose the course.
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             {countedSources.length > 0 ? (
               <>
                 <h4>Counted for you</h4>

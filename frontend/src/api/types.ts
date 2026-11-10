@@ -435,6 +435,22 @@ export interface AnalysisRequest {
   award_ids?: string[];
 }
 
+/** A placeholder that keeps credits for a requirement in a plan. */
+export interface PlanHoldPlaceholder {
+  id: string;
+  label: string | null;
+  desired_credits: DecimalString;
+  term_id: string;
+  online: boolean;
+}
+
+/** D-53: the credits a plan keeps in placeholders, by the server. `degree` is the degree total with them counted; a requirement or group appears when
+ * credits are kept for it (a group as the sum of its parts) or a placeholder is aimed at it. */
+export interface PlanHolds {
+  degree: { total_credits: DecimalString; counted_credits: DecimalString; held_credits: DecimalString; remaining_credits: DecimalString };
+  requirements: Record<string, { held_credits: DecimalString; placeholders: PlanHoldPlaceholder[] }>;
+}
+
 export interface AnalysisResult {
   audit: AuditResult;
   performance: PerformanceResult;
@@ -442,6 +458,8 @@ export interface AnalysisResult {
   record_revision: number;
   plan_revision: number | null;
   rule_version: string;
+  /** Only with a plan. */
+  plan_holds?: PlanHolds | null;
 }
 
 export interface RevisionConflictData {

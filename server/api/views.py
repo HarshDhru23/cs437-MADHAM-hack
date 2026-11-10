@@ -583,6 +583,9 @@ def analysis(request):
     performance['source_reported_controls'] = stored.reported_controls
     data = {'audit': audit, 'performance': performance, 'validation': _validate_owned_plan(request.user, plan) if plan else None,
             'record_revision': stored.revision, 'plan_revision': plan.revision if plan else None, 'rule_version': rules['version']}
+    if plan:   # D-53: credits the plan keeps in placeholders count in "With my plan", and the view says which placeholder keeps them
+        _, _, held_rows, _ = _plan_holds(rules, record, audit, plan.payload)
+        data['plan_holds'] = _plan_holds_view(rules, audit, held_rows, plan.payload)
     return response(data, audit['issues'] + performance['issues'])
 
 
@@ -599,12 +602,29 @@ def plan_validate(request, plan_id):
 
 def _plan_check(user, stored, payload):
     """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
-    from coursepath.degree_audit import evaluate_audit, requirement_progress
+    from coursepath.degree_audit import evaluate_audit
     from coursepath.plan_generation import term_cap
-    from coursepath.online_credits import count_online
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
+    online, held, requirements, uncovered = _plan_holds(rules, record, audit, payload)
+    validation = _validate_payload(user, payload, simple_load=True)
+    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
+    load = {}
+    for term, row in validation['workload'].items():
+        limit = term_cap(term)
+        planned = decimal_value(row['target_credits'])
+        load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
+    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
+            'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
+            'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+
+
+def _plan_holds(rules, record, audit, payload):
+    """What a plan's placeholders keep: per credit-bearing requirement the credits held (never more than it can still take) and what stays
+    uncovered. Returns the online count, the credits held per requirement before capping, the requirement rows and the total uncovered."""
+    from coursepath.degree_audit import requirement_progress
+    from coursepath.online_credits import count_online
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
     # An online credit is held where the allocator counted it (D-10, D-42): above the 8-credit discipline cap, or aimed at a requirement online
     # courses cannot fill, it holds open-elective credit, never the requirement the student aimed it at.
@@ -619,16 +639,35 @@ def _plan_check(user, stored, payload):
         left = decimal_value(row['remaining_credits']) - covered
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
-    validation = _validate_payload(user, payload, simple_load=True)
-    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
-    load = {}
-    for term, row in validation['workload'].items():
-        limit = term_cap(term)
-        planned = decimal_value(row['target_credits'])
-        load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
-    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
-            'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
-            'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+    return online, held, requirements, uncovered
+
+
+def _plan_holds_view(rules, audit, requirements, payload):
+    """D-53: the credits a plan keeps in placeholders, for the requirements view "With my plan": the degree total with them counted, and for each
+    requirement (a group too, as the sum of its parts) the credits kept and the placeholders that keep them. Only what is kept appears."""
+    held_by_leaf = {row['id']: decimal_value(row['held_credits']) for row in requirements}
+    placeholders = {}
+    for semester in payload['semesters']:
+        for p in semester.get('placeholders', []):
+            placeholders.setdefault(p['requirement_id'], []).append({'id': p['id'], 'label': p.get('label'), 'desired_credits': p['desired_credits'],
+                                                                     'term_id': semester['term_id'], 'online': p.get('online') is True})
+    found = {}
+
+    def walk(rule):
+        children = rule.get('children', [])
+        total = held_by_leaf.get(rule['id'], Decimal(0)) if not children else sum((walk(c) for c in children), Decimal(0))
+        mine = placeholders.get(rule['id'], [])
+        if total > 0 or mine:
+            found[rule['id']] = {'held_credits': decimal_string(total), 'placeholders': mine}
+        return total
+    for rule in rules['requirements']:
+        walk(rule)
+    held_total = sum(held_by_leaf.values(), Decimal(0))
+    degree = audit['degree']['projected']
+    counted = decimal_value(degree['counted_credits']) + held_total
+    return {'degree': {'total_credits': degree['total_credits'], 'counted_credits': decimal_string(counted), 'held_credits': decimal_string(held_total),
+                       'remaining_credits': decimal_string(max(Decimal(0), decimal_value(degree['total_credits']) - counted))},
+            'requirements': found}
 
 
 def _incomplete_noncredit_issues(rules, audit, record):
