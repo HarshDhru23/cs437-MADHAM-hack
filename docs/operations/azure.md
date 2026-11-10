@@ -95,7 +95,9 @@ az postgres flexible-server firewall-rule list --resource-group coursepath-rg --
 
 It exits 1 while a `0.0.0.0` rule exists. **Run it in every release; once the plan below is done it must pass.** (It is also a step of the release procedure in the coursepath skill's `reference/deploy.md`.)
 
-**The plan (not applied: these are production changes and need the owner's go-ahead; change one thing at a time, check `/api/v1/health` after each, back the database up first with `scripts/backup.py dump`):**
+**Applied on 10 Nov 2026 (owner's go-ahead):** steps 1 to 3 below were done in that order, with `/api/v1/health` checked after each. The web app now connects as `coursepath_app`, which owns only the app's 18 tables and the `coursepath` database and has no superuser, create-role or create-database rights. The all-Azure `0.0.0.0` rule is deleted and the firewall holds one rule per possible outbound address of the web app (31 at the time). `scripts/check_azure_firewall.py` passes. Keep the plan below as the procedure to repeat after a plan resize. Before this, the live database had automatic backups (7 days) as the restore point.
+
+**The plan (change one thing at a time, check `/api/v1/health` after each, back the database up first with `scripts/backup.py dump`):**
 
 1. *Give the app its own database role, not the admin.* As `cpadmin` (from your own IP, rule added for the purpose), in database `coursepath`:
    ```sql
@@ -124,7 +126,7 @@ It exits 1 while a `0.0.0.0` rule exists. **Run it in every release; once the pl
 3. *Replace the all-of-Azure rule with the app's outbound addresses.*
    ```powershell
    az webapp show --resource-group coursepath-rg --name coursepath-iitgn --query possibleOutboundIpAddresses --output tsv   # the full set, not only the current one
-   az postgres flexible-server firewall-rule create --resource-group coursepath-rg --server-name coursepath-db-isc --name app-<ip> --start-ip-address <ip> --end-ip-address <ip>   # once per address
+   az postgres flexible-server firewall-rule create --resource-group coursepath-rg --server-name coursepath-db-isc --name app-<ip with dashes, e.g. app-4-187-190-117> --start-ip-address <ip> --end-ip-address <ip>   # once per address; Azure rejects dots in rule names, and each call takes about half a minute
    # check /api/v1/health and a real sign-in, then:
    az postgres flexible-server firewall-rule delete --resource-group coursepath-rg --server-name coursepath-db-isc --name <name of the 0.0.0.0 rule> --yes
    ```
