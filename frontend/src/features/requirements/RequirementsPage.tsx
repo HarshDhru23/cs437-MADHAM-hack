@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnalysis, useCatalogue, useCurriculum, usePlans, useRecord } from '../../api/hooks';
-import type { Issue } from '../../api/types';
+import type { Issue, RequirementResult } from '../../api/types';
 import { usePublishView, type DataMode } from '../../app/viewContext';
 import { useSession } from '../../app/session';
 import { IssueList, visibleIssues } from '../../components/IssueList';
@@ -136,7 +136,7 @@ export function RequirementsPage() {
         <section aria-label="Overview" className="panel req-hud">
           <DegreeRing groups={ringGroups} total={degree?.total_credits ?? null} counted={degree?.counted_credits ?? null} highlightId={active} onHighlight={setActive} />
           <div className="req-hud-side">
-            <Verdict view={view} complete={audit.complete} remaining={degree?.remaining_credits ?? null} />
+            <Verdict view={view} complete={audit.complete} remaining={degree?.remaining_credits ?? null} pending={pendingIn(results)} />
             {degree ? (
               <dl className="req-tiles">
                 <div>
@@ -205,16 +205,33 @@ export function RequirementsPage() {
   );
 }
 
-function Verdict({ view, complete, remaining }: { view: View; complete: boolean; remaining: string | null }) {
+/**
+ * The requirements still pending in this view, by what a student calls them. A requirement that asks for no credits (the comprehensive viva) is
+ * pending when no credits are left, so "0 credits remaining" is not enough to say a view is complete (CR-69, D-16).
+ */
+function pendingIn(results: RequirementResult[] | null): string[] {
+  return (results ?? []).filter((r) => r.status === 'pending').map((r) => r.id);
+}
+
+function Verdict({ view, complete, remaining, pending }: { view: View; complete: boolean; remaining: string | null; pending: string[] }) {
   const left = remaining !== null && Number(remaining) > 0 ? formatCredits(remaining) : null;
+  const creditsDone = remaining !== null && Number(remaining) === 0;
+  // Nothing is complete while a requirement is pending, whatever the credits say; say which one in words (the viva) or that some remain.
+  const unfinished = pending.includes('viva') ? 'your comprehensive viva is not complete' : 'some requirements are not complete yet';
   let text: string;
   let done: boolean;
   if (view === 'projected') {
-    done = remaining !== null && Number(remaining) === 0;
+    done = creditsDone && pending.length === 0;
     text = done ? 'Your plan covers every requirement' : left ? `Your plan leaves ${left} credits uncovered` : 'Your plan does not cover every requirement yet';
   } else if (view === 'current') {
-    done = remaining !== null && Number(remaining) === 0;
-    text = done ? 'Your current courses complete every requirement' : left ? `Not yet eligible to graduate — ${left} credits to go after your current courses` : 'Not yet eligible to graduate';
+    done = creditsDone && pending.length === 0;
+    text = done
+      ? 'Your current courses complete every requirement'
+      : left
+        ? `Not yet eligible to graduate — ${left} credits to go after your current courses`
+        : creditsDone
+          ? `Not yet eligible to graduate — ${unfinished}`
+          : 'Not yet eligible to graduate';
   } else {
     done = complete;
     text = complete ? 'Graduation requirements complete' : left ? `Not yet eligible to graduate — ${left} credits to go` : 'Not yet eligible to graduate';
