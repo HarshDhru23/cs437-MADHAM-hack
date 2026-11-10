@@ -148,7 +148,8 @@
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_pdf_keeps_suffixed_special_topics_rows_and_their_wrapped_titles",
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_wrapped_title_never_attaches_to_the_row_above",
         "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_code_as_wide_as_its_column_is_split_from_the_title_it_touches",
-        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped"
+        "tests.reference.test_transcript_variants.SuffixedSpecialTopicsCodes.test_cp06_a_course_row_with_an_unreadable_code_is_disclosed_never_skipped",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp06_first_attempt_that_only_ran_out_of_time_is_tried_again"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -224,7 +225,9 @@
       "oct27_target": true,
       "tests": [
         "tests.imports.test_pdf.PDFTests.test_cp09_invalid_encrypted_image_only_and_limits",
-        "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback"
+        "server.records.test_imports.ImportAPITests.test_cp09_foreign_expired_preview_and_transaction_rollback",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_a_pdf_that_always_runs_out_of_time_still_fails_after_one_more_try",
+        "tests.imports.test_pdf_slow_start.PdfSlowStartTests.test_cp09_an_unreadable_pdf_is_not_retried"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
