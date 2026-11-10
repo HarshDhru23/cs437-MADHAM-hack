@@ -43,9 +43,12 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
         enrolled_here = [r for r in enrolment if r.get('term_id') == term and canonical_code(r['normalized_code'], identity) not in in_plan]
         enrolled = sum((decimal_value(r['credits']) for r in enrolled_here), Decimal(0))
         placeholders = sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', [])), Decimal(0))
-        # D-50: online courses are taken beside the semester, not in it: in a regular semester their credits are held outside its load (they count
-        # in the 16-credit online pool and the caps, which the plan check reports). A summer break holds nothing else, so there they are its load.
-        outside = Decimal(0) if term.endswith('SUMMER') else sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', []) if p.get('online') is True), Decimal(0))
+        # D-50: in a draft check (simple_load, D-36) online courses are taken beside the semester, not in it: their credits are held outside its load, up to
+        # the 16-credit online pool (D-11), so a regular semester's 28 never bounds more than the pool. A summer break holds nothing else, so there online
+        # credits are its load. A saved plan keeps the ADV13 p. 7 rules (D-36): there online credits count in the load like any other.
+        outside = Decimal(0)
+        if context.get('simple_load') is True and not term.endswith('SUMMER'):
+            outside = min(sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', []) if p.get('online') is True), Decimal(0)), Decimal(16))
         workload[term] = {'selected_credits': decimal_string(selected), 'enrolled_credits': decimal_string(enrolled), 'placeholder_credits': decimal_string(placeholders),
                           **({'online_credits': decimal_string(outside)} if outside else {}), 'target_credits': decimal_string(selected + enrolled + placeholders - outside)}
         issues.extend(_load_issues(context, term, selected + enrolled + placeholders - outside))
@@ -132,7 +135,7 @@ def _listed_code(snapshots, term, code, current):
 
 def _is_project(code):
     import re
-    return bool(re.match(r'^[A-Z]{2,4} [234]99', code))
+    return bool(re.match(r'^[A-Z]{2,4} [234]99', code))
 
 
 def _offering(snapshot, offering_id):

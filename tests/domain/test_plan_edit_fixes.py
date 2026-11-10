@@ -82,10 +82,6 @@ class MovedCourseTests(unittest.TestCase):
         self.assertIn('OFFERING_VARIANT_UNKNOWN', codes(result))
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class GeneratedPlanLoadAgreesWithTheCheckTests(unittest.TestCase):
     """The semester totals a generated plan states are the ones the plan check reports, whatever online courses it holds and wherever."""
 
@@ -101,3 +97,71 @@ class GeneratedPlanLoadAgreesWithTheCheckTests(unittest.TestCase):
                 for term, row in result['validation']['workload'].items():
                     if not term.endswith('SUMMER'):
                         self.assertLessEqual(D(row['target_credits']), 28)
+
+
+class SavedPlanKeepsTheAdvisoryLoadRulesTests(unittest.TestCase):
+    """D-36: the saved plan keeps ADV13 p. 7 (GPS 21, advisor cap, overload approval). D-50 holds online credits outside the load only in a draft
+    check (simple_load), so a saved plan counts them like any other credit."""
+
+    def saved(self, semesters, **context):
+        return validate_plan({'attempts': [], 'catalogue': {}, **context}, {'semesters': semesters})
+
+    def test_cp39_a_saved_plan_counts_online_credits_against_the_gps_limit(self):
+        five = [course(n) for n in range(5)]   # 20 credits; one 4-credit online course makes 24 > 21
+        result = self.saved([{'term_id': '2027-28-I', 'courses': five, 'placeholders': [online(1, '4', 'x')]}], standing='GPS')
+        self.assertEqual(result['workload']['2027-28-I']['target_credits'], '24')
+        self.assertNotIn('online_credits', result['workload']['2027-28-I'])
+        self.assertIn('LOAD_LIMIT', codes(result))
+
+    def test_cp39_a_saved_plan_counts_online_credits_against_the_advisor_cap(self):
+        five = [course(n) for n in range(5)]
+        result = self.saved([{'term_id': '2027-28-I', 'courses': five, 'placeholders': [online(1, '4', 'x')]}], advisor_cap='20')
+        self.assertIn('LOAD_LIMIT', codes(result))
+
+    def test_cp39_a_saved_plan_over_28_with_online_credits_still_needs_overload_approval(self):
+        result = self.saved([{'term_id': '2027-28-I', 'courses': [course(n) for n in range(7)], 'placeholders': [online(1, '4', 'x')]}])
+        self.assertIn('OVERLOAD_APPROVAL_REQUIRED', codes(result))
+
+
+class OnlineExemptionIsBoundedTests(unittest.TestCase):
+    def test_cp39_only_the_16_credit_online_pool_is_held_outside_the_28_credit_limit(self):
+        full = [course(n) for n in range(7)]
+        within = check([{'term_id': '2027-28-I', 'courses': full, 'placeholders': [online(1, '16', 'x')]}])
+        self.assertEqual(within['workload']['2027-28-I']['target_credits'], '28')
+        self.assertNotIn('LOAD_LIMIT', codes(within))
+        beyond = check([{'term_id': '2027-28-I', 'courses': full, 'placeholders': [online(1, '16', 'x'), online(2, '100', 'x')]}])
+        self.assertEqual(beyond['workload']['2027-28-I']['online_credits'], '16')
+        self.assertEqual(beyond['workload']['2027-28-I']['target_credits'], '128')   # 28 + the 100 that no pool can hold
+        self.assertIn('LOAD_LIMIT', codes(beyond))
+
+
+class ProjectCourseMessagesTests(unittest.TestCase):
+    """Project registrations are separate attempts (D-01), so adding one is never reported as a retake or a duplicate."""
+
+    def test_cp39_two_projects_in_one_plan_are_not_duplicates(self):
+        result = check([{'term_id': '2027-28-I', 'courses': [course(1, 'CS 399'), course(2, 'CS 399')], 'placeholders': []}])
+        self.assertNotIn('DUPLICATE_COURSE', codes(result))
+
+    def test_cp39_a_project_after_a_passed_project_of_the_same_code_is_not_a_retake(self):
+        attempt = {'normalized_code': 'CS 299', 'completion_status': 'completed', 'credits': '4', 'term_id': '2025-26-SUMMER', 'id': 'a1'}
+        result = validate_plan({'attempts': [attempt], 'catalogue': {}, 'simple_load': True},
+                               {'semesters': [{'term_id': '2027-28-I', 'courses': [course(1, 'CS 299')], 'placeholders': []}]})
+        self.assertNotIn('RETAKE_PLANNED', codes(result))
+
+    def test_cp39_an_ordinary_course_taken_twice_is_still_a_duplicate(self):
+        result = check([{'term_id': '2027-28-I', 'courses': [course(1, 'ZZ 150'), course(2, 'ZZ 150')], 'placeholders': []}])
+        self.assertIn('DUPLICATE_COURSE', codes(result))
+
+
+class StaleChoiceIsIgnoredForCreditsTests(unittest.TestCase):
+    def test_cp39_a_stale_offering_id_does_not_hide_the_new_terms_offering_from_the_credit_check(self):
+        old = next(o for s in SNAPSHOTS if s['term_id'] == '2026-27-I' for o in s['offerings'] if o['code'] == 'CS 330')
+        stale = course(1, 'CS 330', credits='9', offering_id=old['id'])
+        fresh = course(1, 'CS 330', credits='9')
+        for item in (stale, fresh):
+            result = check([{'term_id': '2027-28-I', 'courses': [item], 'placeholders': []}], SNAPSHOTS)
+            self.assertIn('OFFERING_CREDITS_DIFFER', codes(result))
+
+
+if __name__ == '__main__':
+    unittest.main()
