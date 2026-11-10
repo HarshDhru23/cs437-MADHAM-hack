@@ -30,6 +30,7 @@ from coursepath.identity import canonical_code, identity_map
 from coursepath.imports.normalization import CODE
 from coursepath.issues import issue
 from coursepath.models import term_key, validate_term_id
+from coursepath.online_credits import ONLINE_POOL as _ONLINE_POOL
 from coursepath.offerings import matching_offerings, offering_availability, pattern_snapshot, snapshot_for_term
 from coursepath.rules.allocation import allocate, eligible, pass_fail_conversions
 from coursepath.rules.loader import validate_curriculum
@@ -46,7 +47,7 @@ ELECTIVE_NAMES = {'hss-other': 'HSS elective', 'bs-elective': 'Basic Science ele
 INTERNSHIP_LABEL = 'Internship module (IN 498)'
 ONLINE_LABEL = 'Online course'
 PROJECT_LABEL = 'Open project (arrange it with a supervisor)'
-ONLINE_POOL = Decimal(16)   # D-11, D-13: at most 16 online credits count, to discipline electives (at most 8) and then open electives; the allocator enforces the caps
+ONLINE_POOL = _ONLINE_POOL   # D-11, D-13: at most 16 online credits count, to discipline electives (at most 8) and then open electives; the allocator enforces the caps
 ONLINE_ORDER = ('cse-general', 'open-electives')   # D-13: online credits go to discipline electives first, then open electives; never HSS
 ONLINE_CODE = {'cse-general': 'CS {}', 'open-electives': 'ZZ {}'}   # 900 + n stands in for an online course the student chooses (distinct codes, so none is a repeat); never shown
 MIN_PLACEHOLDER = Decimal(2)                         # a held elective chunk is at least 2 credits unless it is all that is left
