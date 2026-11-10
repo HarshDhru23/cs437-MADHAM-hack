@@ -5,7 +5,7 @@ from coursepath.models import term_key
 from coursepath.eligibility import evaluate_prerequisite
 from coursepath.issues import issue
 from coursepath.offerings import matching_offerings, offering_availability, pattern_snapshot, snapshot_for_term
-from coursepath.timetable import check_meetings
+from coursepath.timetable import check_meetings, term_of_id
 from coursepath.identity import canonical_code
 
 
@@ -43,9 +43,12 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
         enrolled_here = [r for r in enrolment if r.get('term_id') == term and canonical_code(r['normalized_code'], identity) not in in_plan]
         enrolled = sum((decimal_value(r['credits']) for r in enrolled_here), Decimal(0))
         placeholders = sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', [])), Decimal(0))
+        # D-50: online courses are taken beside the semester, not in it: in a regular semester their credits are held outside its load (they count
+        # in the 16-credit online pool and the caps, which the plan check reports). A summer break holds nothing else, so there they are its load.
+        outside = Decimal(0) if term.endswith('SUMMER') else sum((decimal_value(p['desired_credits']) for p in semester.get('placeholders', []) if p.get('online') is True), Decimal(0))
         workload[term] = {'selected_credits': decimal_string(selected), 'enrolled_credits': decimal_string(enrolled), 'placeholder_credits': decimal_string(placeholders),
-                          'target_credits': decimal_string(selected + enrolled + placeholders)}
-        issues.extend(_load_issues(context, term, selected + enrolled + placeholders))
+                          **({'online_credits': decimal_string(outside)} if outside else {}), 'target_credits': decimal_string(selected + enrolled + placeholders - outside)}
+        issues.extend(_load_issues(context, term, selected + enrolled + placeholders - outside))
         if placeholders:
             issues.append(issue('PLACEHOLDER_UNRESOLVED', 'Select actual courses before eligibility or completion can be established.', entities=[p['id'] for p in semester['placeholders']]))
         for course in semester.get('courses', []):
@@ -81,7 +84,8 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
             availability = offering_availability(offering_snapshot, term, _listed_code(offering_snapshot, term, code, current))
             issues.extend(availability['issues'])
             ids = availability['offering_ids']
-            chosen = course.get('offering_id') if course.get('offering_id') in ids else ids[0] if len(ids) == 1 and not course.get('offering_id') else None
+            choice = course.get('offering_id') if _own_term(course.get('offering_id'), term) else None   # D-51: a choice made for another term is not a choice here
+            chosen = choice if choice in ids else ids[0] if len(ids) == 1 and not choice else None
             if chosen:
                 offered = _offering(snapshot_for_term(offering_snapshot, term), chosen)
                 if offered.get('credits') is not None and decimal_value(offered['credits']) != decimal_value(course['credits']):
@@ -108,6 +112,12 @@ def validate_plan(context, plan, offering_snapshot=None, calendar=None):
     overall = 'conflicts' if 'conflicts' in statuses else 'clear' if statuses and set(statuses) == {'clear'} else 'not_checked'
     return {'workload': workload, 'per_course': per_course, 'issues': issues, 'meeting_check_status': overall,
             'meeting_checks': meeting_checks, 'completion_term': None}
+
+
+def _own_term(identifier, term):
+    """False for an offering or section ID that names another term (`2026-27-I:CS330` in `2027-28-I`): such an ID is left over from before the
+    course was moved. An ID that names this term, or none, is the student's choice."""
+    return not identifier or term_of_id(identifier) in (None, term)
 
 
 def _listed_code(snapshots, term, code, current):

@@ -407,6 +407,8 @@ export interface TermWorkload {
   /** Confirmed current enrolment in this term that is not also in the plan; included in `target_credits`. */
   enrolled_credits?: DecimalString;
   placeholder_credits: DecimalString;
+  /** Online courses held in a regular semester: outside its load, so `target_credits` leaves them out (D-50). */
+  online_credits?: DecimalString;
   target_credits?: DecimalString;
 }
 

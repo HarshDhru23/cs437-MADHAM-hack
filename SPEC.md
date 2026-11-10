@@ -118,6 +118,8 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 
 **Added on 8 Nov (D-45, D-46):** CP-36 (a plan is marked valid or not valid) and CP-37 (sign-in with an IITGN Google account only). Both were requested after the freeze; the freeze rule allows new IDs, and CP-35 to CP-37 are the only statements added since.
 
+**Added on 10 Nov (D-50 to D-52):** CP-39 (project courses in a plan, online credits outside the load, moves between semesters of the same kind). Requested after the freeze by Manashree; the freeze rule allows new IDs (proposed decisions, awaiting Harsh's confirmation).
+
 ## November 3 implementation status (not release certification)
 
 Status per statement comes from running its mapped tests: `python scripts/statement_report.py --all` (add `--browser --frontend` for the UI suites). This section does not record a pass count. A statement is release-complete only with its tests green, a real browser flow, review by another member and a merged PR (`schemas/statement-test-map.json`). The table lists, for the November statements, what the backend now does and what is still missing.
@@ -130,4 +132,5 @@ Status per statement comes from running its mapped tests: `python scripts/statem
 | CP-30 | Versioned JSON export; restore through preview, diff and confirmed commit. | Printable report view and browser evidence. |
 | CP-31 | Frontend responsibility. | Phone and keyboard browser flows and an observed user session. |
 | CP-32 | Owner-only data, re-authenticated deletion (data or account), expired-preview purge, production settings check. | Hosted deployment and PostgreSQL verification (GAP-13). |
+| CP-39 | A student can add a project course to a plan and the system decides whether it counts as the open project or an elective; online courses are held outside a semester's credit limit; a course moves only between odd semesters or between even ones, and keeps no section chosen for its old term. | A first project fills the open project and a later one counts as an elective; seven 4-credit courses plus an online course stay at 28 credits with no load error, while a non-online placeholder still goes over; a summer break counts its online credits against its 10; a moved course is not reported as an unknown variant, a genuinely unknown variant still is; move targets are the same kind of semester only. |
 | CP-33, CP-34 | Exact-date internships against the published 2026-27 calendar (D-24), served with D-25 presets by `GET /calendar`; calendar-month arithmetic, attendance and exam overlaps, downstream courses; terms without published dates are reported unchecked; IN 498 modules under D-14; none / 3 / 6 month comparison. | The 2027-28 calendar when published (GAP-03); internship UI and browser evidence (#28). |

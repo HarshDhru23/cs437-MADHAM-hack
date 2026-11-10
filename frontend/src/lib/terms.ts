@@ -11,6 +11,21 @@ function yearLabel(start: number): string {
   return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
 }
 
+/** 'I' (odd semester), 'II' (even semester) or 'SUMMER'; null for anything that is not a term ID. */
+export function termKind(termId: string): 'I' | 'II' | 'SUMMER' | null {
+  return (TERM.exec(termId)?.[3] as 'I' | 'II' | 'SUMMER' | undefined) ?? null;
+}
+
+/**
+ * The terms a planned course can move to (D-50): an odd semester to another odd semester, an even one to another even one, a summer break to
+ * another summer break. A course is offered in the same parity of semester year after year, so a move to the other parity would put it
+ * where it is not offered. The term it is in is always in the list.
+ */
+export function moveTargets(from: string, all: string[]): string[] {
+  const kind = termKind(from);
+  return all.filter((t) => t === from || (kind !== null && termKind(t) === kind));
+}
+
 export function nextRegularTerm(termId: string): string | null {
   const m = TERM.exec(termId);
   if (!m) return null;
