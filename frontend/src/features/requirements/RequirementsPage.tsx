@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnalysis, useCatalogue, useCurriculum, usePlans, useRecord } from '../../api/hooks';
 import { useResourceCache } from '../../api/resources';
@@ -47,11 +47,17 @@ export function RequirementsPage() {
     return map;
   }, [record.data, selectedPlan]);
 
-  const audit = analysis.data?.audit ?? null;
+  // While a new count loads (after saving a current course the record has a new revision), keep showing the last one: tearing the page down
+  // would also tear down the form the student is typing in and drop its focus.
+  const lastAnalysis = useRef<typeof analysis.data>(null);
+  if (analysis.data) lastAnalysis.current = analysis.data;
+  const shown = hasHistory ? (analysis.data ?? lastAnalysis.current) : null;
+  const refreshing = Boolean(analysis.loading && shown);
+  const audit = shown?.audit ?? null;
   const personal = Boolean(session.user && hasHistory && audit);
   const results = audit ? audit[view] : null;
   // D-53: in "With my plan" the credits the plan keeps in placeholders count too, and each requirement says so.
-  const holds = view === 'projected' ? (analysis.data?.plan_holds ?? null) : null;
+  const holds = view === 'projected' ? (shown?.plan_holds ?? null) : null;
   const ledger = audit ? (view === 'actual' ? audit.ledger : view === 'current' ? audit.current_ledger : audit.projected_ledger) : [];
   const dataMode: DataMode = personal ? view : 'public';
   usePublishView({ ruleVersion: null, reviewStatus: null, dataMode, recordRevision: null });
@@ -137,7 +143,8 @@ export function RequirementsPage() {
         </fieldset>
       ) : null}
 
-      {analysis.loading && hasHistory ? <StatePanel kind="loading" title="Checking your record…" /> : null}
+      {analysis.loading && hasHistory && !shown ? <StatePanel kind="loading" title="Checking your record…" /> : null}
+      {refreshing ? <p className="muted" role="status">Updating the count…</p> : null}
       {analysis.error ? <ErrorPanel error={analysis.error} onRetry={analysis.reload} /> : null}
 
       {personal && audit ? (
@@ -181,7 +188,6 @@ export function RequirementsPage() {
 
       {personal && view === 'current' && record.data ? (
         <section aria-label="Your current courses">
-          <h2>Your current courses</h2>
           <p className="muted">Add the courses you are taking this semester. They count here under the requirements they fill, marked in progress.</p>
           <CurrentEnrolmentSection
             record={record.data}

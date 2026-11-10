@@ -74,6 +74,54 @@ class PlanHoldsTests(AccountAPIMixin, TestCase):
         self.assertIsNone(data.get('plan_holds'))
 
 
+class PlanHoldsAgreeWithThePlanCheckTests(AccountAPIMixin, TestCase):
+    """The requirements view and the plan check count the same placeholders, so what the view says is left is what the check says is uncovered."""
+
+    CASES = {
+        'none': [],
+        'two': [holder('p1', 'open-electives', '4', 'Open elective'), holder('p2', 'hss-other', '4', 'HSS elective')],
+        'capped': [holder('p1', 'open-electives', '20', 'Open elective')],
+        'two-over': [holder('p1', 'open-electives', '10', 'a'), holder('p2', 'open-electives', '10', 'b')],
+        'online-over-the-discipline-cap': [holder('o1', 'cse-general', '20', 'Online course', online=True)],
+        'met-requirement': [holder('p1', 'dsa', '4', 'Aimed at a course already passed')],
+        'group': [holder('p1', 'hss', '4', 'Aimed at a group')],
+    }
+
+    analysis = PlanHoldsTests.analysis   # the same helper, without re-running that class's tests
+
+    def check(self, username, placeholders):
+        client = Client()
+        self.signup(client, username)
+        revision = self.request(client, 'patch', '/record', {'expected_revision': 0, 'attempts': synthetic_attempts()}).json()['data']['revision']
+        semesters = [{'term_id': '2026-27-I', 'courses': [], 'placeholders': placeholders}]
+        response = self.request(client, 'post', '/plans/check', {'record_revision': revision, 'semesters': semesters})
+        self.assertEqual(response.status_code, 200, response.content)
+        return response.json()['data']
+
+    def test_cp40_the_remaining_credits_equal_the_plan_checks_uncovered_credits_in_every_case(self):
+        for name, placeholders in self.CASES.items():
+            with self.subTest(case=name):
+                holds = self.analysis(f'agree-{name}', placeholders)['plan_holds']['degree']
+                checked = self.check(f'agree-check-{name}', placeholders)
+                self.assertEqual(holds['remaining_credits'], checked['uncovered_credits'])
+
+    def test_cp40_two_open_elective_placeholders_keep_what_the_requirement_can_take_and_are_both_named(self):
+        row = self.analysis('holds-two-over', self.CASES['two-over'])['plan_holds']['requirements']['open-electives']
+        self.assertEqual(row['held_credits'], '16')   # 20 asked for, 16 needed
+        self.assertEqual(sorted(p['id'] for p in row['placeholders']), ['p1', 'p2'])
+
+    def test_cp40_a_placeholder_aimed_at_a_requirement_that_is_already_met_keeps_nothing(self):
+        data = self.analysis('holds-met', self.CASES['met-requirement'])['plan_holds']
+        self.assertEqual(data['degree']['held_credits'], '0')
+        self.assertEqual(data['requirements'].get('dsa', {'held_credits': '0'})['held_credits'], '0')
+
+    def test_cp40_online_credits_over_the_discipline_cap_are_kept_up_to_the_cap_only(self):
+        data = self.analysis('holds-online-cap', self.CASES['online-over-the-discipline-cap'])['plan_holds']
+        rows = data['requirements']
+        self.assertEqual(rows['cse-general']['held_credits'], '8')   # the 8-credit cap on online credits in the discipline electives (D-11)
+        self.assertLessEqual(float(data['degree']['held_credits']), 20)
+
+
 class CurrentCoursesCountTests(AccountAPIMixin, TestCase):
     """CP-41: a confirmed current course is counted in "Completed + current courses" under the requirement it fills; the record only accepts confirmed ones.
     92 of 170 credits are completed (tests/plan_fixtures.py); CS 330 (4 credits) fills the pending Operating Systems core course, so 96 count."""

@@ -130,6 +130,10 @@ function RequirementRow({ id, result, def, top = false }: { id: string; result?:
   const { catalogue, ledger, sources, definitions, activeId, onActive, holds } = useContext(TreeContext);
   const hold = holds[id];
   const held = hold && Number(hold.held_credits) > 0 ? hold.held_credits : undefined;
+  // Only placeholders the server counted here are listed: one aimed at a requirement that is already met, or at a group, keeps nothing.
+  const kept = held && hold ? hold.placeholders : [];
+  // A placeholder keeps no more than the requirement can still take (D-07); say so when the amounts listed are more than the amount kept.
+  const capped = kept.reduce((sum, p) => sum + Number(p.desired_credits), 0) > Number(held ?? 0);
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const name = requirementLabel(def, result);
@@ -155,7 +159,7 @@ function RequirementRow({ id, result, def, top = false }: { id: string; result?:
           ) : taken?.grade ? (
             <span className="muted"> grade {taken.grade}</span>
           ) : null}
-          {hold && hold.placeholders.length > 0 ? <span className="muted req-held"> · placeholder kept: {hold.placeholders.map((p) => `${formatCredits(p.desired_credits)} credits in ${formatTerm(p.term_id)}`).join(', ')}</span> : null}
+          {kept.length > 0 ? <span className="muted req-held"> · placeholder kept: {kept.map((p) => `${formatCredits(p.desired_credits)} credits in ${formatTerm(p.term_id)}`).join(', ')}{capped ? `; ${formatCredits(held ?? '0')} counted` : ''}</span> : null}
         </div>
       </li>
     );
@@ -195,11 +199,12 @@ function RequirementRow({ id, result, def, top = false }: { id: string; result?:
         {open ? (
           <div className="req-details" id={panelId}>
             {hint ? <p className="muted">{hint}</p> : null}
-            {hold && hold.placeholders.length > 0 ? (
+            {kept.length > 0 ? (
               <>
                 <h4>Placeholder kept</h4>
+                {capped ? <p className="muted">{`${formatCredits(held ?? '0')} credits are counted here: a placeholder keeps no more than this requirement can still take.`}</p> : null}
                 <ul>
-                  {hold.placeholders.map((p) => (
+                  {kept.map((p) => (
                     <li key={p.id}>
                       {formatCredits(p.desired_credits)} {Number(p.desired_credits) === 1 ? 'credit' : 'credits'} in {formatTerm(p.term_id)}
                       {p.label ? `: ${p.label}` : ''}
