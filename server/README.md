@@ -197,6 +197,8 @@ every production sign-in is a verified IITGN Google account, and password sign-u
 sign-in are never on in production). Production requires PostgreSQL and HTTPS/secure cookies;
 configure the actual proxy and production WSGI server with the hosting team.
 `COURSEPATH_DB_ENGINE=postgresql` allows PostgreSQL testing in development.
+`COURSEPATH_DEMO=0` turns off "Try with a sample student" (`POST /api/v1/auth/demo`): a visitor gets a throw-away
+account with a made-up record (`data/demo/sample-student.json`), deleted when they leave it or after six hours.
 `COURSEPATH_SQLITE_PATH` selects an isolated development/test database only.
 Never set production credentials in committed files. `server.records.test_privacy`
 runs `check --deploy --fail-level WARNING` under production settings and checks
