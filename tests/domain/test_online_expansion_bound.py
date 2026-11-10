@@ -50,3 +50,41 @@ class OnlineExpansionBound(unittest.TestCase):
         result, _rows, _credits = rows_given_to_the_allocator('16', '4')
         self.assertEqual((result['counted'], result['counted_by_placeholder']), (D(16), {'p0': D(16)}))
         self.assertEqual(result['issues'][0]['entity_refs'], ['2026-27-SUMMER', 'p1'])
+
+
+def hss_gap_record():
+    """The public ADV13 anchor record minus HS 305 and HS 352: 8 HSS credits remain, and the open electives are full."""
+    from tests.domain.test_curriculum_adv13 import PATH, record
+    return record([r for r in PATH if r[1] not in {'HS 305', 'HS 352'}])
+
+
+def one_term(*placeholders):
+    return {'semesters': [{'term_id': '2026-27-SUMMER', 'courses': [], 'placeholders': [
+        {'id': f'p{i}', 'requirement_id': r, 'desired_credits': c, 'label': 'Online course', 'online': True} for i, (r, c) in enumerate(placeholders)]}]}
+
+
+class OnlineExpansionKeepsTheAllocatorsAlternatives(unittest.TestCase):
+    """CR-103 review [P1]: a bound on the rows built must not drop rows the allocator needs, nor make the count depend on row order."""
+    OPEN_FULL_FIRST = (('open-electives', '16'), ('hss-other', '8'))
+
+    def counted(self, *placeholders):
+        return count_online(CURRICULUM, hss_gap_record(), one_term(*placeholders))['counted']
+
+    def test_online_rows_for_a_full_requirement_do_not_use_up_the_rows_for_one_that_needs_credits(self):
+        # Negative: a global limit built 16 open-elective rows first, so the 8 HSS credits that fill the gap never reached the allocator (counted 0).
+        self.assertEqual(self.counted(*self.OPEN_FULL_FIRST), D(8))
+
+    def test_what_counts_does_not_depend_on_the_order_of_the_placeholders(self):
+        self.assertEqual(self.counted(*reversed(self.OPEN_FULL_FIRST)), D(8))
+
+    def test_the_bound_never_changes_what_counts_compared_with_no_bound_at_all(self):
+        cases = [self.OPEN_FULL_FIRST, tuple(reversed(self.OPEN_FULL_FIRST)),
+                 (('cse-general', '20'), ('open-electives', '10')), (('open-electives', '10'), ('cse-general', '20')),
+                 (('cse-general', '12'), ('hss-other', '8'), ('open-electives', '12'), ('bs-elective', '4')),
+                 (('open-electives', '40'), ('open-electives', '40'), ('hss-other', '100'))]
+        for placeholders in cases:
+            with self.subTest(placeholders=placeholders):
+                bounded = count_online(CURRICULUM, hss_gap_record(), one_term(*placeholders))
+                with mock.patch.object(online_credits, 'ONLINE_POOL', D(10 ** 6)):
+                    unbounded = count_online(CURRICULUM, hss_gap_record(), one_term(*placeholders))
+                self.assertEqual((bounded['counted'], bounded['counted_by_requirement']), (unbounded['counted'], unbounded['counted_by_requirement']))

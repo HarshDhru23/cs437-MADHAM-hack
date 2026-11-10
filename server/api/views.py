@@ -247,14 +247,19 @@ def validated_plan(payload):
 MAX_SAVED_PLANS = 50   # the same bound a backup may restore
 
 
+def _require_room_for_plans(user, adding):
+    """Every list call checks each saved plan (CR-103), so an account keeps at most MAX_SAVED_PLANS: refuse what would take it over, creating or restoring."""
+    if AcademicPlan.objects.filter(owner=user).count() + adding > MAX_SAVED_PLANS:
+        raise ValueError(f'At most {MAX_SAVED_PLANS} saved plans; delete one first')
+
+
 @endpoint({'GET', 'POST'})
 def plans(request):
     record = get_object_or_404(AcademicRecord, owner=request.user)
     if request.method == 'GET':
         return response([_plan_with_status(request.user, record, p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
     payload = validated_plan(request.payload)
-    if AcademicPlan.objects.filter(owner=request.user).count() >= MAX_SAVED_PLANS:
-        raise ValueError(f'At most {MAX_SAVED_PLANS} saved plans; delete one first')   # every list call checks each saved plan (CR-103)
+    _require_room_for_plans(request.user, 1)
     stored = AcademicPlan.objects.create(owner=request.user, payload=payload)
     return response({**_plan_with_status(request.user, record, stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
 
@@ -798,6 +803,10 @@ def _restore_backup(request, preview, stored, expected):
     rejected = _backup_rejection(request, stored, payload['attempts'])
     if rejected:
         return rejected
+    # Counted here, not at preview: the account may have saved plans since the preview, or committed other previews. The record row is locked so two
+    # commits for one account cannot both pass the count; a refusal rolls the whole restore back.
+    AcademicRecord.objects.select_for_update().get(pk=stored.pk)
+    _require_room_for_plans(request.user, len(payload['plans']))
     restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
     _spend_preview(preview)
