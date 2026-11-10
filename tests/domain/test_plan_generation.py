@@ -157,7 +157,10 @@ class RecommendedPreparationOrderTests(unittest.TestCase):
         placed = {p['normalized_code']: p for p in courses(result)}
         self.assertIn('ES 214', placed)
         self.assertIn('CS 201', placed)
-        self.assertLess(term_key(placed['ES 214']['term_id']), term_key(placed['CS 201']['term_id']))
+        # D-48 (10 Nov, requested by Manashree): a core course is never delayed because its recommended preparation is missing. ES 214 and CS 201 are
+        # both offered only in even semesters in 2026-27, so the preparation can be earlier only by pushing CS 201 a whole year; it now shares the
+        # semester and the plan check warns, naming ES 214 (tests/domain/test_core_in_year.py).
+        self.assertLessEqual(term_key(placed['ES 214']['term_id']), term_key(placed['CS 201']['term_id']))
 
 
 class OfferingBasisTests(unittest.TestCase):

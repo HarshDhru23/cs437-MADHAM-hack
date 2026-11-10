@@ -2899,6 +2899,10 @@
             "lighten_with_online": {
               "type": "boolean"
             },
+            "include_current": {
+              "type": "boolean",
+              "description": "True (the default): the plan starts after the running semester and counts the student's confirmed current courses as taken. False: the plan starts from the completed courses alone and plans the running semester like a future one (D-49)."
+            },
             "internship_term": {
               "anyOf": [
                 {

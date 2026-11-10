@@ -1219,6 +1219,37 @@
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > says only IITGN accounts can sign in when the server refuses the account, and stays on the page",
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > keeps the username and password form, and no Google button, when Google is not configured"
       ]
+    },
+    {
+      "id": "CP-38",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "tests": [
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_missing_preparation_warns_and_the_core_course_is_not_delayed",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_waits_for_its_own_year_when_the_student_is_ahead",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_core_courses_still_respect_the_credit_limit_and_the_timetable",
+        "tests.domain.test_core_in_year.CoreInItsYearTests.test_cp38_a_core_course_offered_only_in_one_parity_goes_in_that_parity",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_completed_and_current_is_the_default_and_starts_after_the_running_semester",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_completed_only_plans_the_running_semester_again",
+        "tests.domain.test_core_in_year.CurrentCoursesChoiceTests.test_cp38_include_current_must_be_true_or_false",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_by_default_the_plan_starts_after_the_running_semester",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_completed_only_plans_the_running_semester_again",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_include_current_must_be_a_boolean",
+        "server.records.test_core_in_year_api.IncludeCurrentTests.test_cp38_a_running_course_planned_again_is_one_course_in_the_degree_count"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > is offered only when the student has confirmed current courses",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > defaults to completed + current courses and sends nothing extra",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > \"Completed courses only\" asks the server to leave current courses out",
+        "frontend/src/features/plan/generateBasis.test.tsx::Plan from (CP-38) > changing the choice with a draft on screen builds the draft again from the other starting point"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

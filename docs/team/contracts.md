@@ -133,7 +133,7 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 
 ### Plan generation (`POST /plans/generate`, D-35, CP-35)
 
-Request `options` (all optional, unknown keys are a 400): `terms` (regular or summer term IDs, in order; default: the next regular terms after the latest term in the record or current enrolment, up to eight semesters in total), `target_credits_per_term` (default 22), `max_credits_per_term` (default and limit 28 for a regular semester, 10 for summer; D-36), `internship_term` (one of the planned terms; D-37), `skip_terms` (for example a term spent on an internship).
+Request `options` (all optional, unknown keys are a 400): `terms` (regular or summer term IDs, in order; default: the next regular terms after the latest term in the record or current enrolment, up to eight semesters in total), `target_credits_per_term` (default 22), `max_credits_per_term` (default and limit 28 for a regular semester, 10 for summer; D-36), `internship_term` (one of the planned terms; D-37), `skip_terms` (for example a term spent on an internship). `include_current` (boolean, default true; D-49): false plans from the completed courses alone and plans the running semester again; the response echoes it in `options`. Core (mandatory) courses keep to their year and are never delayed by missing recommended preparation, which is reported as a warning naming the missing course (D-48).
 
 Response `data` is the `plan_generation` definition in `schemas/coursepath-v1.schema.json` (example: `examples/plan-generation.json`):
 
