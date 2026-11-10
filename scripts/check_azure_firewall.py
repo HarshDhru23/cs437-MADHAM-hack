@@ -3,7 +3,7 @@
 A firewall rule whose start or end address is 0.0.0.0 means "allow all Azure services and resources", including other customers' resources
 (CR-108). Pipe the rule list in, or let the script ask the Azure CLI (read-only):
 
-    az postgres flexible-server firewall-rule list --resource-group coursepath-rg --name coursepath-db-isc | python scripts/check_azure_firewall.py -
+    az postgres flexible-server firewall-rule list --resource-group coursepath-rg --server-name coursepath-db-isc | python scripts/check_azure_firewall.py -
     python scripts/check_azure_firewall.py            # runs that `az` command itself
 
 Exit code 0 when no rule admits all of Azure, 1 when one does, 2 when the list could not be read. Prints rule names and addresses only, never settings."""
@@ -20,11 +20,15 @@ def open_to_azure(rules):
     return [rule for rule in rules if '0.0.0.0' in (rule.get('startIpAddress'), rule.get('endIpAddress'))]
 
 
+def list_command():
+    # `firewall-rule list` names the server with --server-name; --name is not accepted there (checked against the installed Azure CLI's help).
+    return ['az', 'postgres', 'flexible-server', 'firewall-rule', 'list', '--resource-group', RESOURCE_GROUP, '--server-name', SERVER, '--output', 'json']
+
+
 def read_rules(argument):
     if argument == '-':
         return json.load(sys.stdin)
-    out = subprocess.run(['az', 'postgres', 'flexible-server', 'firewall-rule', 'list', '--resource-group', RESOURCE_GROUP, '--name', SERVER, '--output', 'json'],
-                         capture_output=True, text=True, timeout=120)
+    out = subprocess.run(list_command(), capture_output=True, text=True, timeout=120)
     if out.returncode != 0:
         raise RuntimeError(out.stderr.strip() or 'az failed')
     return json.loads(out.stdout)

@@ -45,6 +45,21 @@ class AzureFirewallCheck(unittest.TestCase):
             self.assertEqual(CHECK.main(['check_azure_firewall.py', '-']), 2)
         self.assertIn('could not read', out.getvalue())
 
+    def test_the_az_command_names_the_server_with_server_name(self):
+        # The installed CLI rejects `--name` on `firewall-rule list`; a successful call must use --server-name.
+        seen = []
+
+        def fake_run(command, **kwargs):
+            seen.append(command)
+            return mock.Mock(returncode=0, stdout=json.dumps([APP]), stderr='')
+        out = io.StringIO()
+        with mock.patch.object(CHECK.subprocess, 'run', side_effect=fake_run), contextlib.redirect_stdout(out):
+            self.assertEqual(CHECK.main(['check_azure_firewall.py']), 0, out.getvalue())
+        command = seen[0]
+        self.assertEqual(command[:4], ['az', 'postgres', 'flexible-server', 'firewall-rule'])
+        self.assertEqual(command[command.index('--server-name') + 1], 'coursepath-db-isc')
+        self.assertNotIn('--name', command)
+
     def test_a_missing_az_command_is_not_a_pass(self):
         out = io.StringIO()
         with mock.patch.object(CHECK.subprocess, 'run', side_effect=FileNotFoundError('az')), contextlib.redirect_stdout(out):
