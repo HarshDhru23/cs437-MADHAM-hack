@@ -45,6 +45,13 @@
 .ring-fill[data-done='true'] {
   stroke: var(--ok);
 }
+.ring-held {
+  stroke: var(--accent);
+  stroke-width: 14;
+  stroke-linecap: butt;
+  opacity: 0.35;
+  transition: stroke-dashoffset 1s var(--ease);
+}
 .ring-arc {
   cursor: default;
   outline: none;
@@ -230,6 +237,7 @@
   white-space: nowrap;
 }
 .req-meter {
+  position: relative;
   display: block;
   height: 6px;
   border-radius: 3px;
@@ -237,10 +245,19 @@
   overflow: hidden;
 }
 .req-meter i {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
   display: block;
-  height: 100%;
   background: var(--accent);
   border-radius: 3px;
+}
+.req-meter i.held {
+  background: var(--accent);
+  opacity: 0.35;
+}
+.req-held {
+  color: var(--muted, inherit);
 }
 .req-meter[data-done='true'] i {
   background: var(--ok);

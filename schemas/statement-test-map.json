@@ -1219,6 +1219,55 @@
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > says only IITGN accounts can sign in when the server refuses the account, and stays on the page",
         "frontend/src/features/auth/googleSignIn.test.tsx::Google sign-in > keeps the username and password form, and no Google button, when Google is not configured"
       ]
+    },
+    {
+      "id": "CP-40",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "draft_or_incomplete",
+      "tests": [
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_placeholder_credits_count_toward_the_total_with_the_plan",
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_each_requirement_says_how_much_is_kept_and_by_which_placeholder",
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_a_placeholder_keeps_no_more_than_the_requirement_can_still_take",
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_an_online_placeholder_is_kept_where_the_allocator_counts_it",
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_a_plan_without_placeholders_keeps_nothing",
+        "server.records.test_plan_holds.PlanHoldsTests.test_cp40_without_a_plan_there_are_no_holds"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::With my plan: placeholders count (CP-40) > shows the total and the credits remaining with the placeholders counted, and says how much they keep",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::With my plan: placeholders count (CP-40) > a requirement says it keeps credits in placeholders, and opening it names the placeholder",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::With my plan: placeholders count (CP-40) > marks an online placeholder as online",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::With my plan: placeholders count (CP-40) > says nothing about placeholders in the completed and current views",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::With my plan: placeholders count (CP-40) > a plan with no placeholders shows the plain total and no placeholder line"
+      ]
+    },
+    {
+      "id": "CP-41",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_plan_holds.CurrentCoursesCountTests.test_cp41_a_confirmed_current_course_counts_under_its_requirement",
+        "server.records.test_plan_holds.CurrentCoursesCountTests.test_cp41_without_current_courses_the_current_count_equals_the_completed_count",
+        "server.records.test_plan_holds.CurrentCoursesCountTests.test_cp41_a_current_course_that_is_not_confirmed_is_refused"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::Completed + current courses: add the courses of the running semester (CP-41) > shows the current courses panel only in that view",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::Completed + current courses: add the courses of the running semester (CP-41) > adds a confirmed current course, saves it with the record revision and counts again with the new revision",
+        "frontend/src/features/requirements/requirementsHolds.test.tsx::Completed + current courses: add the courses of the running semester (CP-41) > does not show the panel to a visitor who is not signed in"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

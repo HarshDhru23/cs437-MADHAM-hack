@@ -118,6 +118,8 @@ The selected cohort is 2024-entry B.Tech CSE. Both imports and account persisten
 
 **Added on 8 Nov (D-45, D-46):** CP-36 (a plan is marked valid or not valid) and CP-37 (sign-in with an IITGN Google account only). Both were requested after the freeze; the freeze rule allows new IDs, and CP-35 to CP-37 are the only statements added since.
 
+**Added on 10 Nov (D-53, D-54):** CP-40 (placeholder credits count in the requirements with a plan) and CP-41 (add current courses from the requirements view). Requested after the freeze by Manashree; the freeze rule allows new IDs (proposed decisions, awaiting Harsh's confirmation).
+
 ## November 3 implementation status (not release certification)
 
 Status per statement comes from running its mapped tests: `python scripts/statement_report.py --all` (add `--browser --frontend` for the UI suites). This section does not record a pass count. A statement is release-complete only with its tests green, a real browser flow, review by another member and a merged PR (`schemas/statement-test-map.json`). The table lists, for the November statements, what the backend now does and what is still missing.
@@ -130,4 +132,6 @@ Status per statement comes from running its mapped tests: `python scripts/statem
 | CP-30 | Versioned JSON export; restore through preview, diff and confirmed commit. | Printable report view and browser evidence. |
 | CP-31 | Frontend responsibility. | Phone and keyboard browser flows and an observed user session. |
 | CP-32 | Owner-only data, re-authenticated deletion (data or account), expired-preview purge, production settings check. | Hosted deployment and PostgreSQL verification (GAP-13). |
+| CP-40 | A student sees, in the requirements "With my plan", the credits their plan keeps in placeholders counted in the total and under the requirement they are kept for, with the placeholder named and marked as still to be chosen. | Hand-counted: 92 of 170 completed, an open-elective and an HSS-elective placeholder of 4 credits each make 100 counted and 70 remaining; a placeholder keeps no more than the requirement can still take (20 credits for open electives keeps 16); an online placeholder is kept where the allocator counts it; no plan, no holds; the completed and current views never mention placeholders. |
+| CP-41 | A student can add the courses they are taking this semester from the "Completed + current courses" requirements view, and they are counted there under the requirements they fill, marked in progress. | A confirmed course is saved with the record revision, the requirements are counted again with the new revision, and the panel is offered only in that view and only when signed in. |
 | CP-33, CP-34 | Exact-date internships against the published 2026-27 calendar (D-24), served with D-25 presets by `GET /calendar`; calendar-month arithmetic, attendance and exam overlaps, downstream courses; terms without published dates are reported unchecked; IN 498 modules under D-14; none / 3 / 6 month comparison. | The 2027-28 calendar when published (GAP-03); internship UI and browser evidence (#28). |

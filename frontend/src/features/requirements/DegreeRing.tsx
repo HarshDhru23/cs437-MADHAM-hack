@@ -9,6 +9,8 @@ export interface RingGroup {
   required: string;
   /** Credits counted so far; null when there is no record to count. */
   counted: string | null;
+  /** Credits a plan keeps in placeholders for this group (the server's number); drawn after the counted credits, lighter. */
+  held?: string | null;
   done: boolean;
 }
 
@@ -67,7 +69,8 @@ export function DegreeRing({ groups, total, counted, highlightId, onHighlight }:
     const from = angle + GAP_DEGREES;
     const to = Math.max(from + 0.1, angle + sweep - GAP_DEGREES);
     angle += sweep;
-    return { group: g, index, d: arcPath(from, to), share: fraction(g.counted, g.required) };
+    const heldShare = g.held && Number(g.held) > 0 ? fraction(String(Number(g.counted ?? 0) + Number(g.held)), g.required) : 0;   // drawing only
+    return { group: g, index, d: arcPath(from, to), share: fraction(g.counted, g.required), heldShare };
   });
 
   const summary =
@@ -80,7 +83,7 @@ export function DegreeRing({ groups, total, counted, highlightId, onHighlight }:
     <figure className="ring" data-motion={reduced ? 'reduced' : 'full'}>
       <div className="ring-art" data-active={active ? 'true' : undefined}>
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={summary} className="ring-svg">
-          {arcs.map(({ group, d, share, index }) => (
+          {arcs.map(({ group, d, share, heldShare, index }) => (
             <g
               key={group.id}
               className="ring-arc"
@@ -93,6 +96,9 @@ export function DegreeRing({ groups, total, counted, highlightId, onHighlight }:
               tabIndex={-1}
             >
               <path d={d} className="ring-track" fill="none" />
+              {heldShare > share ? (
+                <path d={d} className="ring-held" fill="none" pathLength={1} strokeDasharray="1 1" strokeDashoffset={filled ? 1 - heldShare : 1} />
+              ) : null}
               <path
                 d={d}
                 className="ring-fill"

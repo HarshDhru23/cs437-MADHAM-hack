@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnalysis, useCatalogue, useCurriculum, usePlans, useRecord } from '../../api/hooks';
+import { useResourceCache } from '../../api/resources';
 import type { Issue } from '../../api/types';
 import { usePublishView, type DataMode } from '../../app/viewContext';
 import { useSession } from '../../app/session';
 import { IssueList, visibleIssues } from '../../components/IssueList';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { formatCredits, formatTerm, humanize } from '../../lib/format';
+import { latestCompletedTerm } from '../../lib/terms';
+import { CurrentEnrolmentSection } from '../record/RecordPage';
 import { DegreeRing, type RingGroup } from './DegreeRing';
 import { indexDefinitions, requirementLabel, RequirementTree, shownGroups, type CountedSource } from './RequirementTree';
 import './requirements.css';
@@ -25,6 +28,7 @@ export function RequirementsPage() {
   const catalogue = useCatalogue();
   const record = useRecord();
   const plans = usePlans();
+  const cache = useResourceCache();
   const [view, setView] = useState<View>('actual');
   const [planId, setPlanId] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
@@ -46,6 +50,8 @@ export function RequirementsPage() {
   const audit = analysis.data?.audit ?? null;
   const personal = Boolean(session.user && hasHistory && audit);
   const results = audit ? audit[view] : null;
+  // D-53: in "With my plan" the credits the plan keeps in placeholders count too, and each requirement says so.
+  const holds = view === 'projected' ? (analysis.data?.plan_holds ?? null) : null;
   const ledger = audit ? (view === 'actual' ? audit.ledger : view === 'current' ? audit.current_ledger : audit.projected_ledger) : [];
   const dataMode: DataMode = personal ? view : 'public';
   usePublishView({ ruleVersion: null, reviewStatus: null, dataMode, recordRevision: null });
@@ -60,7 +66,8 @@ export function RequirementsPage() {
     ...c.requirements.filter((r) => r.type === 'noncredit').map((r) => ({ id: r.id, label: r.label, semesters: r.minimum_courses ?? null })),
     ...(c.noncredit_obligations ?? []).filter((o) => !c.requirements.some((r) => r.id === o.id)).map((o) => ({ id: o.id, label: o.label, semesters: o.required_semesters ?? null })),
   ];
-  const degree = audit?.degree?.[view] ?? null;
+  const degree = holds ? holds.degree : (audit?.degree?.[view] ?? null);
+  const heldTotal = holds && Number(holds.degree.held_credits) > 0 ? holds.degree.held_credits : null;
   const total = degree?.total_credits ?? c.total_credits;
 
   // One arc per group that carries credits, in the order of the list below. The sizes are the credits each group asks for (from the rules);
@@ -71,6 +78,7 @@ export function RequirementsPage() {
       label: requirementLabel(def, result),
       required: String(def.minimum_credits ?? result?.required_credits ?? '0'),
       counted: result ? (result.counted_credits ?? '0') : null,
+      held: holds?.requirements[id]?.held_credits ?? null,
       done: result?.status === 'satisfied',
     }))
     .filter((g) => Number(g.required) > 0);
@@ -137,6 +145,7 @@ export function RequirementsPage() {
           <DegreeRing groups={ringGroups} total={degree?.total_credits ?? null} counted={degree?.counted_credits ?? null} highlightId={active} onHighlight={setActive} />
           <div className="req-hud-side">
             <Verdict view={view} complete={audit.complete} remaining={degree?.remaining_credits ?? null} />
+            {heldTotal ? <p className="muted">{`${formatCredits(heldTotal)} of the credits counted are kept in placeholders: you still choose the courses for them.`}</p> : null}
             {degree ? (
               <dl className="req-tiles">
                 <div>
@@ -151,6 +160,12 @@ export function RequirementsPage() {
                   <dt>Credits remaining</dt>
                   <dd className="num">{formatCredits(degree.remaining_credits)}</dd>
                 </div>
+                {heldTotal ? (
+                  <div>
+                    <dt>Kept in placeholders</dt>
+                    <dd className="num">{formatCredits(heldTotal)}</dd>
+                  </div>
+                ) : null}
               </dl>
             ) : null}
           </div>
@@ -164,6 +179,21 @@ export function RequirementsPage() {
         </section>
       )}
 
+      {personal && view === 'current' && record.data ? (
+        <section aria-label="Your current courses">
+          <h2>Your current courses</h2>
+          <p className="muted">Add the courses you are taking this semester. They count here under the requirements they fill, marked in progress.</p>
+          <CurrentEnrolmentSection
+            record={record.data}
+            latestCompleted={latestCompletedTerm(record.data.attempts)}
+            onSaved={(next) => {
+              if (session.user) cache.set(`record:${session.user.id}`, { data: next, issues: [] });
+              cache.invalidate('analysis:');
+            }}
+          />
+        </section>
+      ) : null}
+
       {toCheck.length > 0 ? (
         <section aria-label="Things to check" className="panel">
           <h2>Things to check</h2>
@@ -174,7 +204,7 @@ export function RequirementsPage() {
       <section aria-labelledby="req-heading">
         <h2 id="req-heading">{personal ? `Requirements — ${VIEW_LABEL[view]}` : 'All requirements'}</h2>
         {personal && results ? (
-          <RequirementTree label="Requirements" definitions={definitions} results={results} ledger={ledger} sources={sources} catalogue={catalogue.data?.courses ?? []} activeId={active} onActive={setActive} />
+          <RequirementTree label="Requirements" definitions={definitions} results={results} ledger={ledger} sources={sources} catalogue={catalogue.data?.courses ?? []} holds={holds?.requirements ?? {}} activeId={active} onActive={setActive} />
         ) : (
           <RequirementTree label="Requirements" definitions={definitions} defs={c.requirements} catalogue={catalogue.data?.courses ?? []} activeId={active} onActive={setActive} />
         )}
