@@ -68,9 +68,12 @@ export const saveRegistry = {
     return false;
   },
 
-  /** A user signed in: keep only that account's drafts. */
+  /** A user signed in: keep only that account's drafts, and send the ones an expired session stopped (CR-73). */
   adoptFor(userId: string): void {
-    for (const [id, entry] of [...entries]) if (entry.ownerId !== userId && !entry.mounted) forget(id, entry);
+    for (const [id, entry] of [...entries]) {
+      if (entry.ownerId !== userId && !entry.mounted) forget(id, entry);
+      else if (entry.ownerId === userId) entry.queue.resumeAfterSignIn();
+    }
   },
 
   /** Sign-out: drop every kept draft. */

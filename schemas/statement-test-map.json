@@ -763,6 +763,12 @@
         "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
       ],
       "frontend_tests": [
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > sends the kept draft when the same account signs in again, with the revision it was based on",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > does the same for a queue whose page was left while the session was expired",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a draft that is now stale still gets a 409 and then waits for the student (revision checks still apply)",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a different account signing in drops the draft and sends nothing",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a save that failed for another reason is not resent by a sign-in",
+        "frontend/src/api/saveRegistryResend.test.ts::saving again after the session expired > a sign-in with nothing waiting sends nothing",
         "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > an edit made while a save is in flight is not sent when that save is refused with 409",
         "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > keeps editing locally in the conflict state without sending, and keep-mine still sends once, against the newer revision",
         "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > a draft waiting behind the in-flight save is still sent after that save succeeds (negative: no conflict, normal path)",
