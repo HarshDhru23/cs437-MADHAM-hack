@@ -1462,6 +1462,47 @@
         "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > links a course that has a course plan and says \"not available yet\" for one that has none, in the draft table",
         "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > asks for the timetable of each semester once, however many courses it has"
       ]
+    },
+    {
+      "id": "CP-44",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": false,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_a_student_declares_standing_and_an_advisor_cap_and_the_record_keeps_them",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_an_advisor_cap_the_student_set_limits_a_saved_plan",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_gps_standing_limits_a_saved_plan_to_21_credits",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_a_draft_check_keeps_its_single_28_credit_limit",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_the_cap_can_be_taken_away_again",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_a_cap_outside_1_to_28_whole_credits_is_refused_and_nothing_changes",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_the_limits_of_the_range_are_accepted",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_standing_is_regular_or_gps_only",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_curriculum_fields_still_need_review",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_a_stale_revision_is_a_409_and_changes_nothing",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_a_student_only_changes_their_own_profile",
+        "server.records.test_study_load_profile.StudyLoadProfileTests.test_cp44_the_export_carries_what_the_student_declared",
+        "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_a_gps_student_gets_no_21_credit_error_in_a_draft",
+        "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_the_same_gps_student_gets_it_in_a_saved_plan",
+        "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_an_advisor_cap_does_not_limit_a_draft_but_limits_a_saved_plan",
+        "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_a_draft_still_stops_at_28_credits_for_everyone"
+      ],
+      "browser_tests": [],
+      "frontend_tests": [
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > starts as regular standing with no advisor limit, and nothing to save",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > shows what the student declared before",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > saves GPS and a limit of 24 with the current revision, changing only those two profile fields",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > leaves the limit out of the profile when the student clears it",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > refuses a limit that is not a whole number from 1 to 28 and sends nothing",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > accepts the two ends of the range",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > says the record changed elsewhere on a conflict, saves nothing, and offers to reload",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > says plainly when the save fails, without developer words",
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > explains that the limit applies to saved plans and drafts keep 28, with no decision numbers"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."

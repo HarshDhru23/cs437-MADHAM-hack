@@ -18,6 +18,7 @@ import { Badge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
 import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
+import { StudyLoadSection } from './StudyLoad';
 import './record.css';
 
 const STATUS_LABEL: Record<CompletionStatus, string> = {
@@ -166,6 +167,8 @@ export function RecordPage() {
       </section>
 
       <CurrentEnrolmentSection record={data} onSaved={onSaved} latestCompleted={latestCompleted} />
+
+      <StudyLoadSection record={data} onSaved={onSaved} />
 
       {editing ? (
         <AttemptDialog

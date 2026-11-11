@@ -314,6 +314,13 @@ Recorded 7 Nov 2026 by Harsh, after the hosted app showed an "unknown" on almost
 - **Switch.** `COURSEPATH_DEMO=0` turns it off (`GET /session` then says `sample_student: false`).
 - **Not decided here.** A saved plan is not pre-made: the visitor generates it, which is the point of the demo.
 
+**D-56. A student records their own standing and advisor credit limit** (TEAM, Aryan 10 Nov, relayed from issue #115; built 11 Nov). Answers the question in issue #115 (D-31, D-36).
+- **Who records it.** The student, by self-declaration, for both standing (regular or GPS) and the advisor credit limit. No evidence or advisor step; GPS is a self-declaration like the rest.
+- **Values.** Standing is `normal` (regular) or `GPS`. The advisor limit is any whole number of credits from 1 to 28, stored as a decimal string; leaving it out means no advisor limit. Nothing set means regular standing and 28 credits (D-31).
+- **Where.** The Record page, a "Study load" section: "Standing: Regular / GPS" and "Credit limit set by my advisor (optional, 1 to 28)". `PATCH /record` accepts these two profile fields with the record's revision; every other profile field is still a curriculum choice and is refused.
+- **What it changes.** Saved-plan validation only: GPS standing gives the 21-credit limit and the advisor limit applies (ADV13 p. 7, D-36, CP-21). A draft check and a generated draft keep one 28-credit limit and say nothing about either (D-36, D-50), so a declared GPS standing no longer gives a draft a 21-credit error (issue #61).
+- **Not decided here.** Whether an advisor limit above the regular 28 means anything (it cannot raise the limit: the lower of the two applies), and any evidence step for GPS standing.
+
 ## Implementation follow-ups
 
 Each item goes through the normal reviewed PR. Owners are from `docs/team/README.md`.
