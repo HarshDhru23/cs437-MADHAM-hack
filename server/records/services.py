@@ -153,13 +153,15 @@ def record_data(record):
 
 
 @transaction.atomic
-def replace_record(record, expected, attempts, current_enrolment=None, reported_controls=None):
+def replace_record(record, expected, attempts, current_enrolment=None, reported_controls=None, profile=None):
     attempts = validate_attempts(attempts)
     updates = {'revision': F('revision') + 1}
     if current_enrolment is not None:
         updates['current_enrolment'] = current_enrolment
     if reported_controls is not None:
         updates['reported_controls'] = reported_controls
+    if profile is not None:
+        updates['profile'] = profile
     if not type(record).objects.filter(pk=record.pk, owner=record.owner, revision=expected).update(**updates):
         record.refresh_from_db()
         raise RevisionConflict(record.revision)

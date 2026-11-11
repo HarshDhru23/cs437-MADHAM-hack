@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from pathlib import Path
 from datetime import timedelta
 from functools import lru_cache, wraps
@@ -311,13 +312,33 @@ def record(request):
     payload = request.payload
     if set(payload) - {'expected_revision', 'attempts', 'current_enrolment', 'profile', 'correction_justifications'}:
         raise ValueError('Unknown/privileged record field')
-    if 'profile' in payload and payload['profile'] != stored.profile:
-        raise ValueError('Curriculum changes require review')
+    profile = _declared_profile(stored.profile, payload['profile']) if 'profile' in payload else None
     enrolment = payload.get('current_enrolment')
     if enrolment is not None:
         enrolment = current_enrolment(enrolment)
     rows = corrected_record_rows(stored, payload.get('attempts', record_data(stored)['attempts']), payload.get('correction_justifications', {}))
-    return response(replace_record(stored, expected_revision(payload), rows, enrolment))
+    return response(replace_record(stored, expected_revision(payload), rows, enrolment, profile=profile))
+
+
+STUDY_LOAD_FIELDS = ('standing', 'advisor_cap')
+
+
+def _declared_profile(stored, incoming):
+    """D-56: the student declares their standing (regular or GPS) and an optional advisor credit cap (1 to 28 whole credits) themselves. Every
+    other profile field is a curriculum choice and stays fixed. Returns the new profile, or None when nothing is declared differently."""
+    if not isinstance(incoming, dict) or {k: v for k, v in incoming.items() if k not in STUDY_LOAD_FIELDS} != {k: v for k, v in stored.items() if k not in STUDY_LOAD_FIELDS}:
+        raise ValueError('Curriculum changes require review')
+    profile = {k: v for k, v in stored.items() if k not in STUDY_LOAD_FIELDS}
+    if 'standing' in incoming:
+        if incoming['standing'] not in ('normal', 'GPS'):
+            raise ValueError('Standing is "normal" (regular) or "GPS"')
+        profile['standing'] = incoming['standing']
+    if 'advisor_cap' in incoming:
+        cap = incoming['advisor_cap']
+        if not isinstance(cap, str) or not re.fullmatch(r'[1-9][0-9]?', cap) or int(cap) > 28:
+            raise ValueError('The advisor credit cap is a whole number of credits from 1 to 28, as a decimal string')
+        profile['advisor_cap'] = cap
+    return None if profile == stored else profile
 
 
 def validated_plan(payload):

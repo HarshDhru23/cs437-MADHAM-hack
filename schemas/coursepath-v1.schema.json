@@ -299,6 +299,16 @@
             },
             "curriculum_version": {
               "type": "string"
+            },
+            "standing": {
+              "enum": [
+                "normal",
+                "GPS"
+              ]
+            },
+            "advisor_cap": {
+              "type": "string",
+              "pattern": "^([1-9]|1[0-9]|2[0-8])$"
             }
           }
         },

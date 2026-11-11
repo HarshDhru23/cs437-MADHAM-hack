@@ -120,7 +120,10 @@ export interface Profile {
   programme: string;
   admission_year: number;
   curriculum_version: string;
+  /** Declared by the student: "normal" (regular) or "GPS". */
   standing?: string;
+  /** Declared by the student: a whole number of credits from 1 to 28, as a decimal string. */
+  advisor_cap?: string;
 }
 
 export interface ReportedControlsEntry {
@@ -143,6 +146,7 @@ export interface RecordPatch {
   expected_revision: number;
   attempts?: CourseAttempt[];
   current_enrolment?: CurrentEnrolment[];
+  profile?: Profile;
   correction_justifications?: Record<string, string>;
 }
 
