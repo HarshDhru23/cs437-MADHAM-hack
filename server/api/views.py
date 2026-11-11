@@ -636,7 +636,7 @@ def _plan_check(user, stored, payload):
         limit = term_cap(term)
         planned = decimal_value(row['target_credits'])
         load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
-    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
+    return {'validation': validation, 'degree': audit['degree']['projected'], 'degree_surplus': audit['degree_surplus']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
             'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
             'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
 
@@ -688,6 +688,7 @@ def _plan_holds_view(rules, audit, requirements, payload):
     counted = decimal_value(degree['counted_credits']) + held_total
     return {'degree': {'total_credits': degree['total_credits'], 'counted_credits': decimal_string(counted), 'held_credits': decimal_string(held_total),
                        'remaining_credits': decimal_string(max(Decimal(0), decimal_value(degree['total_credits']) - counted))},
+            'degree_surplus': {**audit['degree_surplus']['projected'], 'earned_credits': decimal_string(counted + decimal_value(audit['degree_surplus']['projected']['surplus_credits']))},
             'requirements': found}
 
 

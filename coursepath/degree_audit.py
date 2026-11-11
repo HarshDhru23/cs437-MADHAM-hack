@@ -28,10 +28,55 @@ def evaluate_audit(curriculum, catalogue, record, plan=None, awards=(), approval
     if awards:
         issues.append(issue('AWARD_POLICY_MISSING', 'Joint award evaluation awaits the full reviewed award definitions.'))
     degree = {name: degree_progress(curriculum, results['requirements']) for name, results in (('actual', actual), ('current', current), ('projected', projected))}
-    return {'degree': degree, 'actual': actual['requirements'], 'current': current['requirements'], 'projected': projected['requirements'],
+    degree_surplus = {name: degree_surplus_credits(curriculum, results, rows)
+                      for name, results, rows in (('actual', actual, record.get('attempts', [])), ('current', current, current_rows), ('projected', projected, projected_rows))}
+    return {'degree': degree, 'degree_surplus': degree_surplus, 'actual': actual['requirements'], 'current': current['requirements'], 'projected': projected['requirements'],
             'ledger': actual['ledger'], 'current_ledger': current['ledger'], 'projected_ledger': projected['ledger'],
             'excluded_attempts': actual['excluded_attempts'], 'issues': issues, 'complete': actual['complete'] and not awards,
             'rule_version': curriculum['version'], 'record_revision': record.get('revision', 0), 'search_nodes': actual['search_nodes']}
+
+
+def _walk_degree(curriculum, results):
+    """(counted, required, surplus) over the degree's requirements. A leaf counts at most what it asks for and the credits beyond that are its surplus; a
+    group adds up its parts (an either/or group, only the side the student works on), so a credit is never counted twice."""
+    by_id = {}
+
+    def index(nodes):
+        for node in nodes:
+            by_id[node['id']] = node
+            index(node.get('children', []))
+    index(results)
+
+    def walk(rule):
+        node = by_id.get(rule['id'])
+        children = rule.get('children', [])
+        if not children:
+            required = decimal_value(node['required_credits']) if node else Decimal(0)
+            earned = decimal_value(node['counted_credits']) if node else Decimal(0)
+            return min(earned, required), required, max(Decimal(0), earned - required)
+        parts = [walk(child) for child in children]
+        if rule['type'] == 'any_of':
+            picks = [by_id[c['id']] for c in children if c['id'] in by_id]
+            chosen = max(range(len(parts)), key=lambda i: (picks[i]['status'] in {'satisfied', 'conditional'}, parts[i][0]))
+            return parts[chosen]
+        return tuple(sum((p[i] for p in parts), Decimal(0)) for i in range(3))
+
+    totals = [Decimal(0)] * 3
+    for rule in curriculum['requirements']:
+        for i, value in enumerate(walk(rule)):
+            totals[i] += value
+    return tuple(totals)
+
+
+def degree_surplus_credits(curriculum, result, rows):
+    """CP-47: the credits earned or planned beyond what the degree asks for, and every credit the student has toward it (counted plus beyond), so a
+    student at 172 of 170 sees 172. Beyond means a requirement's own overshoot (D-07: a 4-credit course in a requirement 2 credits short of full) plus the
+    courses the allocation left out because every requirement they could fill was already full. `degree` still counts each requirement at most what it asks for."""
+    counted, _, overshoot = _walk_degree(curriculum, result['requirements'])
+    credits = {row['id']: row.get('credits') for row in rows}
+    left_out = sum((decimal_value(credits[e['attempt_id']]) for e in result['excluded_attempts'] if e['reason'] == 'NOT_NEEDED' and credits.get(e['attempt_id'])), Decimal(0))
+    surplus = overshoot + left_out
+    return {'surplus_credits': decimal_string(surplus), 'earned_credits': decimal_string(counted + surplus)}
 
 
 def degree_progress(curriculum, results):
