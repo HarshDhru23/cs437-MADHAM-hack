@@ -763,6 +763,9 @@
         "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
       ],
       "frontend_tests": [
+        "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > an edit made while a save is in flight is not sent when that save is refused with 409",
+        "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > keeps editing locally in the conflict state without sending, and keep-mine still sends once, against the newer revision",
+        "frontend/src/api/saveQueueConflict.test.ts::SaveQueue after a 409 > a draft waiting behind the in-flight save is still sent after that save succeeds (negative: no conflict, normal path)",
         "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
         "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",
