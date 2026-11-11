@@ -306,6 +306,30 @@ a:hover {
 .sample-banner p {
   margin: 0;
 }
+/* CP-45: the offer of the synthetic example, on every page until the record has data */
+.example-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  max-width: var(--content);
+  margin: var(--space-4) auto 0;
+  padding: var(--space-4);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+}
+.example-banner > div:first-child {
+  flex: 1 1 24rem;
+}
+.example-banner h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+.example-banner p {
+  margin: 0;
+}
 main {
   max-width: var(--content);
   margin: 0 auto;

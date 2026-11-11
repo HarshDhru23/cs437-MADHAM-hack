@@ -11,18 +11,11 @@ import { IssueList } from '../../components/IssueList';
 import { Tabs } from '../../components/Tabs';
 import { importDraftStore, useImportDraft } from './draftStore';
 import { previewStore } from './previewStore';
+import { SYNTHETIC_SAMPLE } from './syntheticSample';
 import './import.css';
 
-/** Synthetic sample in the IMS table layout. No real student data. */
-export const SYNTHETIC_SAMPLE = [
-  'Academic Period\tCourse No\tCourse Name\tCredit\tGrade',
-  '2025-26 Semester II\tZZ 299\tSynthetic Project\t4\tA',
-  '2025-26 Semester I\tZZ 299\tSynthetic Project\t4\tP',
-  '2024-25 Semester II\tZZ 104\tSynthetic Calculus\t2\tB',
-  '2024-25 Semester II\tZZ 372\tSynthetic Short Course\t1\tB',
-  '2024-25 Semester I\tZZ 242(N)\tSynthetic Data Structures\t4\tA-',
-  '2024-25 Semester I\tZZ 101\tSynthetic Physical Activity\t0\tP',
-].join('\n');
+// A made-up student in the IMS table layout (real course codes, invented grades), generated from the sample student's data: see syntheticSample.ts.
+export { SYNTHETIC_SAMPLE };
 
 export function Steps({ current }: { current: 'import' | 'review' | 'analyze' }) {
   const steps = [
@@ -203,6 +196,7 @@ export function ImportPage() {
         <button type="button" className="btn" onClick={() => importDraftStore.update({ kind: 'ims', text: SYNTHETIC_SAMPLE })}>
           Use synthetic sample
         </button>
+        <span className="muted">A made-up student with real course codes and invented grades, to try the import without your own data.</span>
         {session.user ? (
           <button type="button" className="btn btn-primary" disabled={pending || record.loading} onClick={() => parse('ims')}>
             {pending ? 'Parsing…' : 'Parse grades'}

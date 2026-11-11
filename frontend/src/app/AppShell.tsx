@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { CommandBar } from '../components/CommandBar';
+import { SyntheticExampleBanner } from '../features/import/SyntheticExample';
 import { useSession } from './session';
 import { useTheme } from './theme';
 import { DATA_MODE_LABEL, useViewInfo } from './viewContext';
@@ -129,6 +130,7 @@ export function AppShell() {
           ) : null}
         </dl>
       </section>
+      {session.user && !sample ? <SyntheticExampleBanner /> : null}
       {session.expired ? (
         <div className="callout" data-tone="warning" role="alert" style={{ maxWidth: '72rem', margin: '1rem auto 0' }}>
           Your session ended. Unsaved plan, enrolment and import changes are kept in this tab (not if you close or reload it).{' '}
