@@ -1503,6 +1503,40 @@
         "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > says plainly when the save fails, without developer words",
         "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > explains that the limit applies to saved plans and drafts keep 28, with no decision numbers"
       ]
+    },
+    {
+      "id": "CP-45",
+      "oct27_target": false,
+      "implementation_scope": "backend_evidence",
+      "release_evidence": {
+        "browser": true,
+        "human_review": false,
+        "merged_pr": false
+      },
+      "academic_data": "not_applicable",
+      "tests": [
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_the_file_the_page_pastes_is_generated_from_the_made_up_student",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_the_table_has_the_ims_header_and_one_row_per_attempt_newest_first",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_the_table_imports_cleanly_into_the_same_record_as_the_sample_student",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_the_requirements_count_92_of_170_credits_with_78_remaining",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_the_imported_example_and_the_sample_student_give_the_same_audit_and_performance",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_a_plan_for_the_rest_of_the_degree_can_be_generated_and_completes",
+        "server.records.test_synthetic_example.SyntheticExampleTests.test_cp45_importing_a_real_transcript_later_replaces_the_example_and_never_mixes"
+      ],
+      "browser_tests": [
+        "e2e/tests/synthetic-example.spec.ts::a reviewer with no data finds the synthetic example at once, loads it and plans the rest of the degree (CP-45)"
+      ],
+      "frontend_tests": [
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example table (CP-45) > is an IMS table of the made-up student: real course codes, one row per attempt, no real person",
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example, offered as soon as a student with no data signs in (CP-45) > is shown on the first page, in plain words, with a button to load it and a way to import real data",
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example, offered as soon as a student with no data signs in (CP-45) > is shown on every main page, not only the first",
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example, offered as soon as a student with no data signs in (CP-45) > is not shown to a student who already has courses on their record",
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example, offered as soon as a student with no data signs in (CP-45) > is not shown to the sample student, a visitor who has not signed in, or in the middle of a review",
+        "frontend/src/features/import/syntheticExample.test.tsx::The synthetic example, offered as soon as a student with no data signs in (CP-45) > stays out of the way while an import is being reviewed",
+        "frontend/src/features/import/syntheticExample.test.tsx::Loading the synthetic example (CP-45) > previews the table with the record revision, commits every row, and the offer goes away",
+        "frontend/src/features/import/syntheticExample.test.tsx::Loading the synthetic example (CP-45) > says so plainly when the example could not be loaded, and offers the button again",
+        "frontend/src/features/import/syntheticExample.test.tsx::Loading the synthetic example (CP-45) > keeps the button from being pressed twice while it loads"
+      ]
     }
   ],
   "note": "Run test IDs to derive outcomes; synthetic success and local private controls do not certify the checkpoint. browser_tests run against the real Django API, database and production frontend build (e2e/); frontend_tests are component tests against a fake API. release_evidence.browser is true only where a browser test exercises the statement itself; human_review and merged_pr become true only after the reviewed PR is merged. local_tests need the private originals (COURSEPATH_REAL_INPUT_DIR) and the local git-ignored oracle; they are recorded evidence but never count towards tests-green, so CI and a fresh clone report the same statements green. A statement with implementation_scope \"frontend\" is a UI-only promise: its tests-green comes from its browser_tests, which must all run and pass; browser tests never make any other statement green."
