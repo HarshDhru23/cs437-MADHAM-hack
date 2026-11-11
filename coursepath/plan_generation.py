@@ -52,7 +52,7 @@ PROJECT_LABEL = 'Open project (arrange it with a supervisor)'
 ONLINE_POOL = _ONLINE_POOL   # D-11, D-13: at most 16 online credits count, to discipline electives (at most 8) and then open electives; the allocator enforces the caps
 ONLINE_ORDER = ('cse-general', 'open-electives')   # D-13: online credits go to discipline electives first, then open electives; never HSS
 ONLINE_CODE = {'cse-general': 'CS {}', 'open-electives': 'ZZ {}'}   # 900 + n stands in for an online course the student chooses (distinct codes, so none is a repeat); never shown
-MIN_PLACEHOLDER = Decimal(2)                         # a held elective chunk is at least 2 credits unless it is all that is left
+MIN_PLACEHOLDER = Decimal(2)                         # a held elective piece is at least 2 credits unless it is all that is left (see _piece)
 MODULE_CREDITS = Decimal(4)                 # external-exposure (IN 498) credit comes in 4-credit modules, 16 at most (D-14)
 MIN_ELECTIVE_CREDITS = Decimal(2)   # planner preferences, stated in the assumptions: no short courses and no preparatory
 MIN_ELECTIVE_LEVEL = 100            # courses (numbered below 100, such as "HS 001 Preparatory Course in English") as suggestions
@@ -99,6 +99,19 @@ def _credit_option(value, name):
     if amount <= 0 or amount > HARD_CAP:
         raise ValueError(f'{name} must be above 0 and at most {HARD_CAP}')
     return amount
+
+
+def _piece(left, room):
+    """How many of the `left` credits a requirement still needs to hold as one elective piece in a semester with `room` credits free (CP-46). All of
+    it when it fits; otherwise an even piece (courses are 4 or 2 credits, so a piece of 1 or 3 cannot be filled with one course) that leaves 0 or at
+    least 2 behind, or nothing when no such piece fits and a later semester has to take it."""
+    take = min(left, room)
+    if take >= left:
+        return left
+    take -= take % 2
+    if left - take < 2:
+        take -= 2
+    return take if take >= MIN_PLACEHOLDER else Decimal(0)
 
 
 def term_cap(term, standing=None, advisor_cap=None):
@@ -551,8 +564,8 @@ def _generate(context, options=None, force_online=False, end_term=None, busiest_
                         left = need(leaf)[0] - flex_taken.get(leaf['id'], Decimal(0))
                         if left <= 0 or not leaf_open(leaf, with_flex=True):
                             continue
-                        take = min(left, limits[term][limit_index] - load_f[term])
-                        if take <= 0 or (take < MIN_PLACEHOLDER and take < left):
+                        take = _piece(left, limits[term][limit_index] - load_f[term])
+                        if take <= 0:
                             continue
                         existing = next((h for h in flex_holders if h['term'] == term and h['requirement_id'] == leaf['id']), None)
                         if existing:

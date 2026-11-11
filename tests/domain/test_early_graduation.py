@@ -186,10 +186,11 @@ class LightenWithOnlineTests(unittest.TestCase):
         self.assertEqual(lighter['graduation']['last_term'], base['graduation']['last_term'])
         self.assertTrue(lighter['online_potential']['lightened'])
         self.assertEqual(lighter['online_potential']['busiest_before'], '28')
-        # 10 credits go online in the summer break (its limit), the other 68 are spread over three semesters: 23 + 23 + 22
+        # 10 credits go online in the summer break (its limit), the other 68 are spread over three semesters. Held elective credits come in even pieces
+        # (CP-46), so the spread is 24 + 22 + 22 (it was 23 + 23 + 22 when a 3-credit piece was allowed)
         self.assertEqual(lighter['graduation']['online_credits'], '10')
-        self.assertEqual(lighter['online_potential']['busiest_semester_credits'], '23')
-        self.assertEqual(lighter['summary']['credits_by_term'], {'2026-27-I': '23', '2026-27-II': '23', '2026-27-SUMMER': '10', '2027-28-I': '22'})
+        self.assertEqual(lighter['online_potential']['busiest_semester_credits'], '24')
+        self.assertEqual(lighter['summary']['credits_by_term'], {'2026-27-I': '24', '2026-27-II': '22', '2026-27-SUMMER': '10', '2027-28-I': '22'})
         self.assertTrue(lighter['summary']['complete'])
         self.assertEqual(lighter['options']['lighten_with_online'], True)
 

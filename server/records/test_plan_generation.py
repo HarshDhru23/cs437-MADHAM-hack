@@ -239,7 +239,7 @@ class OnlineManualAPITests(AccountAPIMixin, TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         Draft202012Validator(SCHEMA, format_checker=FormatChecker()).validate(response.json())
         potential = response.json()['data']['online_potential']
-        self.assertEqual((potential['lightened'], potential['busiest_before'], potential['busiest_semester_credits']), (True, '28', '23'))
+        self.assertEqual((potential['lightened'], potential['busiest_before'], potential['busiest_semester_credits']), (True, '28', '24'))   # 24 + 22 + 22 + 10 online: held electives come in even pieces (CP-46)
         saved = self.request(client, 'post', '/plans', {'label': 'Lighter', 'semesters': response.json()['data']['semesters']})
         self.assertEqual(saved.status_code, 201, saved.content)   # online placeholders save like any other
 

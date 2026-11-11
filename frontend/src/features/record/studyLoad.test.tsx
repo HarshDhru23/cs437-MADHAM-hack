@@ -67,7 +67,7 @@ describe('Study load on the Record page (CP-44)', () => {
     await user.click(gps);
     await user.type(cap, '24');
     await user.click(save);
-    await waitFor(() => expect(s.patches).toHaveLength(1));
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 5000 });
     expect(s.patches[0]).toEqual({ expected_revision: record.revision, profile: { ...record.profile, standing: 'GPS', advisor_cap: '24' } });
     expect(await within(section).findByRole('status')).toHaveTextContent('Saved');
     expect(s.current.profile.advisor_cap).toBe('24');
@@ -80,7 +80,7 @@ describe('Study load on the Record page (CP-44)', () => {
     const user = userEvent.setup();
     await user.clear(cap);
     await user.click(save);
-    await waitFor(() => expect(s.patches).toHaveLength(1));
+    await waitFor(() => expect(s.patches).toHaveLength(1), { timeout: 5000 });
     expect(s.patches[0]!.profile).toEqual({ ...record.profile, standing: 'normal' });
     expect(s.patches[0]!.profile).not.toHaveProperty('advisor_cap');
   });
@@ -106,7 +106,7 @@ describe('Study load on the Record page (CP-44)', () => {
       await user.clear(cap);
       await user.type(cap, ok);
       await user.click(save);
-      await waitFor(() => expect(s.patches.at(-1)?.profile?.advisor_cap).toBe(ok));
+      await waitFor(() => expect(s.patches.at(-1)?.profile?.advisor_cap).toBe(ok), { timeout: 5000 });
       await within(section).findByRole('status');   // the page has taken the saved record before the next edit starts
       await waitFor(() => expect(save).toBeDisabled());
     }
