@@ -292,6 +292,20 @@ a:hover {
   padding: var(--space-2);
   font-weight: 500;
 }
+.sample-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--whatif);
+  color: var(--bg);
+  font-weight: 500;
+}
+.sample-banner p {
+  margin: 0;
+}
 main {
   max-width: var(--content);
   margin: 0 auto;

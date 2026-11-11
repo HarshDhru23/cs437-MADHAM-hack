@@ -13,6 +13,7 @@ from coursepath.issues import issue
 from coursepath.serialization import decimal_string, decimal_value
 
 ROW_CREDITS = Decimal(4)
+ONLINE_POOL = Decimal(16)   # D-11, D-13: at most 16 online credits count, so no more rows than that are ever worth building (CR-103)
 # A stand-in code per requirement: the subject prefix that requirement accepts. Anything else is treated as an open elective.
 STAND_IN = {'cse-general': 'CS {}', 'hss-other': 'HS {}', 'bs-elective': 'BS {}', 'open-electives': 'ZZ {}'}
 
@@ -29,16 +30,23 @@ def count_online(curriculum, record, plan):
     if not found:
         return {'planned': Decimal(0), 'counted': Decimal(0), 'counted_by_placeholder': {}, 'counted_by_requirement': {}, 'issues': []}
     rows, owner, number = {}, {}, 0
+    built = {}   # credits built so far per stand-in pattern (its subject prefix), not overall
     for term, placeholder in found:
-        left = decimal_value(placeholder['desired_credits'])
+        # Stand-ins with the same subject prefix fill exactly the same requirements, so the allocator can never count more than the pool from them
+        # and rows past it in one such group are never built: a placeholder asking for thousands of credits costs no more than 16. The limit is per
+        # group, not global: rows aimed at a requirement that is already full must not use it up before rows for a requirement that still needs
+        # credits are built, or what counts would depend on row order (CR-103 review).
+        pattern = STAND_IN.get(placeholder['requirement_id'], 'ZZ {}')
+        left = min(decimal_value(placeholder['desired_credits']), ONLINE_POOL - built.get(pattern, Decimal(0)))
         while left > 0:
             number += 1
             credits = min(ROW_CREDITS, left)
-            code = STAND_IN.get(placeholder['requirement_id'], 'ZZ {}').format(900 + number)
+            code = pattern.format(900 + number)
             row_id = f'online-row-{number}'
             rows.setdefault(term, []).append({'id': row_id, 'normalized_code': code, 'credits': decimal_string(credits), 'online': True})
             owner[row_id] = (placeholder['id'], credits)
             left -= credits
+            built[pattern] = built.get(pattern, Decimal(0)) + credits
     semesters = []
     for semester in plan.get('semesters', []):
         semesters.append({'term_id': semester['term_id'], 'courses': list(semester.get('courses', [])) + rows.get(semester['term_id'], [])})

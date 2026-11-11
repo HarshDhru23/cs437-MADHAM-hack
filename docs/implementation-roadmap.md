@@ -32,10 +32,10 @@ Use these local documents as primary evidence:
 
 1. [Hackathon reference](reference/hackathon-2026-10-09.html), checkpoint table and rules, especially spec/test/review requirements.
 2. [January 2026 B.Tech norms](../Adv13_Norms%20for%20BTech%20Programme_28%20Jan%202026.pdf): institute rules pp. 1-4; honours/minors p. 6; academic load p. 7; duration/credit expiry pp. 8-9; science/math baskets p. 10; CSE rules pp. 14-15; 2024-entry CSE sample p. 23. Other departments' degree structures are outside scope; their courses remain eligible where a CSE-applicable rule permits them.
-3. [Sample transcript](../24110107-B.Tech-ASSISTANTREGISTRAR%28ACADEMICS%29AT.pdf), including its evaluation legend on p. 2.
+3. Sample transcript (a private local PDF, never committed), including its evaluation legend on p. 2.
 4. [IMS sample](../copied_input.txt).
 5. [Supplied current timetable](../Timetable%2C%20Sem-I%2C%202026-27.xlsx): `Time table`, `Time Slots` and `Availability` sheets. Unlike the earlier public tentative course list, this workbook contains meeting slots and their weekday/time legend. Treat it as a supplied term snapshot, with revision/finality recorded rather than assumed.
-6. [Example graduation plan](../24110107_Graduation%20Plan.xlsx): example student intent and reconciliation cases, not an academic rule authority or an automatically accepted record.
+6. Example graduation plan (a private local workbook, never committed): example student intent and reconciliation cases, not an academic rule authority or an automatically accepted record.
 
 Public sources checked on 22 October:
 
@@ -122,7 +122,7 @@ Preview shows semester groups, row counts, credit totals, unmatched courses and 
 | Difference | Extra SC 372 in 2024-25 semester II; flag/classify rather than failing the parser or forcing totals equal. |
 | Repeated course | Preserve two CS 299 registrations, one in each 2025-26 semester. |
 | Variant | Preserve ES 242(N), 4 credits. |
-| Performance reconciliation | **92 performance credits**, **849 points**, **CPI 9.23**: reproduced from the graded rows using the transcript legend, excluding P. |
+| Performance reconciliation | The sample record's performance credits, grade points and CPI (controls kept local with the sample): reproduced from the graded rows using the transcript legend, excluding P. |
 | Non-credit rows | Preserve all PE and IN entries. |
 
 Commit only anonymized fixtures with synthetic identity/header values. Use the supplied real transcript for local verification; do not publish it as a CI artifact or a demo account's record. Keep independent expected JSON so tests cannot use the parser's own output as the oracle.
@@ -262,7 +262,7 @@ Expand `SPEC.md` **before feature code**, with at least one independently meanin
 | CP-12 | A student can see discrepancies between source totals, extracted rows and degree-countable credits. | PDF 104 vs paste 105; separate classification, no forced equality. |
 | CP-13 | A student can inspect source evidence and unresolved catalogue/equivalence matches for imported rows. | CS 203/202 stays unresolved without approval. |
 | CP-14 | A student's earned-credit, prerequisite-exposure and performance status follow separate approved grade policies. | P/D/E/F/unknown/blank matrix and zero-credit obligations. |
-| CP-15 | A student can inspect CPI and its counted credits/points, with discrepancies or incomplete policies identified. | Sample 849/92 -> 9.23; P exclusion, cap/rounding and repeat-policy cases. |
+| CP-15 | A student can inspect CPI and its counted credits/points, with discrepancies or incomplete policies identified. | The sample record's totals reproduced from its graded rows; P exclusion, cap/rounding and repeat-policy cases. |
 | CP-16 | A student can inspect term SPI with its counted attempts and calculation. | Independently calculated terms, fail/repeat/withdrawal policy tests. |
 | CP-17 | A student's mandatory choices and overlapping basket requirements are evaluated without prohibited double counting. | Alternative allocations, narrow-basket adversary, total conservation. |
 | CP-18 | A student can see project/online/exposure caps and excluded credits, including approved exceptions. | 8-credit combined cap, project cap, quad/exposure limits and evidence. |

@@ -103,6 +103,44 @@ def requirement_progress(curriculum, results):
     return rows
 
 
+def incomplete_zero_credit(curriculum, results):
+    """The requirements that ask for no credits but still have to be met (Physical Education, the comprehensive viva in every active semester,
+    D-16) and are not complete in `results`. `requirement_progress` skips them because it lists only what asks for credits. A requirement counts
+    as complete when it is satisfied, or satisfied once the planned courses are taken ('conditional')."""
+    by_id = {}
+
+    def index(nodes):
+        for node in nodes:
+            by_id[node['id']] = node
+            index(node.get('children', []))
+    index(results)
+    rows = []
+
+    def check(node):
+        if node and decimal_value(node['required_credits']) == 0 and node['status'] not in {'satisfied', 'conditional'}:
+            rows.append({'id': node['id'], 'label': node.get('label', node['id']), 'missing_terms': node.get('missing_terms', []),
+                         'counted_courses': node.get('counted_courses'), 'required_courses': node.get('required_courses')})
+
+    def walk(rule):
+        children = rule.get('children', [])
+        if not children:
+            check(by_id.get(rule['id']))
+            return
+        if rule['type'] == 'any_of':
+            picks = [c for c in children if c['id'] in by_id]
+            walk(max(picks, key=lambda c: (by_id[c['id']]['status'] in {'satisfied', 'conditional'}, decimal_value(by_id[c['id']]['counted_credits']))))
+            return
+        for child in children:
+            walk(child)
+
+    for rule in curriculum['requirements']:
+        walk(rule)
+    for obligation in curriculum.get('noncredit_obligations', []):   # the viva is evaluated beside the requirement tree, not inside it
+        if obligation['id'] in by_id:
+            check(by_id[obligation['id']])
+    return rows
+
+
 def _conditional(tree):
     for result in tree:
         if result['status'] == 'satisfied':

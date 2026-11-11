@@ -115,6 +115,10 @@ function PickerView({
   const [code, setCode] = useState('');
   const [credits, setCredits] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [projectDept, setProjectDept] = useState('CS');
+  const [projectLevel, setProjectLevel] = useState('299');
+  const [projectCredits, setProjectCredits] = useState('4');
+  const [projectError, setProjectError] = useState<string | null>(null);
   const available = useMemo(() => (offered ? courses.filter((c) => offered.has(c.normalized_code)) : courses), [courses, offered]);
   const options = useMemo(() => choices ?? derivedChoices(available), [choices, available]);
   const chosen = options.find((o) => o.id === requirement) ?? null;
@@ -143,6 +147,24 @@ function PickerView({
     onPick({ normalized_code: trimmed, credits: credits.trim(), fromCatalogue: false });
     setCode('');
     setCredits('');
+  };
+
+  // D-52: a project (a department's 299, 399 or 499 course) is arranged with a supervisor, so no timetable lists it. The student gives the department,
+  // level and credits; the server's allocation decides whether it is the open project or an elective, so nothing here asks which.
+  const submitProject = (event: FormEvent) => {
+    event.preventDefault();
+    const dept = projectDept.trim().toUpperCase();
+    if (!/^[A-Z]{2,4}$/.test(dept)) {
+      setProjectError('Enter the department as two to four letters, for example CS.');
+      return;
+    }
+    const value = projectCredits.trim();
+    if (!isDecimalString(value) || Number(value) <= 0) {
+      setProjectError('Enter the project credits as a number above 0, for example 4.');
+      return;
+    }
+    setProjectError(null);
+    onPick({ normalized_code: `${dept} ${projectLevel}`, credits: value, fromCatalogue: false });
   };
 
   const count = filtered.length === 1 ? '1 course' : `${filtered.length} courses`;
@@ -215,6 +237,38 @@ function PickerView({
           <strong>No course list is available right now.</strong> You can still add a course by its code and credits.
         </div>
       ) : null}
+      <form onSubmit={submitProject} noValidate aria-label="Add a project course">
+        <h3>Project course</h3>
+        <p className="muted">A project is arranged with a supervisor, so it is not in the timetable. CoursePath decides by itself whether it counts as your open project or as an elective.</p>
+        <div className="inline-fields">
+          <div className="field">
+            <label htmlFor={`${id}-pdept`}>Department code</label>
+            <input id={`${id}-pdept`} type="text" value={projectDept} onChange={(e) => setProjectDept(e.target.value)} autoComplete="off" aria-invalid={Boolean(projectError)} />
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-plevel`}>Project level</label>
+            <select id={`${id}-plevel`} value={projectLevel} onChange={(e) => setProjectLevel(e.target.value)}>
+              <option value="299">299</option>
+              <option value="399">399</option>
+              <option value="499">499</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-pcredits`}>Project credits</label>
+            <input id={`${id}-pcredits`} type="text" inputMode="decimal" value={projectCredits} onChange={(e) => setProjectCredits(e.target.value)} aria-invalid={Boolean(projectError)} />
+          </div>
+          <div className="field">
+            <button type="submit" className="btn">
+              Add project course
+            </button>
+          </div>
+        </div>
+        {projectError ? (
+          <p className="field-error" role="alert">
+            {projectError}
+          </p>
+        ) : null}
+      </form>
       <form onSubmit={submitManual} noValidate aria-label="Add a course by code">
         <div className="inline-fields">
           <div className="field">

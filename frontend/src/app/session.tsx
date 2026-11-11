@@ -10,6 +10,7 @@ import { useResourceCache } from '../api/resources';
 import { saveRegistry } from '../api/saveRegistry';
 import type { SessionUser, SignInOptions } from '../api/types';
 import { importDraftStore } from '../features/import/draftStore';
+import { resetKeptScenarioDrafts } from '../features/scenarios/keptDrafts';
 import { previewStore } from '../features/import/previewStore';
 
 export interface SessionValue {
@@ -26,6 +27,10 @@ export interface SessionValue {
   loginWithGoogle: (credential: string) => Promise<void>;
   /** What the sign-in page offers; the password forms alone until the server says Google is configured. */
   signIn: SignInOptions;
+  /** Whether the sign-in pages offer "Try with a sample student". */
+  sampleStudent: boolean;
+  /** Start a made-up sample student: a throw-away account with no sign-in. */
+  startSample: () => Promise<void>;
   logout: () => Promise<void>;
   /**
    * The server already ended the session (account deletion): clear every piece
@@ -59,6 +64,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
   const [status, setStatus] = useState<SessionValue['status']>('loading');
   const [expired, setExpired] = useState(false);
   const [signIn, setSignIn] = useState<SignInOptions>(PASSWORD_ONLY);
+  const [sampleStudent, setSampleStudent] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [attempt, setAttempt] = useState(0);
   const userRef = useRef<SessionUser | null>(null);
@@ -84,6 +90,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
         userRef.current = session.user;
         setUser(session.user);
         setSignIn(session.sign_in ?? PASSWORD_ONLY);
+        setSampleStudent(session.sample_student === true);
         if (session.user) {
           importDraftStore.adoptFor(session.user.id);
           saveRegistry.adoptFor(session.user.id);
@@ -129,6 +136,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
     importDraftStore.clear();
     previewStore.clear();
     saveRegistry.clear();
+    resetKeptScenarioDrafts();
     await api.bootstrap().catch(() => undefined);
   }, [api]);
 
@@ -160,6 +168,8 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       signup: (c) => establish(() => endpoints.signup(api, c)),
       loginWithGoogle: (credential) => establish(() => endpoints.googleSignIn(api, credential)),
       signIn,
+      sampleStudent,
+      startSample: () => establish(() => endpoints.startSample(api)),
       logout,
       forgetSession,
       notice,
@@ -167,7 +177,7 @@ export function SessionProvider({ children, createClient, mock = false }: Sessio
       refreshPersonal: () => cacheRef.current.clear(),
       retryBootstrap: () => setAttempt((a) => a + 1),
     }),
-    [api, status, user, expired, error, mock, signIn, establish, logout, forgetSession, notice],
+    [api, status, user, expired, error, mock, signIn, sampleStudent, establish, logout, forgetSession, notice],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

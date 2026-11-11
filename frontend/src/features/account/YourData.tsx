@@ -18,13 +18,14 @@ import { IssueList } from '../../components/IssueList';
 import { formatTerm, formatTimestamp, humanize } from '../../lib/format';
 import { previewStore } from '../import/previewStore';
 import { PasswordField } from '../auth/AuthPages';
+import { GoogleSignIn } from '../auth/GoogleSignIn';
 import './account.css';
 
 export const DELETE_PHRASE = 'delete my data';
 
 /** Quoted from server/README.md ("Rules and deployment configuration"); not CoursePath policy text of our own. */
 const README_RETENTION =
-  'Data deletion is immediate in the application database; this repository configures no database backups, so any copy the host keeps is outside its control (the deletion response says so).';
+  'Data deletion is immediate in the application database. The hosted database keeps automatic backups for 7 days, so a copy can remain in a backup until it expires (the deletion response says so).';
 
 function asApiError(error: unknown): ApiError {
   return error instanceof ApiError ? error : new ApiError('server', 0, String(error), []);
@@ -380,8 +381,11 @@ function DeletedCounts({ result }: { result: DeleteDataResult }) {
   );
 }
 
-function deleteFailure(error: ApiError): string {
-  if (error.code === 'REAUTH_FAILED') return 'Your current password was not accepted. Nothing was deleted.';
+function deleteFailure(error: ApiError, googleOnly: boolean): string {
+  if (error.code === 'REAUTH_FAILED')
+    return googleOnly
+      ? 'Google could not confirm that this is your account. Nothing was deleted.'
+      : 'Your current password was not accepted. Nothing was deleted.';
   if (error.kind === 'throttled') return 'Too many attempts. Wait and try again later. Nothing was deleted.';
   if (error.kind === 'network')
     return 'The CoursePath server could not be reached, so CoursePath cannot confirm whether anything was deleted. Reload this page to check your record.';
@@ -395,6 +399,12 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
   const phraseId = useId();
   const accountId = useId();
   const [password, setPassword] = useState('');
+  // The account says how it re-authenticates (`reauth`); the site-wide sign-in options only say whether Google is available. A Google-only account has
+  // no password and confirms with a fresh Google credential; a legacy password account always keeps its password, even where Google is configured.
+  const googleClientId = session.user?.reauth === 'google' ? session.signIn.google_client_id : null;
+  const googleOnly = googleClientId !== null;
+  const [googleCredential, setGoogleCredential] = useState('');
+  const proof = googleOnly ? googleCredential : password;
   const [phrase, setPhrase] = useState('');
   const [deleteAccount, setDeleteAccount] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; phrase?: string }>({});
@@ -408,7 +418,7 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
   const review = (event: FormEvent) => {
     event.preventDefault();
     const next = {
-      password: password ? undefined : 'Enter your current password.',
+      password: proof ? undefined : googleOnly ? 'Confirm with your IITGN Google account first.' : 'Enter your current password.',
       phrase: phrase.trim() === DELETE_PHRASE ? undefined : `Type “${DELETE_PHRASE}” exactly to confirm.`,
     };
     setErrors(next);
@@ -424,9 +434,15 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
     setPending(true);
     setError(null);
     try {
-      const response = await accountEndpoints.deleteData(session.api, { expected_revision: expected, password, confirm: DELETE_PHRASE, delete_account: deleteAccount });
+      const response = await accountEndpoints.deleteData(session.api, {
+        expected_revision: expected,
+        ...(googleOnly ? { google_credential: googleCredential } : { password }),
+        confirm: DELETE_PHRASE,
+        delete_account: deleteAccount,
+      });
       const data = response.data;
       setPassword('');
+      setGoogleCredential('');
       setPhrase('');
       setRevision(null);
       previewStore.clear();
@@ -448,7 +464,10 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
       cache.invalidate('analysis:');
     } catch (e) {
       const failure = asApiError(e);
-      if (failure.code === 'REAUTH_FAILED') setPassword('');
+      if (failure.code === 'REAUTH_FAILED') {
+        setPassword('');
+        setGoogleCredential('');
+      }
       setError(failure);
     } finally {
       setPending(false);
@@ -470,7 +489,7 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
         <li>any approval evidence attached to your account.</li>
       </ul>
       <p>
-        Your account stays, with an empty record, unless you also tick “Delete my account too”. That also deletes your username and password and signs you out
+        Your account stays, with an empty record, unless you also tick “Delete my account too”. That also deletes your {googleOnly ? 'account' : 'username and password'} and signs you out
         on every device. Download a backup first if you may want this data again.
       </p>
       <blockquote cite="server/README.md">
@@ -479,7 +498,21 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
       </blockquote>
 
       <form onSubmit={review} noValidate className="form-narrow">
-        <PasswordField label="Current password for deletion" value={password} onChange={setPassword} autoComplete="current-password" error={errors.password} />
+        {googleClientId !== null ? (
+          <div className="field">
+            <p id={`${phraseId}-google`}>Confirm that this is you by choosing your IITGN Google account.</p>
+            <GoogleSignIn clientId={googleClientId} text="continue_with" onCredential={setGoogleCredential} />
+            {googleCredential ? (
+              <p className="muted" role="status">
+                Confirmed with your Google account.
+              </p>
+            ) : errors.password ? (
+              <span className="field-error">{errors.password}</span>
+            ) : null}
+          </div>
+        ) : (
+          <PasswordField label="Current password for deletion" value={password} onChange={setPassword} autoComplete="current-password" error={errors.password} />
+        )}
         <div className="field">
           <label htmlFor={phraseId}>Type “{DELETE_PHRASE}” to confirm</label>
           <input
@@ -532,11 +565,11 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
             const fresh = await endpoints.record(session.api);
             setRevision(fresh.data.revision);
             setError(null);
-            if (password && phrase.trim() === DELETE_PHRASE) setConfirming(true);
+            if (proof && phrase.trim() === DELETE_PHRASE) setConfirming(true);
           }}
         />
       ) : error ? (
-        <ServerFailure title={deleteFailure(error)} error={error} />
+        <ServerFailure title={deleteFailure(error, googleOnly)} error={error} />
       ) : null}
 
       <ConfirmDialog
@@ -559,12 +592,21 @@ function DeleteData({ record }: { record: AcademicRecord | null }) {
 
 export function YourData() {
   const record = useRecord();
+  const session = useSession();
   return (
     <section className="panel stack" aria-labelledby="your-data-heading">
       <h2 id="your-data-heading">Your data</h2>
       <DownloadBackup />
-      <RestoreBackup record={record.data} />
-      <DeleteData record={record.data} />
+      {session.user?.demo ? (
+        <div className="callout" role="note">
+          This is a sample student. Nothing here is real. Use Leave the sample to remove it.
+        </div>
+      ) : (
+        <>
+          <RestoreBackup record={record.data} />
+          <DeleteData record={record.data} />
+        </>
+      )}
     </section>
   );
 }

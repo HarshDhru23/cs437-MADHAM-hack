@@ -604,8 +604,16 @@
               "selected_credits": {
                 "$ref": "#/$defs/decimal"
               },
+              "enrolled_credits": {
+                "$ref": "#/$defs/decimal",
+                "description": "Credits of confirmed current enrolment in this term that are not also in the plan; they count toward target_credits."
+              },
               "placeholder_credits": {
                 "$ref": "#/$defs/decimal"
+              },
+              "online_credits": {
+                "$ref": "#/$defs/decimal",
+                "description": "Credits of online courses held in a regular semester. They are outside the semester's load: target_credits does not include them (D-50). In a summer break they are the load, so this is 0 there."
               },
               "target_credits": {
                 "$ref": "#/$defs/decimal"
@@ -845,7 +853,8 @@
       "type": "object",
       "required": [
         "id",
-        "username"
+        "username",
+        "reauth"
       ],
       "properties": {
         "id": {
@@ -853,6 +862,17 @@
         },
         "username": {
           "type": "string"
+        },
+        "reauth": {
+          "enum": [
+            "password",
+            "google"
+          ],
+          "description": "How this account proves itself before deleting data (D-46): a password account sends its password; a Google-only account (no usable password) sends a fresh google_credential. Follows the account, not the site's sign-in options."
+        },
+        "demo": {
+          "const": true,
+          "description": "Present, and true, only for a sample-student account (\"Try with a sample student\"): a throw-away account with a made-up record, no password and no email, deleted when its visitor leaves or after a few hours. Real accounts omit it."
         }
       },
       "additionalProperties": false
@@ -902,6 +922,10 @@
             }
           },
           "additionalProperties": false
+        },
+        "sample_student": {
+          "type": "boolean",
+          "description": "Whether POST /auth/demo (\"Try with a sample student\") is available."
         }
       },
       "additionalProperties": false
@@ -1101,6 +1125,90 @@
               "type": "null"
             }
           ]
+        },
+        "plan_holds": {
+          "type": "object",
+          "description": "Only with a plan (D-53): the credits the plan keeps in placeholders. degree is the degree total with them counted; requirements holds, for each requirement or group with credits kept (or a placeholder aimed at it), the credits kept (never more than it can still take) and the placeholders that keep them.",
+          "required": [
+            "degree",
+            "requirements"
+          ],
+          "properties": {
+            "degree": {
+              "type": "object",
+              "required": [
+                "total_credits",
+                "counted_credits",
+                "held_credits",
+                "remaining_credits"
+              ],
+              "properties": {
+                "total_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "counted_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "held_credits": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "remaining_credits": {
+                  "$ref": "#/$defs/decimal"
+                }
+              },
+              "additionalProperties": false
+            },
+            "requirements": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "held_credits",
+                  "placeholders"
+                ],
+                "properties": {
+                  "held_credits": {
+                    "$ref": "#/$defs/decimal"
+                  },
+                  "placeholders": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "desired_credits",
+                        "term_id",
+                        "online"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "desired_credits": {
+                          "$ref": "#/$defs/decimal"
+                        },
+                        "term_id": {
+                          "$ref": "#/$defs/term_id"
+                        },
+                        "online": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -2886,6 +2994,10 @@
             },
             "lighten_with_online": {
               "type": "boolean"
+            },
+            "include_current": {
+              "type": "boolean",
+              "description": "True (the default): the plan starts after the running semester and counts the student's confirmed current courses as taken. False: the plan starts from the completed courses alone and plans the running semester like a future one (D-49)."
             },
             "internship_term": {
               "anyOf": [

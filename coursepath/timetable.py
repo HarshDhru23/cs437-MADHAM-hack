@@ -9,8 +9,18 @@ was compared, so it never reads as clear.
 `section_ids` on a planned course are snapshot meeting IDs the student chose.
 """
 from datetime import date, timedelta
+import re
 from coursepath.issues import issue
 from coursepath.offerings import matching_offerings
+
+
+TERM_PREFIX = re.compile(r'^(\d{4}-\d{2}-(?:I|II|SUMMER)):')
+
+
+def term_of_id(identifier):
+    """The term an offering or meeting ID names (`2026-27-I:CS330:lecture:H2` -> `2026-27-I`), or None when it names none."""
+    found = TERM_PREFIX.match(identifier or '')
+    return found[1] if found else None
 
 
 def _dates(meeting):
@@ -38,12 +48,15 @@ def _unique(meetings):
 def _resolve(item, snapshot, issues):
     """Return (meetings as (meeting, kind, certainly_required) tuples, resolved)."""
     entity = item['id']
+    term = snapshot.get('term_id')
     offerings = matching_offerings(snapshot, item['normalized_code'])
-    if item.get('offering_id'):
-        offerings = [o for o in offerings if o['id'] == item['offering_id']]
+    # D-51: an offering or section chosen for another term (the course was moved) is no choice in this one.
+    offering_id = item.get('offering_id') if term_of_id(item.get('offering_id')) in (None, term) else None
+    if offering_id:
+        offerings = [o for o in offerings if o['id'] == offering_id]
         if not offerings:
             issues.append(issue('OFFERING_VARIANT_UNKNOWN', f"The selected offering variant is not in this term's snapshot for {item['normalized_code']}.",
-                                'error', [entity, item['offering_id']], action='Select an offering variant from the current snapshot.'))
+                                'error', [entity, offering_id], action='Select an offering variant from the current snapshot.'))
             return [], False
     if not offerings:
         issues.append(issue('MEETINGS_UNKNOWN', f"No meetings for {item['normalized_code']} in this term's snapshot.", entities=[entity]))
@@ -53,7 +66,7 @@ def _resolve(item, snapshot, issues):
                             entities=[entity] + [o['id'] for o in offerings], action='Select the offering variant for this course.'))
         return [], False
     groups = [g for g in offerings[0].get('meeting_groups') or [] if g.get('kind') != 'exam']
-    selected = set(item.get('section_ids') or [])
+    selected = {m for m in item.get('section_ids') or [] if term_of_id(m) in (None, term)}
     unknown = selected - {m['id'] for g in groups for m in g.get('meetings', [])}
     if unknown:
         issues.append(issue('SECTION_UNKNOWN', 'A selected section is not in this snapshot.', 'error', [entity] + sorted(unknown)))
@@ -76,8 +89,10 @@ def _resolve(item, snapshot, issues):
     return result, resolved
 
 
-def check_meetings(items, snapshot):
+def check_meetings(items, snapshot, reference_ids=()):
+    """`reference_ids` names items that are fixed facts (confirmed current enrolment): they are checked against the others but not against each other."""
     issues, per_item, resolved_meetings = [], {}, {}
+    reference = set(reference_ids)
     for item in items:
         if snapshot is None:
             per_item[item['id']] = 'not_checked'
@@ -90,6 +105,8 @@ def check_meetings(items, snapshot):
     ids = list(resolved_meetings)
     for i, first in enumerate(ids):
         for second in ids[i + 1:]:
+            if first in reference and second in reference:
+                continue
             for a, kind_a, certain_a in resolved_meetings[first]:
                 for b, kind_b, certain_b in resolved_meetings[second]:
                     if a['weekday'] != b['weekday'] or not (a['start_minute'] < b['end_minute'] and b['start_minute'] < a['end_minute']):

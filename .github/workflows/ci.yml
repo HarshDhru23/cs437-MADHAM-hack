@@ -4,10 +4,14 @@ on:
   push:
   pull_request:
 
-# A newer push to the same branch or PR supersedes the run in progress.
+# PR/feature pushes supersede older checks. A main release is allowed to finish,
+# so cancelling a workflow cannot leave its Azure deployment running out of order.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -48,6 +52,26 @@ jobs:
       # browser test failing. Private-input checks are local_tests and never count here.
       - name: Statement report (all statements)
         run: python scripts/statement_report.py --all --frontend --browser
+
+      - name: Package the tested main revision
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('frontend/dist/release.json').write_text(json.dumps({'commit': os.environ['GITHUB_SHA']}), encoding='utf-8')
+          PY
+          python -m whitenoise.compress frontend/dist   # gzip copies of the build files; WhiteNoise serves them to browsers that accept gzip
+          python scripts/package_azure.py
+
+      - name: Keep the tested release package
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coursepath-${{ github.sha }}
+          path: coursepath-azure.zip
+          if-no-files-found: error
+          retention-days: 7
 
       # Synthetic data only (no private inputs exist in CI).
       - name: Upload browser test report
@@ -115,3 +139,61 @@ jobs:
           createdb -h 127.0.0.1 -U coursepath coursepath_restore
           COURSEPATH_DB_NAME=coursepath_restore python scripts/backup.py restore --input "$RUNNER_TEMP/backup.json"
           rm -f "$RUNNER_TEMP/backup.json"
+
+  deploy:
+    name: Deploy production
+    needs: [test, postgres]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: coursepath-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coursepath-${{ github.sha }}
+
+      - name: Sign in to Azure with the main-only federated identity
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy the tested package
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: coursepath-iitgn
+          resource-group-name: coursepath-rg
+          package: coursepath-azure.zip
+
+      - name: Verify database health and deployed revision
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from urllib.error import URLError
+          from urllib.request import Request, urlopen
+          base = 'https://coursepath-iitgn.azurewebsites.net'
+          def read(path):
+              request = Request(base + path, headers={'Cache-Control': 'no-cache'})
+              with urlopen(request, timeout=15) as response:
+                  return json.load(response)
+          for attempt in range(42):
+              try:
+                  health = read('/api/v1/health')['data']
+                  release = read('/release.json')
+                  if health.get('status') == health.get('database') == 'ok' and release.get('commit') == os.environ['EXPECTED_COMMIT']:
+                      print('Live database is healthy and the tested revision is deployed.')
+                      break
+              except (URLError, OSError, ValueError, KeyError):
+                  pass
+              print('Waiting for the tested release to become ready:', attempt + 1)
+              time.sleep(10)
+          else:
+              raise SystemExit('The tested revision did not become healthy at the live URL.')
+          PY

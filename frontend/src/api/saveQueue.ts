@@ -126,6 +126,7 @@ export class SaveQueue<T> {
     this.clearTimer();
     this.timer = setTimeout(() => {
       this.timer = null;
+      if (this.current.status === 'conflict') return;   // after a 409 nothing is sent until the student chooses (CR-68)
       if (this.inFlight) {
         void this.inFlight.then(() => this.schedule(0));
         return;
@@ -141,6 +142,7 @@ export class SaveQueue<T> {
 
   private run(): Promise<void> {
     const draft = this.current.draft;
+    if (this.current.status === 'conflict') return Promise.resolve();
     if (draft === null || this.inFlight) return this.inFlight ?? Promise.resolve();
     const expected = this.current.revision;
     this.controller = new AbortController();
@@ -161,6 +163,7 @@ export class SaveQueue<T> {
       .catch((error: unknown) => {
         const apiError = error instanceof ApiError ? error : new ApiError('server', 0, String(error), []);
         if (apiError.kind === 'conflict') {
+          this.clearTimer();   // an edit made while this save was in flight scheduled a send; the 409 cancels it
           this.update({ status: 'conflict', conflictRevision: apiError.currentRevision, error: apiError });
         } else if (apiError.kind === 'network') {
           this.update({ status: 'offline', error: apiError });

@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 
@@ -28,16 +29,26 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('COURSEPATH_CSRF_
 # One origin: Django serves /api/v1/* and the built React app (frontend/dist). COURSEPATH_FRONTEND_DIR moves the build for tests.
 COURSEPATH_FRONTEND_DIR = Path(os.getenv('COURSEPATH_FRONTEND_DIR') or BASE_DIR / 'frontend' / 'dist')
 WHITENOISE_ROOT = COURSEPATH_FRONTEND_DIR
+
+
+def immutable_asset(path, url):
+    """Vite writes content-hashed files under /assets/ (name-<hash>.js), so a browser may keep them for good; index.html keeps the short default."""
+    return re.match(r'^/assets/.+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$', url) is not None
+
+
+WHITENOISE_IMMUTABLE_FILE_TEST = immutable_asset
+COURSEPATH_CSP_REPORT_ONLY = os.getenv('COURSEPATH_CSP_REPORT_ONLY') == '1'   # send the policy without enforcing it (server/api/csp.py)
 ROOT_URLCONF = 'server.config.urls'
 WSGI_APPLICATION = 'server.config.wsgi.application'
 INSTALLED_APPS = ['django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'server.records']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
+MIDDLEWARE = ['server.api.csp.ContentSecurityPolicyMiddleware', 'django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
               'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware',
               'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware']
 if not DEBUG:  # static files of the React build (assets/, index.html); the platform proxy terminates TLS
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')   # after the CSP and security middleware, which wrap it
     # Safe only because the platform proxy overwrites this header on every request (Azure App Service does).
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+COURSEPATH_TRUST_FORWARDED_FOR = not DEBUG   # behind the platform proxy the client's address is the last X-Forwarded-For entry (see client_address)
 SECURE_REDIRECT_EXEMPT = [r'^api/v1/health$']  # the platform's readiness probe is plain HTTP
 DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': LOCAL_DIR / 'coursepath.sqlite3', 'OPTIONS': {'timeout': 20}}}
 if DEBUG and os.getenv('COURSEPATH_SQLITE_PATH'):
@@ -69,11 +80,20 @@ SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 CSRF_FAILURE_VIEW = 'server.api.views.csrf_failure'
-# Sign-in (D-46). With a Google OAuth client ID set, only IITGN Google accounts sign in and password sign-up and sign-in are off.
-# Without one (local development, tests) the username and password forms work as before. The domain is fixed on purpose.
+# Sign-in (D-46, CR-140). In production every sign-in is a server-verified IITGN Google account: the server does not start without a Google client ID,
+# and password sign-up and sign-in are never on. The username and password forms exist only in development and tests (no client ID, or the legacy switch).
+COURSEPATH_PRODUCTION = os.getenv('COURSEPATH_ENV', 'development') == 'production'   # not DEBUG; Django's test runner switches DEBUG off, this stays put
+# Without one (local development, tests only) the username and password forms work as before. The domain is fixed on purpose.
 COURSEPATH_GOOGLE_CLIENT_ID = os.getenv('COURSEPATH_GOOGLE_CLIENT_ID', '').strip()
 COURSEPATH_GOOGLE_DOMAIN = 'iitgn.ac.in'
-# Keeps password sign-in for accounts made before Google sign-in (never sign-up). Off unless asked for.
-COURSEPATH_ALLOW_PASSWORD_LOGIN = os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+if COURSEPATH_PRODUCTION and not COURSEPATH_GOOGLE_CLIENT_ID:
+    raise RuntimeError('COURSEPATH_GOOGLE_CLIENT_ID is required in production: every sign-in must be a verified IITGN Google account (D-46)')
+# Keeps password sign-in for accounts made before Google sign-in (never sign-up) on a development server. Off unless asked for, and ignored in production.
+COURSEPATH_ALLOW_PASSWORD_LOGIN = not COURSEPATH_PRODUCTION and os.getenv('COURSEPATH_ALLOW_PASSWORD_LOGIN', '') == '1'
+# "Try with a sample student" (CR-137): a throw-away account with a made-up record, so a reviewer can see the app working without a real transcript or an
+# IITGN Google account. It is deleted when the visitor leaves it or after COURSEPATH_DEMO_HOURS; COURSEPATH_DEMO=0 turns it off.
+COURSEPATH_DEMO_ENABLED = os.getenv('COURSEPATH_DEMO', '1') != '0'
+COURSEPATH_DEMO_HOURS = 6
+COURSEPATH_DEMO_MAX = 200   # live sample accounts at once; the 201st visitor is told to try again later
 # Google's sign-in button opens a pop-up that talks back to this page; Django's default 'same-origin' would cut that link.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'

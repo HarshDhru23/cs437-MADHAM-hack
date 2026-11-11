@@ -1,6 +1,6 @@
 # CoursePath operations runbook (M08)
 
-Status 3 Nov 2026, checked against `main` at `5d3cdfd`. **There is no hosted deployment.** CoursePath runs on localhost only. The team has nothing to host on yet, so production serving and a managed PostgreSQL database are on hold (team decision, 3 Nov). Saving across devices is shown only on one local server: two browsers, or two browser profiles, signed in to the same account against that one server. Nothing here claims hosted persistence. Steps marked *verified* were run on 3 Nov; the rest are procedures.
+Status 3 Nov 2026, checked against `main` at `5d3cdfd`. **CoursePath is hosted on Azure App Service** (`coursepath-iitgn`, with Azure Database for PostgreSQL; see `docs/operations/azure.md`), and every merge to `main` that passes the tests deploys automatically. The sections below were written on 3 Nov for local runs; where they say "localhost" they describe a local server, not production. Steps marked *verified* were run on 3 Nov; the rest are procedures.
 
 ## 1. Start it
 
@@ -25,7 +25,8 @@ Nothing needs to be set for a local run. The git-ignored `server/.local/` holds 
 | `COURSEPATH_API_ORIGIN` | Where the Vite proxy sends `/api` (default `http://127.0.0.1:8000`); `run.py` sets it from `--api-port`. |
 | `COURSEPATH_DB_ENGINE=postgresql` with `COURSEPATH_DB_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | Run against a local PostgreSQL instead of SQLite. CI does this in its `postgres` job. |
 | `COURSEPATH_REAL_INPUT_DIR` | Folder of private inputs for the optional real-file tests (README, Test). |
-| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS and a secret key. |
+| `COURSEPATH_DEMO` | `0` turns off "Try with a sample student". On by default. Sample accounts (`sample-` names, a `DemoAccount` row) are deleted when the visitor leaves, and expired ones (6 hours) when the next sample starts; at most 200 at once. |
+| `COURSEPATH_ENV`, `COURSEPATH_SECRET_KEY` | Production mode only. Not used on localhost; `production` requires PostgreSQL, HTTPS, a secret key and `COURSEPATH_GOOGLE_CLIENT_ID` (the server will not start without it). |
 | `COURSEPATH_ALLOWED_HOSTS` | Not needed on localhost: the default is `localhost,127.0.0.1,testserver`. |
 
 Names only are in `.env.example`. Never put a real value in Git, CI logs or screenshots.
@@ -119,7 +120,7 @@ Proposed by Manashree and agreed by Harsh in the review of PR #36. They apply to
 2. Use synthetic accounts for development, demos and user sessions. A database or backup that holds a real student's record stays on that student's own machine and account.
 3. Keep backups outside the repository, never in Git, CI artifacts, chat or a shared drive. `server/.local/` and `*.sqlite3` are git-ignored; a backup copied elsewhere is not.
 4. A backup holds password hashes and every account's records. Delete it like the original when it is no longer needed.
-5. "Delete my data" removes data from the running database immediately. A copy made earlier under rule 1 still holds it until that copy is deleted, which rule 1 limits to 7 days. The deletion message ("this repository configures no database backups") is accurate for localhost: the repository configures none, and these copies are taken by hand. Revisit the message only if a hosted database with backups is ever set up.
+5. "Delete my data" removes data from the running database immediately. A copy made earlier under rule 1 still holds it until that copy is deleted, which rule 1 limits to 7 days. On the hosted site the Azure database also keeps automatic backups for 7 days (geo-redundant backup off), so a deleted account can remain in a backup until it expires; the deletion message says so. Copies taken by hand under rule 1 are the operator's to delete. If the retention setting changes, update the message in `server/api/views.py`, `YourData.tsx` and `server/README.md` together.
 
 ## 6. Demo and user sessions
 

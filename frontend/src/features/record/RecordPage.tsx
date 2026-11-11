@@ -371,7 +371,7 @@ function AttemptDialog({
   );
 }
 
-function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { record: AcademicRecord; onSaved: (r: AcademicRecord) => void; latestCompleted: string | null }) {
+export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { record: AcademicRecord; onSaved: (r: AcademicRecord) => void; latestCompleted: string | null }) {
   const { api, user } = useSession();
   const id = useId();
   const defaultTerm = (latestCompleted && nextRegularTerm(latestCompleted)) ?? '';

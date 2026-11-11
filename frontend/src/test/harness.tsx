@@ -17,7 +17,7 @@ export interface FakeRequest {
 
 export type FakeHandler = (req: FakeRequest) => { status?: number; data?: unknown; issues?: unknown[] } | Promise<{ status?: number; data?: unknown; issues?: unknown[] }>;
 
-export function fakeApi(routes: Record<string, FakeHandler>, user: { id: string; username: string } | null = { id: '1', username: 'synthetic-student' }) {
+export function fakeApi(routes: Record<string, FakeHandler>, user: { id: string; username: string; reauth?: 'password' | 'google' } | null = { id: '1', username: 'synthetic-student', reauth: 'password' }) {
   const calls: FakeRequest[] = [];
   const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const path = String(input).replace(/^\/api\/v1/, '');

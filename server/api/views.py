@@ -19,6 +19,7 @@ from decimal import Decimal
 from coursepath.serialization import plain, decimal_string, decimal_value
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
 from coursepath.validation import plan_payload, current_enrolment, scenario_payload, reported_controls
+from server.records import demo
 from server.records.services import record_data, replace_record, expected_revision, RevisionConflict, update_plan, plan_data, corrected_record_rows, scenario_data, update_scenario, validate_attempts, restore_rejections
 
 
@@ -57,6 +58,16 @@ def endpoint(methods, public=False):
     return decorate
 
 
+def not_for_sample(fn):
+    """The sample student cannot take real data in (uploads, restores) or delete a real account's data (CR-137): it is a sandbox with a made-up record."""
+    @wraps(fn)
+    def wrapped(request, *args, **kwargs):
+        if demo.is_demo(request.user):
+            return response(issues=[issue('DEMO_ACCOUNT', 'The sample student is made-up data and cannot do this. Sign in with your IITGN Google account to use your own record.', 'error')], status=403)
+        return fn(request, *args, **kwargs)
+    return wrapped
+
+
 def csrf_failure(request, reason=''):
     return response(issues=[issue('CSRF_REQUIRED', 'Refresh the session and send the CSRF token.', 'error')], status=403)
 
@@ -69,6 +80,11 @@ def health(request):
     except DatabaseError:
         return response(issues=[issue('DATABASE_UNAVAILABLE', 'The database is not reachable.', 'error')], status=503)
     return response({'status': 'ok', 'database': 'ok'})
+
+
+@endpoint({'GET', 'POST', 'PUT', 'PATCH', 'DELETE'}, public=True)
+def api_not_found(request):
+    raise Http404   # the endpoint wrapper answers with the NOT_FOUND envelope
 
 
 def spa(request, path=''):
@@ -85,13 +101,34 @@ def spa(request, path=''):
 def sign_in_options():
     """What the sign-in page offers (D-46). A configured Google client ID turns Google sign-in on and password sign-up off."""
     client = settings.COURSEPATH_GOOGLE_CLIENT_ID
-    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client}
+    return {'google_client_id': client or None, 'google_domain': settings.COURSEPATH_GOOGLE_DOMAIN, 'password': not client and not settings.COURSEPATH_PRODUCTION}
+
+
+def password_sign_in_allowed(action):
+    """Whether password sign-up (`signup`) or sign-in (`login`) may run (D-46, CR-140). Never in production, whatever is or is not configured: every
+    production sign-in is a verified IITGN Google account. In development and tests the forms work without a client ID; with one, only the legacy
+    switch keeps `login` (never `signup`) for accounts made before Google sign-in."""
+    if settings.COURSEPATH_PRODUCTION:
+        return False
+    if not settings.COURSEPATH_GOOGLE_CLIENT_ID:
+        return True
+    return action == 'login' and settings.COURSEPATH_ALLOW_PASSWORD_LOGIN
+
+
+def account_summary(user):
+    """The account as the client sees it. `reauth` is how THIS account proves itself before deleting data: a legacy password account with its password,
+    a Google-only account (D-46: no usable password) with a fresh Google credential. It follows the account, not the site's sign-in options, so a password
+    account never gets offered a Google credential that the server refuses (`account_data` branches on the same `has_usable_password`)."""
+    summary = {'id': str(user.pk), 'username': user.username, 'reauth': 'password' if user.has_usable_password() else 'google'}
+    if demo.is_demo(user):
+        summary['demo'] = True   # only present for a sample-student account (CR-137): the page labels it and hides what a made-up record cannot do
+    return summary
 
 
 @endpoint({'GET'}, public=True)
 def session(request):
-    return response({'csrf_token': get_token(request), 'user': {'id': str(request.user.pk), 'username': request.user.username} if request.user.is_authenticated else None,
-                     'sign_in': sign_in_options()})
+    return response({'csrf_token': get_token(request), 'user': account_summary(request.user) if request.user.is_authenticated else None,
+                     'sign_in': sign_in_options(), 'sample_student': settings.COURSEPATH_DEMO_ENABLED})
 
 
 def verify_google_credential(credential):
@@ -111,6 +148,10 @@ def iitgn_email(claims):
     return email.lower()
 
 
+def _throttled_response():
+    return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
+
+
 def _google_sign_in(request, credential):
     from google.auth.exceptions import GoogleAuthError, TransportError
     domain = settings.COURSEPATH_GOOGLE_DOMAIN
@@ -122,9 +163,16 @@ def _google_sign_in(request, credential):
         return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
     except (ValueError, GoogleAuthError):
         return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
+    # Google verified this token, so it is not a forgery and not a guess: whatever is decided about the account below must not use up the shared
+    # address's failure allowance (a campus network is one address). A Google account that keeps being refused has an allowance of its own.
+    throttle_success(request)
+    subject = str(claims.get('sub', ''))
     email = iitgn_email(claims)
     if email is None:
+        if throttled(request, subject=subject):
+            return _throttled_response()
         return response(issues=[issue('NOT_IITGN_ACCOUNT', f'Sign in with your IITGN Google account (name@{domain}).', 'error')], status=403)
+    conflict = False
     with transaction.atomic():
         user = User.objects.filter(username=email).first()
         if user is None:
@@ -133,28 +181,48 @@ def _google_sign_in(request, credential):
             created = True
         else:
             created = False
-            if user.has_usable_password():
-                return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
-    throttle_success(request)
+            conflict = user.has_usable_password()
+    if conflict:
+        # A verified but refused account: counted against this Google account like a wrong-domain one, so it stays bounded now that the address's count is back.
+        if throttled(request, subject=subject):
+            return _throttled_response()
+        return response(issues=[issue('ACCOUNT_CONFLICT', 'An older password account already uses this address. Ask the CoursePath team to move it.', 'error')], status=403)
     login(request, user)
-    return response({'id': str(user.pk), 'username': user.username}, status=201 if created else 200)
+    return response(account_summary(user), status=201 if created else 200)
 
 
-def _throttle_key(request):
-    return hashlib.sha256(request.META.get('REMOTE_ADDR', '').encode()).hexdigest()
+def client_address(request):
+    """The address the request came from. Behind the hosting proxy REMOTE_ADDR is the proxy's own address, which every client shares, so there
+    (`COURSEPATH_TRUST_FORWARDED_FOR`) the client's address is the LAST entry of X-Forwarded-For: the proxy appends the address it saw (with a port),
+    while anything a client sends itself stays in front of it and is ignored. Without a trusted proxy the header is never read."""
+    connecting = request.META.get('REMOTE_ADDR', '')
+    if not settings.COURSEPATH_TRUST_FORWARDED_FOR:
+        return connecting
+    last = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[-1].strip()
+    if not last:
+        return connecting
+    if last.startswith('['):   # [::1]:1234
+        return last[1:].split(']')[0]
+    return last.rsplit(':', 1)[0] if last.count(':') == 1 else last   # 203.0.113.7:1234, or a bare IPv4/IPv6 address
+
+
+def _throttle_key(request, subject=None, scope=None):
+    who = f'google-account:{subject}' if subject else f'{scope}:{client_address(request)}' if scope else client_address(request)
+    return hashlib.sha256(who.encode()).hexdigest()
 
 
 @transaction.atomic
-def throttled(request):
-    """Count this attempt against the address (10 per 15 minutes, then 429). Counting before the check keeps a burst of parallel guesses
-    inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only failures lock an address out."""
-    key = _throttle_key(request)
+def throttled(request, subject=None, scope=None, limit=10):
+    """Count this attempt against the address (10 per 15 minutes, then 429), or against one Google account when `subject` is given. Counting before
+    the check keeps a burst of parallel guesses inside the limit; an attempt that then succeeds gives its count back (`throttle_success`), so only
+    failures lock an address out."""
+    key = _throttle_key(request, subject, scope)
     now = timezone.now()
     entry, _ = LoginThrottle.objects.get_or_create(key=key, defaults={'window_start': now})
     LoginThrottle.objects.filter(pk=key, window_start__lt=now - timedelta(minutes=15)).update(attempts=0, window_start=now)
     LoginThrottle.objects.filter(pk=key).update(attempts=F('attempts') + 1)
     entry.refresh_from_db()
-    return entry.attempts > 10
+    return entry.attempts > limit
 
 
 def throttle_success(request):
@@ -172,8 +240,23 @@ def auth(request, action):
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
         return _google_sign_in(request, payload.get('credential'))
+    if action == 'demo':
+        if not settings.COURSEPATH_DEMO_ENABLED:
+            raise Http404
+        if request.user.is_authenticated:
+            # Signing in as the sample would silently end this person's own session.
+            return response(issues=[issue('ALREADY_SIGNED_IN', 'Sign out first to try the sample student.', 'error')], status=409)
+        if throttled(request, scope='demo', limit=30):
+            return _throttled_response()
+        try:
+            user = demo.start_demo()
+        except demo.DemoFull:
+            return response(issues=[issue('DEMO_UNAVAILABLE', 'The sample student is busy right now. Try again in a few minutes.', 'error')], status=503)
+        login(request, user)
+        request.session.set_expiry(settings.COURSEPATH_DEMO_HOURS * 3600)
+        return response(account_summary(user), status=201)
     if action in {'signup', 'login'}:
-        if google and (action == 'signup' or not settings.COURSEPATH_ALLOW_PASSWORD_LOGIN):
+        if not password_sign_in_allowed(action):
             return response(issues=[issue('PASSWORD_SIGN_IN_DISABLED', f'Sign in with your IITGN Google account (name@{settings.COURSEPATH_GOOGLE_DOMAIN}).', 'error')], status=403)
         if throttled(request):
             return response(issues=[issue('AUTH_THROTTLED', 'Too many attempts. Retry after 15 minutes.', 'error')], status=429)
@@ -192,17 +275,19 @@ def auth(request, action):
                 raise ValueError('Account unavailable')
             throttle_success(request)
             login(request, user)
-            return response({'id': str(user.pk), 'username': user.username}, status=201)
+            return response(account_summary(user), status=201)
         user = authenticate(request, username=username, password=password)
         if user is None:
             return response(issues=[issue('INVALID_CREDENTIALS', 'Sign-in details were not accepted.', 'error')], status=401)
         throttle_success(request)
         login(request, user)
-        return response({'id': str(user.pk), 'username': user.username})
+        return response(account_summary(user))
     if not request.user.is_authenticated:
         return response(status=401)
     if action == 'logout':
+        leaving = User.objects.filter(pk=request.user.pk).first()   # a real object: request.user is lazy and is anonymous once logout() has run
         logout(request)
+        demo.leave_demo(leaving)   # a sample account is deleted when its visitor leaves; a real account is only signed out
         return response()
     if action == 'password':
         if not request.user.check_password(payload.get('old_password', '')):
@@ -239,12 +324,23 @@ def validated_plan(payload):
     return plan_payload(payload)
 
 
+MAX_SAVED_PLANS = 50   # the same bound a backup may restore
+
+
+def _require_room_for_plans(user, adding):
+    """Every list call checks each saved plan (CR-103), so an account keeps at most MAX_SAVED_PLANS: refuse what would take it over, creating or restoring."""
+    if AcademicPlan.objects.filter(owner=user).count() + adding > MAX_SAVED_PLANS:
+        raise ValueError(f'At most {MAX_SAVED_PLANS} saved plans; delete one first')
+
+
 @endpoint({'GET', 'POST'})
 def plans(request):
     record = get_object_or_404(AcademicRecord, owner=request.user)
     if request.method == 'GET':
         return response([_plan_with_status(request.user, record, p) for p in AcademicPlan.objects.filter(owner=request.user).order_by('id')])
-    stored = AcademicPlan.objects.create(owner=request.user, payload=validated_plan(request.payload))
+    payload = validated_plan(request.payload)
+    _require_room_for_plans(request.user, 1)
+    stored = AcademicPlan.objects.create(owner=request.user, payload=payload)
     return response({**_plan_with_status(request.user, record, stored), 'validation': _validate_owned_plan(request.user, stored)}, status=201)
 
 
@@ -264,6 +360,7 @@ def plan_detail(request, plan_id):
 
 
 @endpoint({'POST'})
+@not_for_sample
 def import_preview(request):
     from coursepath.imports.ims import parse_ims
     from coursepath.imports.pdf_transcript import parse_pdf
@@ -293,7 +390,7 @@ def import_preview(request):
     if not parsed['candidate_attempts']:
         return response(parsed, parsed['issues'], 422)
     proposed = reconcile_import(record_data(stored), parsed, {}, replace_imported=True)
-    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
+    _purge_expired_previews()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision,
                                            payload=parsed, expires_at=timezone.now() + timedelta(hours=1))
     data = {k: v for k, v in parsed.items() if k != 'issues'}
@@ -301,7 +398,21 @@ def import_preview(request):
     return response(data, parsed['issues'] + proposed['issues'], 201)
 
 
+def _purge_expired_previews(keep=None):
+    """CR-109: a preview holds every parsed grade, so expired ones of every student go whenever anyone imports or commits (a cheap query on the
+    indexed `expires_at`). Production also runs `purge_previews` at start-up; nothing else runs it on a schedule."""
+    ImportPreview.objects.filter(expires_at__lte=timezone.now()).exclude(pk=keep).delete()
+
+
+def _spend_preview(preview):
+    """Once a preview is committed it keeps only its marker: the row stays so a second commit is refused (409), but the grades are no longer needed."""
+    preview.payload = {}
+    preview.committed_at = timezone.now()
+    preview.save(update_fields=['payload', 'committed_at'])
+
+
 @endpoint({'POST'})
+@not_for_sample
 @transaction.atomic
 def import_commit(request, preview_id):
     from coursepath.imports.reconcile import reconcile_import
@@ -310,6 +421,7 @@ def import_commit(request, preview_id):
     expected = expected_revision(request.payload)
     if preview.committed_at or expected != stored.revision or preview.base_record_revision != expected:
         raise RevisionConflict(stored.revision)
+    _purge_expired_previews(keep=preview.pk)
     if preview.expires_at <= timezone.now():
         return response(issues=[issue('PREVIEW_EXPIRED', 'Create a new preview.', 'error')], status=422)
     if preview.payload.get('kind') == 'backup':
@@ -330,8 +442,7 @@ def import_commit(request, preview_id):
         reported.append({'preview_id': str(preview.pk), 'record_revision_at_import': expected + 1, 'controls': preview.payload['reported_controls'],
                          'source_refs': list({r['id'] for a in candidates for r in a['source_refs']})})
     accepted = replace_record(stored, expected, result['record']['attempts'], reported_controls=reported)
-    preview.committed_at = timezone.now()
-    preview.save(update_fields=['committed_at'])
+    _spend_preview(preview)
     return response(accepted, result['issues'])
 
 
@@ -400,7 +511,9 @@ def _validate_payload(owner, payload, simple_load=False):
     identity = identity_map(_curriculum_for(record).get('identity_groups'))
     data = record_data(record)
     return validate_plan({'attempts': data['attempts'], 'current_enrolment': data['current_enrolment'], 'catalogue': _recommendations(), 'identity': identity,
-                          'standing': record.profile.get('standing', 'unknown'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
+                          'standing': record.profile.get('standing', 'unknown'),
+                          # CR-106: a saved plan keeps the advisor cap (ADV13 p. 7, D-36); a draft check (simple_load) has one 28-credit limit.
+                          'advisor_cap': None if simple_load else record.profile.get('advisor_cap'), 'simple_load': simple_load}, payload, list(_offering_snapshots().values()))
 
 
 @endpoint({'GET'}, public=True)
@@ -470,6 +583,9 @@ def analysis(request):
     performance['source_reported_controls'] = stored.reported_controls
     data = {'audit': audit, 'performance': performance, 'validation': _validate_owned_plan(request.user, plan) if plan else None,
             'record_revision': stored.revision, 'plan_revision': plan.revision if plan else None, 'rule_version': rules['version']}
+    if plan:   # D-53: credits the plan keeps in placeholders count in "With my plan", and the view says which placeholder keeps them
+        _, _, held_rows, _ = _plan_holds(rules, record, audit, plan.payload)
+        data['plan_holds'] = _plan_holds_view(rules, audit, held_rows, plan.payload)
     return response(data, audit['issues'] + performance['issues'])
 
 
@@ -486,12 +602,29 @@ def plan_validate(request, plan_id):
 
 def _plan_check(user, stored, payload):
     """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
-    from coursepath.degree_audit import evaluate_audit, requirement_progress
+    from coursepath.degree_audit import evaluate_audit
     from coursepath.plan_generation import term_cap
-    from coursepath.online_credits import count_online
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
+    online, held, requirements, uncovered = _plan_holds(rules, record, audit, payload)
+    validation = _validate_payload(user, payload, simple_load=True)
+    validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
+    load = {}
+    for term, row in validation['workload'].items():
+        limit = term_cap(term)
+        planned = decimal_value(row['target_credits'])
+        load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
+    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
+            'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
+            'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+
+
+def _plan_holds(rules, record, audit, payload):
+    """What a plan's placeholders keep: per credit-bearing requirement the credits held (never more than it can still take) and what stays
+    uncovered. Returns the online count, the credits held per requirement before capping, the requirement rows and the total uncovered."""
+    from coursepath.degree_audit import requirement_progress
+    from coursepath.online_credits import count_online
     online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
     # An online credit is held where the allocator counted it (D-10, D-42): above the 8-credit discipline cap, or aimed at a requirement online
     # courses cannot fill, it holds open-elective credit, never the requirement the student aimed it at.
@@ -506,16 +639,61 @@ def _plan_check(user, stored, payload):
         left = decimal_value(row['remaining_credits']) - covered
         uncovered += left
         requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
-    validation = _validate_payload(user, payload, simple_load=True)
-    validation['issues'] = validation['issues'] + online['issues']
-    load = {}
-    for term, row in validation['workload'].items():
-        limit = term_cap(term)
-        planned = decimal_value(row['target_credits'])
-        load[term] = {'planned_credits': decimal_string(planned), 'limit_credits': decimal_string(limit), 'available_credits': decimal_string(max(Decimal(0), limit - planned))}
-    return {'validation': validation, 'degree': audit['degree']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
-            'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
-            'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
+    return online, held, requirements, uncovered
+
+
+def _plan_holds_view(rules, audit, requirements, payload):
+    """D-53: the credits a plan keeps in placeholders, for the requirements view "With my plan": the degree total with them counted, and for each
+    requirement (a group too, as the sum of its parts) the credits kept and the placeholders that keep them. Only what is kept appears."""
+    held_by_leaf = {row['id']: decimal_value(row['held_credits']) for row in requirements}
+    placeholders = {}
+    for semester in payload['semesters']:
+        for p in semester.get('placeholders', []):
+            placeholders.setdefault(p['requirement_id'], []).append({'id': p['id'], 'label': p.get('label'), 'desired_credits': p['desired_credits'],
+                                                                     'term_id': semester['term_id'], 'online': p.get('online') is True})
+    found = {}
+
+    def walk(rule):
+        children = rule.get('children', [])
+        total = held_by_leaf.get(rule['id'], Decimal(0)) if not children else sum((walk(c) for c in children), Decimal(0))
+        mine = placeholders.get(rule['id'], [])
+        if total > 0 or mine:
+            found[rule['id']] = {'held_credits': decimal_string(total), 'placeholders': mine}
+        return total
+    for rule in rules['requirements']:
+        walk(rule)
+    held_total = sum(held_by_leaf.values(), Decimal(0))
+    degree = audit['degree']['projected']
+    counted = decimal_value(degree['counted_credits']) + held_total
+    return {'degree': {'total_credits': degree['total_credits'], 'counted_credits': decimal_string(counted), 'held_credits': decimal_string(held_total),
+                       'remaining_credits': decimal_string(max(Decimal(0), decimal_value(degree['total_credits']) - counted))},
+            'requirements': found}
+
+
+def _incomplete_noncredit_issues(rules, audit, record):
+    """CR-104: a plan is not valid while a requirement that asks for no credits is still incomplete. The viva follows ADV13 (28 Jan 2026) p. 4,
+    item 18(d): a recorded Pass or Fail grade in every active semester satisfies the plan check, a missing grade does not (D-16 reconciliation,
+    10 Nov 2026). The audit itself still asks for a P (D-16)."""
+    from coursepath.degree_audit import incomplete_zero_credit
+    from coursepath.rules.allocation import viva_terms_without_grade
+    ungraded = viva_terms_without_grade(rules, record['attempts'])
+    found = []
+    for row in incomplete_zero_credit(rules, audit['projected']):
+        if row['id'] == 'viva':
+            terms = ungraded.get('viva', row['missing_terms'])
+            if not terms and row['required_courses']:   # every active semester has a recorded P or F
+                continue
+            count = len(terms)
+            text = (f'The comprehensive viva is still pending: your record has no viva grade (P or F) for {count} of your semesters.' if count != 1
+                    else 'The comprehensive viva is still pending: your record has no viva grade (P or F) for one of your semesters.')
+            action = 'Add the missing viva records to your record, then check the plan again.'
+            row = {**row, 'missing_terms': terms}
+        else:
+            done, needed = row['counted_courses'], row['required_courses']
+            text = f"{row['label']} is not complete yet" + (f': {done} of {needed} courses done.' if needed else '.')
+            action = 'Complete it, or add the missing courses to your plan.'
+        found.append(issue('NONCREDIT_REQUIREMENT_PENDING', text, 'error', row['missing_terms'], [], action))
+    return found
 
 
 def plan_status(check):
@@ -701,6 +879,7 @@ def export(request):
 
 
 @endpoint({'POST'})
+@not_for_sample
 def backup_preview(request):
     """Validate a JSON backup as a candidate restore. Nothing changes until /imports/{id}/commit with confirm=true."""
     stored = get_object_or_404(AcademicRecord, owner=request.user)
@@ -746,7 +925,7 @@ def backup_preview(request):
         issues.append(issue('BACKUP_RULE_VERSION_DIFFERS', 'The backup was made with different rules; analysis will use the current rules.', 'warning'))
     if scenarios:
         issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
-    ImportPreview.objects.filter(owner=request.user, expires_at__lte=timezone.now()).delete()
+    _purge_expired_previews()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
                                            payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
     return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
@@ -772,15 +951,18 @@ def _restore_backup(request, preview, stored, expected):
     rejected = _backup_rejection(request, stored, payload['attempts'])
     if rejected:
         return rejected
+    # Counted here, not at preview: the account may have saved plans since the preview, or committed other previews. The record row is locked so two
+    # commits for one account cannot both pass the count; a refusal rolls the whole restore back.
+    AcademicRecord.objects.select_for_update().get(pk=stored.pk)
+    _require_room_for_plans(request.user, len(payload['plans']))
     restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
-    preview.committed_at = timezone.now()
-    preview.save(update_fields=['committed_at'])
+    _spend_preview(preview)
     return response(restored)
 
 
-RETENTION = ('Deleted from the CoursePath database immediately. This repository configures no database backups; '
-             'if the hosting provider keeps backups, a copy may remain there until those backups expire under the host\'s retention policy.')
+RETENTION = ('Deleted from the CoursePath database immediately. The hosted database keeps automatic backups for 7 days, '
+             'so a copy of your data can remain in a backup until it expires.')
 
 
 def _google_reauth(user, credential):
@@ -800,6 +982,7 @@ def _google_reauth(user, credential):
 
 
 @endpoint({'DELETE'})
+@not_for_sample
 @transaction.atomic
 def account_data(request):
     """Delete the owner's academic data, or the whole account, after re-authentication."""

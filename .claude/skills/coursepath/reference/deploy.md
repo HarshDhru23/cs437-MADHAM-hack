@@ -32,7 +32,7 @@ Observed in `server/config/settings.py` on `feature/harsh-oct27-backend` (commit
 
 ## Environment variables (names already used by settings.py)
 
-`COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS`, `COURSEPATH_DB_NAME`, `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, `COURSEPATH_DB_PORT`. Keep `.env.example` listing names and descriptions only. Real values live in the host's secret settings, never in Git, CI logs or screenshots.
+`COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`, `COURSEPATH_ALLOWED_HOSTS`, `COURSEPATH_DB_NAME`, `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, `COURSEPATH_DB_PORT`, and `COURSEPATH_GOOGLE_CLIENT_ID` (required: the server refuses to start in production without it; password sign-in is never on in production). Keep `.env.example` listing names and descriptions only. Real values live in the host's secret settings, never in Git, CI logs or screenshots.
 
 ## Choosing a host
 
@@ -43,7 +43,7 @@ Pick one that gives you: HTTPS on a stable URL, a **persistent managed PostgreSQ
 1. Main is green in CI (full `scripts/test.py`, including the PostgreSQL job).
 2. Build: `npm ci && npm run build` in `frontend/`; `pip install -r requirements.txt`; `manage.py collectstatic --noinput`.
 3. `manage.py migrate` against the production DB (back it up first once real users exist).
-4. `COURSEPATH_ENV=production manage.py check --deploy` shows no warnings you haven't consciously accepted.
+4. `COURSEPATH_ENV=production manage.py check --deploy` shows no warnings you haven't consciously accepted. On Azure also run `scripts/check_azure_firewall.py` (docs/operations/azure.md, "Database access"): it fails while the database firewall admits all of Azure.
 5. **Smoke test on the hosted URL** with a fresh synthetic account: sign up → paste synthetic IMS → review → confirm → see audit → add a course to the plan → save → open the same account in a second browser/device and see the save → reload a deep link.
 6. Note the deployed commit SHA in the checkpoint evidence.
 

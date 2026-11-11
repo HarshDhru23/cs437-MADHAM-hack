@@ -192,14 +192,19 @@ switches a source off.
 For production set `COURSEPATH_ENV=production`, `COURSEPATH_SECRET_KEY`,
 `COURSEPATH_ALLOWED_HOSTS` (comma separated), and `COURSEPATH_DB_NAME`,
 `COURSEPATH_DB_USER`, `COURSEPATH_DB_PASSWORD`, `COURSEPATH_DB_HOST`, optional
-`COURSEPATH_DB_PORT`. Production requires PostgreSQL and HTTPS/secure cookies;
+`COURSEPATH_DB_PORT`, and `COURSEPATH_GOOGLE_CLIENT_ID` (the server refuses to start without it:
+every production sign-in is a verified IITGN Google account, and password sign-up and
+sign-in are never on in production). Production requires PostgreSQL and HTTPS/secure cookies;
 configure the actual proxy and production WSGI server with the hosting team.
 `COURSEPATH_DB_ENGINE=postgresql` allows PostgreSQL testing in development.
+`COURSEPATH_DEMO=0` turns off "Try with a sample student" (`POST /api/v1/auth/demo`): a visitor gets a throw-away
+account with a made-up record (`data/demo/sample-student.json`), deleted when they leave it or after six hours.
 `COURSEPATH_SQLITE_PATH` selects an isolated development/test database only.
 Never set production credentials in committed files. `server.records.test_privacy`
 runs `check --deploy --fail-level WARNING` under production settings and checks
 that DEBUG is off, cookies are secure and a missing secret key stops start-up.
-Data deletion is immediate in the application database; this repository
-configures no database backups, so any copy the host keeps is outside its
-control (the deletion response says so). PostgreSQL concurrency, production
+Data deletion is immediate in the application database. The hosted Azure
+PostgreSQL database keeps automatic backups for 7 days (geo-redundant backup is
+off; read from `az postgres flexible-server show`, 10 Nov), so a copy can remain
+in a backup until it expires (the deletion response says so). PostgreSQL concurrency, production
 serving and hosting are not yet verified here (GAP-13).

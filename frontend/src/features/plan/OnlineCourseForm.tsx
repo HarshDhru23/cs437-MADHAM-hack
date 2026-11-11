@@ -78,6 +78,8 @@ export function OnlineCourseForm({
   onCancel: () => void;
 }) {
   const id = useId();
+  const summer = term.endsWith('SUMMER');
+  room = summer ? room : undefined;   // D-50: a regular semester's load never includes online credits, so its room is no limit here
   const options = optionsFrom(requirements);
   const [requirement, setRequirement] = useState(() => options.find((o) => o.needed !== null)?.id ?? options[0]!.id);
   const [credits, setCredits] = useState(() => defaultCredits(options.find((o) => o.id === requirement)?.needed ?? null, room));
@@ -127,7 +129,8 @@ export function OnlineCourseForm({
         <label htmlFor={`${id}-name`}>Course name (optional)</label>
         <input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} placeholder="For example Machine Learning on NPTEL" aria-invalid={problem ? true : undefined} />
       </div>
-      {room !== undefined ? <p className="muted">{`This ${term.endsWith('SUMMER') ? 'break' : 'semester'} has room for ${formatCredits(room)} more credits.`}</p> : null}
+      {room !== undefined ? <p className="muted">{`This break has room for ${formatCredits(room)} more credits.`}</p> : null}
+      {!summer ? <p className="muted">Online courses are not part of the semester&apos;s credit limit. They count toward your degree within the online limit.</p> : null}
       {problem ? (
         <p className="field-error" role="alert">
           {problem}

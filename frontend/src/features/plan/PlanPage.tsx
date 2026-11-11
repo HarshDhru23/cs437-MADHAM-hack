@@ -17,10 +17,11 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
-import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
+import { latestCompletedTerm, moveTargets, nextRegularTerm } from '../../lib/terms';
 import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
 import type { SectionChoice } from './SectionPicker';
+import { useCoursePlans } from './CoursePlan';
 import { GeneratePlanPanel } from './GeneratePlanPanel';
 import { PlanStatusBadge } from './PlanStatusNote';
 import { useDeletePlan, UnsavedChangesError } from './deletePlan';
@@ -215,8 +216,10 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
 
   const move = (fromTerm: string, itemId: string, toTerm: string) => {
     const item = plan.semesters.find((s) => s.term_id === fromTerm)?.courses.find((c) => c.id === itemId);
-    if (!item || fromTerm === toTerm) return;
-    const next = { ...plan, semesters: plan.semesters.map((s) => (s.term_id === fromTerm ? { ...s, courses: s.courses.filter((c) => c.id !== itemId) } : s.term_id === toTerm ? { ...s, courses: [...s.courses, item] } : s)) };
+    if (!item || fromTerm === toTerm || !moveTargets(fromTerm, [toTerm]).includes(toTerm)) return;   // D-50: odd to odd, even to even
+    // The section and variant the student chose belong to the term the course leaves; the new term's own are chosen again (D-51).
+    const { offering_id: _offering, section_ids: _sections, ...moved } = item; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const next = { ...plan, semesters: plan.semesters.map((s) => (s.term_id === fromTerm ? { ...s, courses: s.courses.filter((c) => c.id !== itemId) } : s.term_id === toTerm ? { ...s, courses: [...s.courses, moved] } : s)) };
     edit(next, `Moved ${item.normalized_code} to ${formatTerm(toTerm)}. Check validation for downstream effects.`);
   };
 
@@ -356,6 +359,7 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
       <PlanLoadStrip cells={cells} />
       <PlanProgress check={progress.check} pending={progress.pending} showOnlineWarnings plannedTotal={planTotal} />
 
+      <p className="muted">A course can move to another odd semester, or to another even semester: it is offered in the same kind of semester each year.</p>
       <div className="pb-board">
         {terms.map((s) => (
           <SemesterTable
@@ -572,6 +576,7 @@ function SemesterTable({
 }) {
   const headingId = useId();
   const label = formatTerm(semester.term_id);
+  const coursePlan = useCoursePlans(semester.term_id, validation?.per_course);
   const workload = validation?.workload[semester.term_id];
   const planned = workload ? (workload.target_credits ?? workload.selected_credits) : undefined;
   const termIssues = issues.filter((i) => i.entityRefs.includes(semester.term_id));
@@ -597,6 +602,7 @@ function SemesterTable({
           {`${semester.term_id.endsWith('SUMMER') ? 'Summer' : 'Semester'} total: ${formatCredits(workload.target_credits ?? workload.selected_credits)} / ${formatCredits(limit)} credits`}
           {termIssues.some((i) => /-credit limit/.test(i.message)) ? <strong className="field-error">{` Over the ${formatCredits(limit)}-credit limit`}</strong> : null}
           {roomLeft !== null ? <span>{Number(roomLeft) > 0 ? ` — ${moreCredits(roomLeft)} can be added` : ' — no more credits can be added'}</span> : null}
+          {workload.online_credits && Number(workload.online_credits) > 0 ? <span>{` — plus ${formatCredits(workload.online_credits)} online credits, outside this limit`}</span> : null}
         </p>
       ) : null}
       {termIssues.length > 0 ? (
@@ -632,6 +638,7 @@ function SemesterTable({
                   <th scope="row" data-label="Course" className="pb-code">
                     <span className="mono">{c.normalized_code}</span>
                     {titleOf(c.normalized_code) ? <div className="muted">{titleOf(c.normalized_code)}</div> : null}
+                    <div className="pb-courseplan">{coursePlan(c)}</div>
                   </th>
                   <td className="num pb-cr" data-label="Credits">
                     {formatCredits(c.credits)}
@@ -651,7 +658,7 @@ function SemesterTable({
                       Move {c.normalized_code} to
                     </label>
                     <select id={moveId} defaultValue={semester.term_id}>
-                      {allTerms.map((t) => (
+                      {moveTargets(semester.term_id, allTerms).map((t) => (
                         <option key={t} value={t}>
                           {formatTerm(t)}
                         </option>

@@ -132,7 +132,7 @@ class PreviewExpiryTests(AccountAPIMixin, TestCase):
 
 class ProductionSettingsTests(TestCase):
     def test_cp32_production_settings_pass_the_deploy_check_and_hide_tracebacks(self):
-        env = {**os.environ, 'COURSEPATH_ENV': 'production', 'COURSEPATH_SECRET_KEY': secrets.token_urlsafe(50),
+        env = {**os.environ, 'COURSEPATH_ENV': 'production', 'COURSEPATH_SECRET_KEY': secrets.token_urlsafe(50), 'COURSEPATH_GOOGLE_CLIENT_ID': 'synthetic-client.apps.googleusercontent.com',
                'COURSEPATH_ALLOWED_HOSTS': 'coursepath.example.invalid', 'COURSEPATH_DB_NAME': 'unused', 'COURSEPATH_DB_USER': 'unused',
                'COURSEPATH_DB_PASSWORD': 'unused', 'COURSEPATH_DB_HOST': '127.0.0.1'}
         check = subprocess.run([sys.executable, 'server/manage.py', 'check', '--deploy', '--fail-level', 'WARNING'], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
