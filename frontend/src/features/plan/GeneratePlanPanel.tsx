@@ -13,6 +13,7 @@ import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
 import { isDecimalString } from '../../lib/validation';
 import { meterLevel, meterWidth, sumCredits } from './loadLevel';
+import { TermCoursePlans } from './CoursePlan';
 import { isNamedOnline, isOnline, nextOnlineId, OnlineCourseForm, onlinePlaceholder, type OnlineCourseChoice } from './OnlineCourseForm';
 import { plainIssues, type PlainIssue } from './plainIssues';
 import { PlanLoadStrip, type LoadCell } from './PlanLoadStrip';
@@ -538,83 +539,88 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
                   {empty ? (
                     <p className="pb-empty">Nothing planned in this semester.</p>
                   ) : (
-                    <table className="pb-chips">
-                      <caption>{`${formatTerm(term)} draft`}</caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Course</th>
-                          <th scope="col">Title</th>
-                          <th scope="col" className="num">
-                            Credits
-                          </th>
-                          <th scope="col">Counts toward</th>
-                          <th scope="col">
-                            <span className="visually-hidden">Actions</span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {semester!.courses.map((c) => {
-                          const placement = placements.get(c.id);
-                          return (
-                            <tr key={c.id}>
-                              <th scope="row" data-label="Course" className="pb-code">
-                                <span className="mono">{c.normalized_code}</span>
+                    <TermCoursePlans term={term}>
+                      {(coursePlan) => (
+                        <table className="pb-chips">
+                          <caption>{`${formatTerm(term)} draft`}</caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Course</th>
+                              <th scope="col">Title</th>
+                              <th scope="col" className="num">
+                                Credits
                               </th>
-                              <td data-label="Title" className="pb-title">
-                                {placement?.title ?? catalogueByCode.get(c.normalized_code)?.title ?? ''}
-                              </td>
-                              <td className="num pb-cr" data-label="Credits">
-                                {formatCredits(c.credits)}
-                              </td>
-                              <td data-label="Counts toward" className="pb-for">
-                                {placement?.requirement_label ?? ''}
-                              </td>
-                              <td data-label="Actions" className="pb-act">
-                                <button
-                                  type="button"
-                                  className="btn btn-small btn-danger"
-                                  aria-label={`Remove ${c.normalized_code} from ${formatTerm(term)}`}
-                                  onClick={() => change(term, (s) => ({ ...s, courses: s.courses.filter((x) => x.id !== c.id) }))}
-                                >
-                                  Remove
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {semester!.placeholders.map((p) => {
-                          const name = placeholderName(p, requirementNames.get(p.requirement_id));
-                          const removeName = isNamedOnline(p) ? (p.label ?? name) : name;
-                          return (
-                            <tr key={p.id} className="pb-ph" data-online={isOnline(p) ? 'true' : undefined}>
-                              <th scope="row" data-label="Course" className="pb-code">
-                                {name}
+                              <th scope="col">Counts toward</th>
+                              <th scope="col">
+                                <span className="visually-hidden">Actions</span>
                               </th>
-                              <td data-label="Title" className="pb-title">
-                                {placeholderHint(p)}
-                              </td>
-                              <td className="num pb-cr" data-label="Credits">
-                                {formatCredits(p.desired_credits)}
-                              </td>
-                              <td data-label="Counts toward" className="pb-for">
-                                {placements.get(p.id)?.requirement_label ?? requirementNames.get(p.requirement_id) ?? ''}
-                              </td>
-                              <td data-label="Actions" className="pb-act">
-                                <button
-                                  type="button"
-                                  className="btn btn-small btn-danger"
-                                  aria-label={`Remove ${removeName} from ${formatTerm(term)}`}
-                                  onClick={() => change(term, (s) => ({ ...s, placeholders: s.placeholders.filter((x) => x.id !== p.id) }))}
-                                >
-                                  Remove
-                                </button>
-                              </td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {semester!.courses.map((c) => {
+                              const placement = placements.get(c.id);
+                              return (
+                                <tr key={c.id}>
+                                  <th scope="row" data-label="Course" className="pb-code">
+                                    <span className="mono">{c.normalized_code}</span>
+                                    <div className="pb-courseplan">{coursePlan(c)}</div>
+                                  </th>
+                                  <td data-label="Title" className="pb-title">
+                                    {placement?.title ?? catalogueByCode.get(c.normalized_code)?.title ?? ''}
+                                  </td>
+                                  <td className="num pb-cr" data-label="Credits">
+                                    {formatCredits(c.credits)}
+                                  </td>
+                                  <td data-label="Counts toward" className="pb-for">
+                                    {placement?.requirement_label ?? ''}
+                                  </td>
+                                  <td data-label="Actions" className="pb-act">
+                                    <button
+                                      type="button"
+                                      className="btn btn-small btn-danger"
+                                      aria-label={`Remove ${c.normalized_code} from ${formatTerm(term)}`}
+                                      onClick={() => change(term, (s) => ({ ...s, courses: s.courses.filter((x) => x.id !== c.id) }))}
+                                    >
+                                      Remove
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {semester!.placeholders.map((p) => {
+                              const name = placeholderName(p, requirementNames.get(p.requirement_id));
+                              const removeName = isNamedOnline(p) ? (p.label ?? name) : name;
+                              return (
+                                <tr key={p.id} className="pb-ph" data-online={isOnline(p) ? 'true' : undefined}>
+                                  <th scope="row" data-label="Course" className="pb-code">
+                                    {name}
+                                  </th>
+                                  <td data-label="Title" className="pb-title">
+                                    {placeholderHint(p)}
+                                  </td>
+                                  <td className="num pb-cr" data-label="Credits">
+                                    {formatCredits(p.desired_credits)}
+                                  </td>
+                                  <td data-label="Counts toward" className="pb-for">
+                                    {placements.get(p.id)?.requirement_label ?? requirementNames.get(p.requirement_id) ?? ''}
+                                  </td>
+                                  <td data-label="Actions" className="pb-act">
+                                    <button
+                                      type="button"
+                                      className="btn btn-small btn-danger"
+                                      aria-label={`Remove ${removeName} from ${formatTerm(term)}`}
+                                      onClick={() => change(term, (s) => ({ ...s, placeholders: s.placeholders.filter((x) => x.id !== p.id) }))}
+                                    >
+                                      Remove
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </TermCoursePlans>
                   )}
                   {hasInternship ? <p className="pb-hint">Internship credits come in 4-credit modules, 16 at most. No timetabled courses are planned in this semester.</p> : null}
                   <p className="pb-load">
