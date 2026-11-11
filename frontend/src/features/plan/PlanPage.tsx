@@ -202,7 +202,12 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
   // What is left for graduation and how much room each semester has, from the server, after every change (the same check the draft plan uses).
   const progress = usePlanCheck(recordRevision ?? 0, recordRevision === null ? null : plan.semesters);
   const currentTerm = latestCompleted ? nextRegularTerm(latestCompleted) : null;
-  const stale = validation !== null && (validation.revision !== revision || queue.state?.draft != null);
+  // CR-75: "checking" belongs to a save or check that is on its way. When the save is stuck (offline, an error or a conflict) nothing is being
+  // checked, so the problems already known stay on screen, marked as out of date, instead of vanishing behind a "Checking…" that never ends.
+  const draftNotSaved = queue.state?.draft != null;
+  const saveOnItsWay = draftNotSaved && (queue.state?.status === 'pending' || queue.state?.status === 'saving');
+  const stale = validation !== null && (validation.revision !== revision || saveOnItsWay);
+  const outOfDate = validation !== null && !stale && draftNotSaved;
   const issues = validation?.data.issues ?? [];
   const codeFor = (id: string) => plan.semesters.flatMap((s) => s.courses).find((c) => c.id === id)?.normalized_code;
   const shownIssues = useMemo(() => plainIssues(stale ? [] : studentIssues(issues), codeFor), [stale, issues, plan.semesters]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -289,7 +294,7 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
 
   // One cell per semester for the load strip. The numbers are the ones the semester cards show (the server's validation of the saved plan),
   // else the server's check of the plan as it stands.
-  const shown = stale ? null : (validation?.data ?? null);
+  const shown = stale || outOfDate ? null : (validation?.data ?? null);
   const plannedOf = (term: string): string | undefined => {
     const w = shown?.workload[term];
     return w ? (w.target_credits ?? w.selected_credits) : progress.check?.load[term]?.planned_credits;
@@ -357,7 +362,24 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
       ) : null}
 
       <PlanLoadStrip cells={cells} />
-      <PlanProgress check={progress.check} pending={progress.pending} showOnlineWarnings plannedTotal={planTotal} />
+      {progress.conflict ? (
+        <div className="callout" data-tone="danger" role="alert">
+          <p>
+            <strong>Your record was saved elsewhere</strong> since this page loaded, so the credits left below may be out of date. Reload your record to update them.
+          </p>
+          <button type="button" className="btn" onClick={() => cache.invalidate('record:')}>
+            Reload my record
+          </button>
+        </div>
+      ) : progress.error ? (
+        <div className="callout" data-tone="warning" role="alert">
+          <p>{progress.error.message} The credits left below may be out of date.</p>
+          <button type="button" className="btn" onClick={progress.retry}>
+            Try again
+          </button>
+        </div>
+      ) : null}
+      <PlanProgress check={progress.check} pending={progress.pending} outOfDate={progress.conflict || progress.error !== null} showOnlineWarnings plannedTotal={planTotal} />
 
       <p className="muted">A course can move to another odd semester, or to another even semester: it is offered in the same kind of semester each year.</p>
       <div className="pb-board">
@@ -370,7 +392,7 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
             validation={shown}
             roomLeft={progress.check?.load[s.term_id]?.available_credits ?? null}
             limit={limitOf(s.term_id)}
-            issues={shownIssues}
+            issues={outOfDate ? [] : shownIssues} /* a row never carries a problem found for an older version of the plan */
             highlight={highlight}
             requirementName={(id) => requirementLabel(requirementOptions.find((r) => r.id === id), undefined)}
             titleOf={(code) => titles.get(code) ?? ''}
@@ -410,6 +432,11 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
             Checking your latest changes…
           </p>
         ) : null}
+        {outOfDate ? (
+          <p className="muted" role="status">
+            These checks describe the last version that was saved. Your latest changes are not saved yet, so they have not been checked.
+          </p>
+        ) : null}
         {validationError ? <ErrorPanel error={validationError} /> : null}
         {!validation && !validationError ? <StatePanel kind="loading" title="Checking your plan…" /> : null}
         {validation && !stale ? (
@@ -427,7 +454,7 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
 
       <div className="pb-timetables">
         {terms.map((s) => (
-          <TermTimetablePanel key={s.term_id} semester={s} validation={shown} issues={stale ? [] : issues} onChooseSections={(id, choice) => chooseSections(s.term_id, id, choice)} />
+          <TermTimetablePanel key={s.term_id} semester={s} validation={shown} issues={stale || outOfDate ? [] : issues} onChooseSections={(id, choice) => chooseSections(s.term_id, id, choice)} />
         ))}
       </div>
 

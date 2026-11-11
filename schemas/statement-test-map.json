@@ -131,7 +131,7 @@
       "frontend_tests": [
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > shows the server explanation of a nested unmet prerequisite and a duplicate on every affected item",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > groups validation issues; selecting one highlights the affected item and shows the remedy",
-        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows drop the previous version's problems and the panel says it is checking",
+        "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > after an unsaved edit, rows drop the previous version's problems and the panel says its checks are from the last saved version",
         "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > shows missing preparation as a warning, never a red \"not eligible\"",
         "frontend/src/components/components.test.tsx::PreparationBadge (D-17 recommended preparation) > keeps an unlisted course unknown, not \"none needed\""
       ]
@@ -763,6 +763,11 @@
         "e2e/tests/reimport-conflict.spec.ts::re-import conflicts > a commit against a record saved in another tab is refused and changes nothing (409)"
       ],
       "frontend_tests": [
+        "frontend/src/features/plan/planCheckStates.test.tsx::a save that cannot be sent (CR-75) > does not claim to be checking when the save failed, and keeps the last known problems, marked as out of date",
+        "frontend/src/features/plan/planCheckStates.test.tsx::a save that cannot be sent (CR-75) > says it is checking while the save is still on its way",
+        "frontend/src/features/plan/planCheckStates.test.tsx::a re-check that fails after an edit (CR-71) > tells the student the credits left may be out of date when the record changed elsewhere (409)",
+        "frontend/src/features/plan/planCheckStates.test.tsx::a re-check that fails after an edit (CR-71) > shows the error and a Try again button when the check fails, and clears both when it works again",
+        "frontend/src/features/plan/planCheckStates.test.tsx::a re-check that fails after an edit (CR-71) > shows no notice and no stale mark when every check works",
         "frontend/src/api/saveQueue.test.ts::SaveQueue > stops on 409 conflict without retrying automatically and preserves the draft",
         "frontend/src/features/plan/plan.test.tsx::PlanPage (A06, CP-04/05/20..22) > an unsaved draft whose save failed is still there when the student comes back to the plan",
         "frontend/src/app/session.test.tsx::SessionProvider > kept plan/enrolment drafts survive expiry for the same user, but not sign-out or another user",
