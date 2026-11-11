@@ -328,7 +328,7 @@ export function ReportPage() {
             <div>
               <dt>Credits counted</dt>
               <dd className="num">
-                {formatCredits(audit.degree.actual.counted_credits)} of {formatCredits(audit.degree.actual.total_credits)}
+                {formatCredits(audit.degree_surplus?.actual.earned_credits ?? audit.degree.actual.counted_credits)} of {formatCredits(audit.degree.actual.total_credits)}
               </dd>
             </div>
           ) : null}

@@ -64,7 +64,8 @@ export function PlanProgress({ check, pending, showOnlineWarnings = false, plann
               <strong>{creditsWord(plannedTotal)}</strong> in the plan
             </p>
           ) : null}
-          <p className="num">{`${formatCredits(check.degree.counted_credits)} of ${formatCredits(check.degree.total_credits)} degree credits covered by your plan`}</p>
+          <p className="num">{`${formatCredits(check.degree_surplus?.earned_credits ?? check.degree.counted_credits)} of ${formatCredits(check.degree.total_credits)} degree credits covered by your plan`}</p>
+          {check.degree_surplus && Number(check.degree_surplus.surplus_credits) > 0 ? <p className="num muted">{`${creditsWord(check.degree_surplus.surplus_credits)} more than the degree asks for: they are earned but fill no requirement.`}</p> : null}
           {Number(check.placeholder_credits) > 0 ? <p className="num">{`${creditsWord(check.placeholder_credits)} held in placeholders that you fill with courses`}</p> : null}
           {online ? <p className="num">{`Online credits: ${formatCredits(online.planned_credits)} planned, ${formatCredits(online.counted_credits)} count toward your degree`}</p> : null}
           {onlineWarnings.map((w) => (

@@ -304,9 +304,16 @@ export interface DegreeProgress {
   remaining_credits: DecimalString;
 }
 
+/** CP-47: credits beyond what the degree asks for (D-07) and every credit toward it (`earned_credits`, counted plus beyond), so it can pass 170. */
+export interface DegreeSurplus {
+  surplus_credits: DecimalString;
+  earned_credits: DecimalString;
+}
+
 export interface AuditResult {
   /** Credits counted toward the degree total (170 for CSE 2024) in each view; the server computes them. */
   degree?: { actual: DegreeProgress; current: DegreeProgress; projected: DegreeProgress };
+  degree_surplus?: { actual: DegreeSurplus; current: DegreeSurplus; projected: DegreeSurplus };
   actual: RequirementResult[];
   current: RequirementResult[];
   projected: RequirementResult[];
@@ -452,6 +459,7 @@ export interface PlanHoldPlaceholder {
  * credits are kept for it (a group as the sum of its parts) or a placeholder is aimed at it. */
 export interface PlanHolds {
   degree: { total_credits: DecimalString; counted_credits: DecimalString; held_credits: DecimalString; remaining_credits: DecimalString };
+  degree_surplus?: DegreeSurplus;
   requirements: Record<string, { held_credits: DecimalString; placeholders: PlanHoldPlaceholder[] }>;
 }
 
@@ -929,6 +937,7 @@ export interface PlanCheck {
   status: PlanStatus;
   validation: PlanValidation;
   degree: DegreeProgress;
+  degree_surplus?: DegreeSurplus;
   placeholder_credits: DecimalString;
   /** Credits still needed after courses and placeholders: the 'credits left for graduation'. */
   uncovered_credits: DecimalString;
