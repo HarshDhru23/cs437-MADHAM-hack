@@ -10,6 +10,7 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { formatCredits, formatTerm, humanize } from '../../lib/format';
 import { latestCompletedTerm } from '../../lib/terms';
 import { CurrentEnrolmentSection } from '../record/RecordPage';
+import { creditsWord } from '../plan/PlanProgress';
 import { DegreeRing, type RingGroup } from './DegreeRing';
 import { indexDefinitions, requirementLabel, RequirementTree, shownGroups, type CountedSource } from './RequirementTree';
 import './requirements.css';
@@ -74,6 +75,10 @@ export function RequirementsPage() {
   ];
   const degree = holds ? holds.degree : (audit?.degree?.[view] ?? null);
   const heldTotal = holds && Number(holds.degree.held_credits) > 0 ? holds.degree.held_credits : null;
+  // CP-47: every credit the student has toward the degree, which can pass the total (172 of 170); the server says how many are beyond what the degree asks for.
+  const surplus = holds ? holds.degree_surplus : audit?.degree_surplus?.[view];
+  const beyond = surplus && Number(surplus.surplus_credits) > 0 ? surplus.surplus_credits : null;
+  const shownCredits = surplus?.earned_credits ?? degree?.counted_credits ?? null;
   const total = degree?.total_credits ?? c.total_credits;
 
   // One arc per group that carries credits, in the order of the list below. The sizes are the credits each group asks for (from the rules);
@@ -149,17 +154,18 @@ export function RequirementsPage() {
 
       {personal && audit ? (
         <section aria-label="Overview" className="panel req-hud">
-          <DegreeRing groups={ringGroups} total={degree?.total_credits ?? null} counted={degree?.counted_credits ?? null} highlightId={active} onHighlight={setActive} />
+          <DegreeRing groups={ringGroups} total={degree?.total_credits ?? null} counted={shownCredits} highlightId={active} onHighlight={setActive} />
           <div className="req-hud-side">
             <Verdict view={view} complete={audit.complete} remaining={degree?.remaining_credits ?? null} />
             {heldTotal ? <p className="muted">{`${formatCredits(heldTotal)} of the credits counted are kept in placeholders: you still choose the courses for them.`}</p> : null}
+            {beyond && degree ? <p className="muted">{`${creditsWord(beyond)} more than the ${formatCredits(degree.total_credits)} the degree asks for: they are earned but fill no requirement.`}</p> : null}
             {degree ? (
               <dl className="req-tiles">
                 <div>
                   <dt>Credits counted</dt>
                   <dd>
                     <span className="num">
-                      {formatCredits(degree.counted_credits)} of {formatCredits(degree.total_credits)}
+                      {formatCredits(shownCredits ?? degree.counted_credits)} of {formatCredits(degree.total_credits)}
                     </span>
                   </dd>
                 </div>
