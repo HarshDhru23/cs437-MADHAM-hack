@@ -1445,6 +1445,7 @@
         "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > a course the timetable does not list at all is not available yet",
         "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > with two timetable versions of a course, the link of the chosen version is used",
         "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link in a planned semester (CP-43) > says nothing while the timetable is loading or when it could not be loaded, instead of claiming the course plan is missing",
+        "frontend/src/features/plan/coursePlanLink.test.tsx::Course plan link when the chosen version names another semester (CP-43, review) > a version chosen for another term (D-51) is ignored, so the course still links to the course plan of its own semester",
         "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > links a course that has a course plan and says \"not available yet\" for one that has none, in the draft table",
         "frontend/src/features/plan/coursePlanLinkDraft.test.tsx::Course plan link in the generated draft (CP-43) > asks for the timetable of each semester once, however many courses it has"
       ]

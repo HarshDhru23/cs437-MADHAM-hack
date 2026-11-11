@@ -74,8 +74,9 @@ export function chosenOffering(course: PlannedCourse, offerings: CourseOffering[
  * not an address) counts as no link, so the student is never sent somewhere unexpected.
  */
 export function coursePlanUrl(course: PlannedCourse, offerings: CourseOffering[]): string | null {
-  const chosen = course.offering_id ? offerings.filter((o) => o.id === course.offering_id) : offerings;
-  for (const o of chosen) {
+  // A version chosen for another semester names no version of this one (D-51: the plan check ignores it), so it does not narrow the choice.
+  const picked = course.offering_id ? offerings.filter((o) => o.id === course.offering_id) : [];
+  for (const o of picked.length ? picked : offerings) {
     const target = o.course_plan_link?.target;
     if (!target) continue;
     try {

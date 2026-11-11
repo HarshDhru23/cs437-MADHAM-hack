@@ -119,3 +119,13 @@ describe('Course plan link in a planned semester (CP-43)', () => {
     expect(row).not.toHaveTextContent(/Course plan/);
   });
 });
+
+describe('Course plan link when the chosen version names another semester (CP-43, review)', () => {
+  it('a version chosen for another term (D-51) is ignored, so the course still links to the course plan of its own semester', async () => {
+    const stale = { ...ph, offering_id: '2025-26-II:PH202' };
+    render(planOf([stale]), snapshotWith({ 'PH 202': link(PH_PLAN) }));
+    const row = await rowOf('PH 202');
+    expect(await within(row).findByRole('link', { name: /Course plan.*PH 202/ })).toHaveAttribute('href', PH_PLAN);
+    expect(row).not.toHaveTextContent(/not available/i);
+  });
+});
