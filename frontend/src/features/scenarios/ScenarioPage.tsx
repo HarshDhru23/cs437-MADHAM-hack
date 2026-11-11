@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { accountEndpoints, calendarEndpoints, endpoints, scenarioEndpoints } from '../../api/endpoints';
 import { useResource, useResourceCache } from '../../api/resources';
-import type { AcademicPlan, InternshipInput, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
+import type { AcademicPlan, Scenario, ScenarioApplyResult, ScenarioChange, ScenarioCompareResult, ScenarioConflictData } from '../../api/types';
 import { PLAN_TABS, SubNav } from '../../app/AppShell';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
@@ -15,6 +15,7 @@ import { ChangesEditor } from './ChangesEditor';
 import { CompareView } from './CompareView';
 import { InternshipEditor } from './InternshipEditor';
 import { InternshipPanels } from './InternshipPanels';
+import { keptDrafts, resetKeptScenarioDrafts, type KeptDraft } from './keptDrafts';
 import { ProblemList, problemCount } from './ProblemList';
 import { describeChange, describeSkipped, durationLabel, fitChanges, planItems, PLAN_OPS, splitChanges, type PlanItem, type RefusedChange } from './model';
 import { useScenarios } from './ScenariosPage';
@@ -38,22 +39,12 @@ export function ScenarioPage() {
   return <Workspace key={loaded.data.id} initial={loaded.data} />;
 }
 
-interface Draft {
-  label: string;
-  changes: ScenarioChange[];
-  internship: InternshipInput | null;
-}
+type Draft = KeptDraft;
 
 const draftOf = (s: Scenario): Draft => ({ label: s.label, changes: s.changes, internship: s.internship });
 const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Unsaved edits kept while the student visits another page and comes back (in this tab only, and only for the revision they were made on). */
-const keptDrafts = new Map<string, { draft: Draft; revision: number }>();
-
-/** Forget every kept draft (used when the account changes, and between tests). */
-export function resetKeptScenarioDrafts(): void {
-  keptDrafts.clear();
-}
+export { resetKeptScenarioDrafts };   // tests import it from here
 
 type ApplyConflict = { rebase: boolean; message: string; currentRevision: number | null };
 /** Which request a 409 answered, so "Keep my version" repeats that request. */
