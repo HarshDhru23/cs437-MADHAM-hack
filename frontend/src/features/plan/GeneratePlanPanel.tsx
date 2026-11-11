@@ -113,6 +113,7 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
   const loadId = useId();
   const semesterId = useId();
   const basisId = useId();
+  const coveredId = useId();
   const nameId = useId();
   const [generating, setGenerating] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -503,6 +504,11 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
 
           <PlanLoadStrip cells={cells} />
           <PlanProgress check={check} pending={checking} plannedTotal={check ? planTotal : undefined} />
+          {check && Number(check.uncovered_credits) <= 0 ? (
+            <p id={coveredId} className="muted">
+              This plan already meets every requirement, so there are no elective credits to add. Remove an elective to add a different amount.
+            </p>
+          ) : null}
           {checkError ? (
             <div className="callout" data-tone="warning" role="alert">
               <p>{checkError.message}</p>
@@ -652,6 +658,7 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
                           setElectiveFor(electiveFor === term ? null : term);
                         }}
                         disabled={needing.length === 0}
+                        aria-describedby={needing.length === 0 ? coveredId : undefined}
                       >
                         Add elective credits
                       </button>

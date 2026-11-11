@@ -138,7 +138,7 @@ class LocalAndFrontendTests(unittest.TestCase):
 class RealMapTests(unittest.TestCase):
     def test_every_mapped_test_id_points_at_an_existing_test_method(self):
         statements = sr.load_map(ROOT)
-        self.assertEqual(len(statements), 42)  # CP-25 to CP-27 withdrawn on 3 Nov (D-18); CP-35 added on 7 Nov (D-35), CP-36 and CP-37 on 8 Nov (D-45, D-46), CP-38 to CP-42 (D-48 to D-55) on 10 Nov, CP-43 (course plan link) and CP-44 (study load) and CP-45 (synthetic example) on 11 Nov (SPEC.md)
+        self.assertEqual(len(statements), 43)  # CP-25 to CP-27 withdrawn on 3 Nov (D-18); CP-35 added on 7 Nov (D-35), CP-36 and CP-37 on 8 Nov (D-45, D-46), CP-38 to CP-42 (D-48 to D-55) on 10 Nov, CP-43 (course plan link) and CP-44 (study load) and CP-45 (synthetic example) and CP-46 (elective pieces) on 11 Nov (SPEC.md)
         for s in statements:
             for tid in [*s["tests"], *s.get("local_tests", [])]:
                 self.assertTrue(sr.test_exists(ROOT, tid), f"{s['id']}: {tid} not found in source")

@@ -713,6 +713,23 @@ describe('Problems are shown where they belong, as soon as the check answers', (
 });
 
 describe('Adding elective credits', () => {
+  it('says why Add elective credits is greyed out when every requirement is already covered, and says nothing while one still needs credits (CP-46)', async () => {
+    const covered = server({ check: () => ({ data: checkResult({ uncovered_credits: '0', requirements: [row('open-electives', 'Open electives', 'Electives', '16', '16', '0')] }) }) });
+    const done = await generate(covered);
+    await settled(done);
+    const button = within(done).getByRole('button', { name: 'Add elective credits to 2027–28 Semester I' });
+    expect(button).toBeDisabled();
+    const hint = within(done).getByText(/This plan already meets every requirement, so there are no elective credits to add\. Remove an elective to add a different amount\./);
+    expect(button).toHaveAccessibleDescription(hint.textContent ?? '');
+  });
+
+  it('shows no such note while a requirement still needs credits (CP-46)', async () => {
+    const draft = await generate(server());
+    await settled(draft);
+    expect(within(draft).getByRole('button', { name: 'Add elective credits to 2027–28 Semester I' })).toBeEnabled();
+    expect(within(draft).queryByText(/no elective credits to add/)).not.toBeInTheDocument();
+  });
+
   it('offers the requirements that still need credits with how many, defaults to 4 or what fits, and sends a placeholder to the check', async () => {
     const s = server();
     const draft = await generate(s);

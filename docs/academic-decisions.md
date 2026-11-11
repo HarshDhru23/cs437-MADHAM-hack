@@ -321,6 +321,8 @@ Recorded 7 Nov 2026 by Harsh, after the hosted app showed an "unknown" on almost
 - **What it changes.** Saved-plan validation only: GPS standing gives the 21-credit limit and the advisor limit applies (ADV13 p. 7, D-36, CP-21). A draft check and a generated draft keep one 28-credit limit and say nothing about either (D-36, D-50), so a declared GPS standing no longer gives a draft a 21-credit error (issue #61).
 - **Not decided here.** Whether an advisor limit above the regular 28 means anything (it cannot raise the limit: the lower of the two applies), and any evidence step for GPS standing.
 
+**D-57. Held elective credits come in even pieces** (TEAM, Harsh, 11 Nov). A generated plan holds credits for HSS, Basic Science, CSE and open electives that the student fills with any counting course. A course is 4 or 2 credits, so a held piece of 1 or 3 credits (a 4-credit requirement cut into 3 + 1 to fill what a lightened semester had left) cannot be filled with one course. A piece is therefore at least 2 credits and even, or it is the whole of what the requirement still needs (an odd remainder is kept in one piece); a semester with no room for such a piece takes none and a later one takes it. The total held for a requirement, the 28-credit limit (10 in a summer) and full coverage do not change. A lightened plan (`lighten_with_online`) spreads the work in even pieces too, so its busiest semester can be one credit higher than the exact even spread (24 + 22 + 22 instead of 23 + 23 + 22 for the sample student). Online courses keep their own sizes (D-42).
+
 ## Implementation follow-ups
 
 Each item goes through the normal reviewed PR. Owners are from `docs/team/README.md`.
