@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { analysis, catalogue, curriculum, plan, record } from '../../test/fixtures';
 import { fakeApi, renderApp } from '../../test/harness';
 import { DegreeRing, type RingGroup } from './DegreeRing';
@@ -22,6 +22,7 @@ const fillOf = (arc: Element) => arc.querySelector<SVGPathElement>('.ring-fill')
 const originalMatchMedia = window.matchMedia;
 afterEach(() => {
   window.matchMedia = originalMatchMedia;
+  vi.unstubAllGlobals();
 });
 const preferReducedMotion = () => {
   window.matchMedia = ((query: string) => ({ matches: query.includes('reduce'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia;
@@ -51,12 +52,27 @@ describe('Degree ring on the requirements page', () => {
     const { container } = renderApp(<RequirementsPage />, { fetchImpl });
     await screen.findByRole('region', { name: 'Overview' }, { timeout: 5000 });
     const core = arcs(container).find((a) => a.getAttribute('data-ring-arc') === 'cse-core')!;
-    expect(Number(fillOf(core).getAttribute('stroke-dashoffset'))).toBeCloseTo(1 - 4 / 36, 4); // 4 of 36 credits counted (hand count from the fixture)
+    // The arcs fill on the next animation frame (DegreeRing.tsx), so wait for it instead of reading at once (#101).
+    await waitFor(() => expect(Number(fillOf(core).getAttribute('stroke-dashoffset'))).toBeCloseTo(1 - 4 / 36, 4)); // 4 of 36 credits counted (hand count from the fixture)
     const electives = arcs(container).find((a) => a.getAttribute('data-ring-arc') === 'cse-electives')!;
-    expect(Number(fillOf(electives).getAttribute('stroke-dashoffset'))).toBeCloseTo(0, 4); // 26 of 26 counted: a full arc
+    await waitFor(() => expect(Number(fillOf(electives).getAttribute('stroke-dashoffset'))).toBeCloseTo(0, 4)); // 26 of 26 counted: a full arc
     // The ring never decides a group is done: the fixture's server status for the electives is "needs review", so the arc stays cyan.
     expect(fillOf(electives)).not.toHaveAttribute('data-done');
     expect(fillOf(core)).not.toHaveAttribute('data-done');
+  });
+
+  it('starts every arc empty and fills it only when the animation frame runs', async () => {
+    // The race behind #101: the fill is set in a requestAnimationFrame callback, so a test that reads straight after render sees an empty arc.
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback));
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    const { fetchImpl } = fakeApi(routes);
+    const { container } = renderApp(<RequirementsPage />, { fetchImpl });
+    await screen.findByRole('region', { name: 'Overview' }, { timeout: 5000 });
+    const core = arcs(container).find((a) => a.getAttribute('data-ring-arc') === 'cse-core')!;
+    expect(Number(fillOf(core).getAttribute('stroke-dashoffset'))).toBe(1);
+    act(() => frames.splice(0).forEach((callback) => callback(0)));
+    expect(Number(fillOf(core).getAttribute('stroke-dashoffset'))).toBeCloseTo(1 - 4 / 36, 4);
   });
 
   it('turns an arc mint only when the server says the group is satisfied', async () => {

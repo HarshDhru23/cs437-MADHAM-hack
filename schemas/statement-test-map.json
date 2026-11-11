@@ -449,7 +449,9 @@
       },
       "academic_data": "reviewed_adv13",
       "browser_tests": [],
-      "frontend_tests": []
+      "frontend_tests": [
+        "frontend/src/features/requirements/degreeRing.test.tsx::Degree ring on the requirements page > starts every arc empty and fills it only when the animation frame runs"
+      ]
     },
     {
       "id": "CP-18",
