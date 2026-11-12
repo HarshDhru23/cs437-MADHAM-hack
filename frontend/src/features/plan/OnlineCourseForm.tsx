@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import type { PlanCheckRequirement, PlannedSemester, RequirementPlaceholder } from '../../api/types';
 import { formatCredits, formatTerm } from '../../lib/format';
+import { CreditStepper } from '../../components/CreditStepper';
 import { isDecimalString } from '../../lib/validation';
 import { moreCredits } from './PlanProgress';
 
@@ -103,7 +104,7 @@ export function OnlineCourseForm({
   };
 
   return (
-    <form className="inline-form" onSubmit={submit} noValidate aria-label={`Add online course to ${formatTerm(term)}`}>
+    <form className="inline-form add-form" data-add-form="online" onSubmit={submit} noValidate aria-label={`Add online course to ${formatTerm(term)}`}>
       <div className="field">
         <label htmlFor={`${id}-requirement`}>Counts toward</label>
         <select
@@ -123,7 +124,7 @@ export function OnlineCourseForm({
       </div>
       <div className="field">
         <label htmlFor={`${id}-credits`}>Credits</label>
-        <input id={`${id}-credits`} inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} aria-invalid={problem ? true : undefined} />
+        <CreditStepper id={`${id}-credits`} value={credits} onChange={setCredits} min={MIN_CREDITS} max={MAX_CREDITS} invalid={Boolean(problem)} />
       </div>
       <div className="field">
         <label htmlFor={`${id}-name`}>Course name (optional)</label>
@@ -136,11 +137,11 @@ export function OnlineCourseForm({
           {problem}
         </p>
       ) : null}
-      <div className="panel-row">
-        <button type="submit" className="btn btn-primary btn-small">
+      <div className="add-actions" data-add-actions>
+        <button type="submit" className="btn btn-primary">
           Add online course
         </button>
-        <button type="button" className="btn btn-small" onClick={onCancel}>
+        <button type="button" className="btn" onClick={onCancel}>
           Cancel
         </button>
       </div>

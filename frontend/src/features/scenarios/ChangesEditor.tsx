@@ -95,7 +95,7 @@ export function ChangesEditor({ plan, items, named, changes, onChange }: Changes
 
   return (
     <section className="panel" aria-labelledby={`${formId}-h`}>
-      <h2 id={`${formId}-h`}>Hypothetical changes</h2>
+      <h3 id={`${formId}-h`}>Hypothetical changes</h3>
       {changes.length === 0 ? (
         <p className="muted">No hypothetical changes yet. This scenario currently matches the baseline plan.</p>
       ) : (

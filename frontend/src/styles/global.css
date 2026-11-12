@@ -51,24 +51,24 @@ h4 {
   text-wrap: balance;
 }
 h1 {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 h2 {
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent-strong);
 }
 h3 {
-  font-size: 1.05rem;
+  font-size: 1.125rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 h4 {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
 }
 p {
@@ -100,7 +100,7 @@ a:hover {
 }
 .mono {
   font-family: var(--font-m);
-  font-size: 0.92em;
+  font-size: max(0.92em, 0.8125rem);
 }
 .muted {
   color: var(--text-muted);
@@ -165,7 +165,7 @@ a:hover {
 .brand-mark {
   font-family: var(--font-m);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--accent);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -193,7 +193,7 @@ a:hover {
   text-decoration: none;
   font-family: var(--font-d);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 1rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
@@ -224,7 +224,7 @@ a:hover {
   border-radius: var(--radius);
   font: inherit;
   font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 .cmd-trigger:hover {
@@ -233,7 +233,7 @@ a:hover {
 }
 .kbd {
   font-family: var(--font-m);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   color: var(--muted);
   border: 1px solid var(--line);
   border-radius: 3px;
@@ -272,7 +272,7 @@ a:hover {
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
   font-family: var(--font-m);
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
 }
 .context-bar div {
   display: flex;
@@ -354,7 +354,7 @@ main {
   color: var(--muted);
   text-decoration: none;
   font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .subnav a:hover {
   color: var(--text);
@@ -389,7 +389,7 @@ main {
 }
 .section-label {
   font-family: var(--font-d);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -427,7 +427,7 @@ main {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -458,7 +458,7 @@ main {
   align-items: baseline;
   gap: var(--space-2);
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .readout b,
 .readout strong {
@@ -484,7 +484,7 @@ main {
 .summary-grid dt {
   color: var(--muted);
   font-family: var(--font-m);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -498,7 +498,7 @@ main {
 .summary-grid dd small {
   display: block;
   font-family: var(--font-b);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 400;
   color: var(--muted);
 }
@@ -557,7 +557,7 @@ main {
 .btn-small {
   min-height: 36px;
   padding: 0 var(--space-3);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -576,11 +576,11 @@ main {
 }
 .field .hint {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .field .field-error {
   color: var(--bad-text);
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 input[type='text'],
 input[type='password'],
@@ -618,7 +618,7 @@ textarea:focus-visible {
 textarea {
   min-height: 10rem;
   font-family: var(--font-m);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 input[type='checkbox'],
 input[type='radio'] {
@@ -649,7 +649,7 @@ input[type='radio'] {
   background: var(--bg2);
   font: inherit;
   font-family: var(--font-m);
-  font-size: 0.88rem;
+  font-size: 0.9375rem;
   color: var(--muted);
   cursor: pointer;
   border-radius: var(--radius);
@@ -673,7 +673,7 @@ input[type='radio'] {
   padding: 0.1em 0.55em;
   border-radius: 3px;
   font-family: var(--font-m);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.04em;
   font-weight: 500;
   border: 1px solid currentColor;
@@ -717,7 +717,7 @@ input[type='radio'] {
   padding: 0.1em 0.55em;
   border-radius: 3px;
   font-family: var(--font-m);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.04em;
   border: 1px solid currentColor;
   white-space: nowrap;
@@ -763,12 +763,12 @@ input[type='radio'] {
 }
 .issue-code {
   font-family: var(--font-m);
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
 .sev {
   font-family: var(--font-m);
-  font-size: 0.68rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   padding: 0.05rem 0.4rem;
   border: 1px solid currentColor;
@@ -870,12 +870,12 @@ input[type='radio'] {
   border-radius: 3px;
   padding: 0.4rem 0.6rem;
   background: var(--panel);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   min-width: 0;
 }
 .chip .code {
   font-family: var(--font-m);
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: var(--accent-strong);
   white-space: nowrap;
 }
@@ -886,7 +886,7 @@ input[type='radio'] {
 }
 .chip .chip-credits {
   font-family: var(--font-m);
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -948,7 +948,7 @@ table.data {
   border-collapse: collapse;
   background: transparent;
   font-variant-numeric: tabular-nums;
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 table.data caption {
   text-align: left;
@@ -966,7 +966,7 @@ table.data td {
 table.data thead th {
   background: var(--bg2);
   font-family: var(--font-m);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1240,7 +1240,7 @@ dialog.command input[type='text'] {
   border: 1px solid var(--line);
   background: var(--bg2);
   font-family: var(--font-m);
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
 .steps li[aria-current='step'] {
@@ -1383,7 +1383,7 @@ dialog.command input[type='text'] {
 }
 .snapshot-facts dt {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .snapshot-facts dd {
   margin: 0;
@@ -1437,7 +1437,7 @@ dialog.command input[type='text'] {
 .req-credits {
   font-family: var(--font-m);
   font-weight: 400;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .req-chevron {
   width: 1rem;
@@ -1469,7 +1469,7 @@ dialog.command input[type='text'] {
 .semester-load {
   margin: var(--space-2) 0;
   font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .semester[data-updating='true'] .semester-load span:nth-child(2) {
   opacity: 0.6;
@@ -1487,4 +1487,171 @@ section[aria-label='Your plan so far'][data-updating='true'] > div {
 .semester td,
 .semester th {
   overflow-wrap: anywhere;
+}
+
+/* ---- UX pass: the course search box, the credits stepper and the one add box ---- */
+.search-box {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+.search-box > label {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+.search-box input[type='search'] {
+  width: 100%;
+}
+.search-list {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  list-style: none;
+  max-height: 20rem;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--bg) 70%, transparent);
+}
+.search-option {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.search-option[aria-selected='true'] {
+  background: var(--accent-soft);
+}
+.search-option[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: default;
+}
+.search-title {
+  display: grid;
+  min-width: 0;
+}
+.search-title strong {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-title .muted {
+  font-size: 0.875rem;
+}
+.search-credits {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+.search-empty {
+  padding: var(--space-3);
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+@media (max-width: 36rem) {
+  .search-option {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+  .search-credits {
+    display: none;
+  }
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+}
+.stepper input[type='text'] {
+  width: 4.5rem;
+  border: 0;
+  border-inline: 1px solid var(--line);
+  border-radius: 0;
+  text-align: center;
+  font-family: var(--font-m);
+  background: transparent;
+}
+.stepper .btn {
+  border: 0;
+  border-radius: 0;
+  min-width: 2.75rem;
+  font-size: 1.125rem;
+  background: transparent;
+  color: var(--muted);
+}
+.stepper .btn:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.chip-button {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+.chip-button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.chip-button:hover {
+  border-color: var(--accent);
+}
+
+/* every kind of thing added to a semester shares this layout and this ending */
+.add-box {
+  display: grid;
+  gap: var(--space-3);
+}
+.add-form {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.add-form:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.add-form .field {
+  margin-bottom: 0;
+}
+.add-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+.add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.add-room {
+  margin: 0 0 var(--space-2);
 }

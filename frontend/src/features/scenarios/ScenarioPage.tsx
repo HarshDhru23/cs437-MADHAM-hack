@@ -10,9 +10,10 @@ import { usePublishView } from '../../app/viewContext';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ConflictPanel } from '../../components/ConflictPanel';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
-import { formatTimestamp, plainMessage } from '../../lib/format';
+import { plainMessage } from '../../lib/format';
 import { ChangesEditor } from './ChangesEditor';
 import { CompareView } from './CompareView';
+import { HeadlineFigures } from './HeadlineFigures';
 import { InternshipEditor } from './InternshipEditor';
 import { InternshipPanels } from './InternshipPanels';
 import { keptDrafts, resetKeptScenarioDrafts, type KeptDraft } from './keptDrafts';
@@ -80,6 +81,7 @@ function Workspace({ initial }: { initial: Scenario }) {
   const [applyConflict, setApplyConflict] = useState<ApplyConflict | null>(null);
   const [actionError, setActionError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
+  const [foldOpen, setFoldOpen] = useState(true);
 
   const items: PlanItem[] = useMemo(() => planItems(plan.data), [plan.data]);
   // Every planned item seen so far, so a change on a course the plan has since dropped still has a name.
@@ -137,6 +139,7 @@ function Workspace({ initial }: { initial: Scenario }) {
 
   const own = compare?.data.comparisons.find((c) => c.scenario_id === saved.id) ?? null;
   const ownCase = compare?.data.internship_cases.find((c) => c.scenario_id === saved.id) ?? null;
+  const headline = own && !own.stale && own.scenario ? own : null;
   const baselineStale = Boolean(own?.stale);
   const resultsStale = dirty || comparing || (compare !== null && compare.revision !== saved.revision);
 
@@ -303,19 +306,10 @@ function Workspace({ initial }: { initial: Scenario }) {
         <p>
           What-if: <strong>{saved.label || 'Untitled scenario'}</strong>. Your record and plans stay unchanged until you apply it.
         </p>
-        <dl className="facts">
-          <div>
-            <dt>Based on plan</dt>
-            <dd>{planLabel}</dd>
-          </div>
-          {saved.baseline_captured_at ? (
-            <div>
-              <dt>Created</dt>
-              <dd>{formatTimestamp(saved.baseline_captured_at)}</dd>
-            </div>
-          ) : null}
-        </dl>
-        <Link className="btn" to={`/plan/${encodeURIComponent(saved.plan_id)}`}>
+        <span className="scenario-banner-plan">
+          Based on plan <strong>{planLabel}</strong>
+        </span>
+        <Link className="btn btn-small" to={`/plan/${encodeURIComponent(saved.plan_id)}`}>
           Return to baseline
         </Link>
       </section>
@@ -395,7 +389,10 @@ function Workspace({ initial }: { initial: Scenario }) {
       {saveError ? <ProblemPanel error={saveError} verb="saved" onRetry={() => void save()} /> : null}
       {actionError ? <ProblemPanel error={actionError} verb="changed" /> : null}
 
-      <div className="panel">
+      <ol className="scn-steps" aria-label="Scenario steps">
+        <li className="scn-step">
+          <h2>What would you change?</h2>
+      <div className="panel scn-name">
         <div className="field">
           <label htmlFor={`${headingId}-name`}>Scenario name</label>
           <input id={`${headingId}-name`} type="text" maxLength={200} value={draft.label} onChange={(e) => edit({ label: e.target.value }, 'Name changed.')} />
@@ -423,8 +420,10 @@ function Workspace({ initial }: { initial: Scenario }) {
         presets={calendar.data?.internship_presets ?? null}
       />
 
-      <section className="panel" aria-labelledby={`${headingId}-cmp`}>
-        <h2 id={`${headingId}-cmp`}>Comparison</h2>
+        </li>
+        <li className="scn-step">
+          <h2>What happens</h2>
+      <div className="scn-compare">
         {peers.length > 0 ? (
           <fieldset className="choice-group">
             <legend>Also compare (same baseline plan)</legend>
@@ -452,8 +451,10 @@ function Workspace({ initial }: { initial: Scenario }) {
         </p>
         {compareError ? <ErrorPanel error={compareError} onRetry={() => void runCompare(saved.revision, compareIds)} /> : null}
         {!compare && comparing ? <StatePanel kind="loading" title="Comparing…" /> : null}
+        {headline ? <HeadlineFigures comparison={headline} stale={resultsStale} /> : null}
         {compare ? (
-          <>
+          <details className="scn-fold" open={foldOpen} onToggle={(e) => setFoldOpen((e.currentTarget as HTMLDetailsElement).open)}>
+            <summary>Full comparison</summary>
             <CompareView comparisons={compare.data.comparisons} cases={compare.data.internship_cases} scenarios={allScenarios} items={items} stale={resultsStale} />
             {problemCount(compare.issues, items) > 0 ? (
               <details>
@@ -461,18 +462,16 @@ function Workspace({ initial }: { initial: Scenario }) {
                 <ProblemList issues={compare.issues} items={items} />
               </details>
             ) : null}
-          </>
+            {own?.scenario?.internship ? <InternshipPanels evaluation={own.scenario.internship} assumptions={ownCase?.completion_assumptions} items={items} stale={resultsStale} /> : null}
+          </details>
         ) : null}
-      </section>
+      </div>
 
-      {own?.scenario?.internship ? <InternshipPanels evaluation={own.scenario.internship} assumptions={ownCase?.completion_assumptions} items={items} stale={resultsStale} /> : null}
-
-      <section className="panel" aria-labelledby={`${headingId}-apply`}>
-        <h2 id={`${headingId}-apply`}>Apply or delete</h2>
-        <p>
-          Applying writes only drop, postpone and replace edits to your saved plan. Hypothetical grades, failures, caps and internship choices stay in the scenario.
-          Your accepted record is never changed.
-        </p>
+        </li>
+        <li className="scn-step">
+          <h2>Keep it or drop it</h2>
+      <div className="scn-apply">
+        <p className="muted">Only drop, postpone and replace changes are written to your plan. Your record is never changed.</p>
         {applyConflict ? (
           <div className="callout" data-tone="danger" role="alert">
             <p>
@@ -531,7 +530,9 @@ function Workspace({ initial }: { initial: Scenario }) {
           </button>
         </div>
         {dirty ? <p className="muted">Save the scenario before applying it.</p> : planEdits.length === 0 ? <p className="muted">This scenario has no plan edits to apply.</p> : null}
-      </section>
+      </div>
+        </li>
+      </ol>
 
       <ConfirmDialog open={dialog === 'apply'} title="Apply plan edits" confirmLabel="Apply to plan" onConfirm={apply} onCancel={() => setDialog(null)}>
         <p>

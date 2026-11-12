@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { endpoints } from '../../api/endpoints';
@@ -18,7 +18,6 @@ import { Badge, SeverityBadge } from '../../components/StatusBadge';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { newId } from '../../lib/ids';
 import { latestCompletedTerm, moveTargets, nextRegularTerm } from '../../lib/terms';
-import { isDecimalString } from '../../lib/validation';
 import { requirementLabel } from '../requirements/RequirementTree';
 import type { SectionChoice } from './SectionPicker';
 import { useCoursePlans } from './CoursePlan';
@@ -27,8 +26,9 @@ import { PlanStatusBadge } from './PlanStatusNote';
 import { useDeletePlan, UnsavedChangesError } from './deletePlan';
 import { meterLevel, meterWidth, sumCredits } from './loadLevel';
 import { plainIssues, type PlainIssue } from './plainIssues';
-import { PlanLoadStrip, type LoadCell } from './PlanLoadStrip';
-import { isNamedOnline, isOnline, nextOnlineId, OnlineCourseForm, onlinePlaceholder } from './OnlineCourseForm';
+import type { LoadCell } from './PlanLoadStrip';
+import { AddToSemesterDialog } from './AddToSemesterDialog';
+import { isNamedOnline, isOnline, nextOnlineId, onlinePlaceholder } from './OnlineCourseForm';
 import { moreCredits, PlanProgress } from './PlanProgress';
 import { usePlanCheck } from './usePlanCheck';
 import { studentIssues } from './savedPlanIssues';
@@ -138,6 +138,7 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [highlight, setHighlight] = useState<Set<string>>(new Set());
   const [announce, setAnnounce] = useState('');
+  const [hidden, setHidden] = useState<Set<string>>(new Set()); // the semesters the student has folded away; the plan itself is untouched
 
   const queue = useSaveQueue<PlanPayload>(`plan:${initial.id}`, { value: planPayload(initial), revision: initial.revision }, async (draft, revision, signal) => {
     const result = await endpoints.patchPlan(session.api, initial.id, { ...draft, expected_revision: revision }, { signal });
@@ -356,10 +357,22 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
         </div>
       ) : null}
 
-      <PlanLoadStrip cells={cells} />
       <PlanProgress check={progress.check} pending={progress.pending} showOnlineWarnings plannedTotal={planTotal} />
 
-      <p className="muted">A course can move to another odd semester, or to another even semester: it is offered in the same kind of semester each year.</p>
+      <div className="pb-boardhead">
+        <p className="muted pb-help">A course can move to another odd semester, or to another even semester: it is offered in the same kind of semester each year.</p>
+        {terms.length > 1 ? (
+          hidden.size === 0 ? (
+            <button type="button" className="btn btn-small" onClick={() => setHidden(new Set(terms.map((t) => t.term_id).filter((t) => t !== currentTerm)))}>
+              Show only the current semester
+            </button>
+          ) : (
+            <button type="button" className="btn btn-small" onClick={() => setHidden(new Set())}>
+              Show every semester
+            </button>
+          )
+        ) : null}
+      </div>
       <div className="pb-board">
         {terms.map((s) => (
           <SemesterTable
@@ -367,6 +380,8 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
             semester={s}
             allTerms={terms.map((t) => t.term_id)}
             isCurrent={s.term_id === currentTerm}
+            collapsed={hidden.has(s.term_id)}
+            onToggle={() => setHidden((now) => { const next = new Set(now); if (next.has(s.term_id)) next.delete(s.term_id); else next.add(s.term_id); return next; })}
             validation={shown}
             roomLeft={progress.check?.load[s.term_id]?.available_credits ?? null}
             limit={limitOf(s.term_id)}
@@ -431,9 +446,29 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
         ))}
       </div>
 
-      <Dialog open={dialog?.kind === 'course'} title={`Add course to ${dialog ? formatTerm(dialog.term) : ''}`} onClose={() => setDialog(null)} variant="drawer">
-        {dialog?.kind === 'course' ? <CoursePicker term={dialog.term} courses={catalogue.data?.courses ?? []} coverage={catalogue.data?.coverage ?? 'unknown'} onPick={(c) => pick(dialog.term, c)} /> : null}
-      </Dialog>
+      {dialog && dialog.kind !== 'resolve' ? (
+        <AddToSemesterDialog
+          key={dialog.term}
+          term={dialog.term}
+          initial={dialog.kind}
+          courses={catalogue.data?.courses ?? []}
+          coverage={catalogue.data?.coverage ?? 'unknown'}
+          requirements={progress.check?.requirements}
+          room={progress.check?.load[dialog.term]?.available_credits}
+          placeholderOptions={placeholderOptions}
+          onClose={() => setDialog(null)}
+          onPickCourse={(c) => pick(dialog.term, c)}
+          onAddOnline={(choice) => {
+            const id = nextOnlineId(dialog.term, plan.semesters);
+            edit(updateSemester(dialog.term, (s) => ({ ...s, placeholders: [...s.placeholders, onlinePlaceholder(id, choice)] })), `Added online course ${choice.label} to ${formatTerm(dialog.term)}.`);
+            setDialog(null);
+          }}
+          onAddPlaceholder={(ph) => {
+            edit(updateSemester(dialog.term, (s) => ({ ...s, placeholders: [...s.placeholders, ph] })), `Added placeholder ${ph.label ?? ''}.`);
+            setDialog(null);
+          }}
+        />
+      ) : null}
       {dialog?.kind === 'resolve'
         ? (() => {
             const ph = plan.semesters.find((s) => s.term_id === dialog.term)?.placeholders.find((p) => p.id === dialog.placeholderId);
@@ -452,32 +487,6 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
             );
           })()
         : null}
-      {dialog?.kind === 'online' ? (
-        <Dialog open title={`Add online course to ${formatTerm(dialog.term)}`} onClose={() => setDialog(null)}>
-          <OnlineCourseForm
-            term={dialog.term}
-            requirements={progress.check?.requirements}
-            room={progress.check?.load[dialog.term]?.available_credits}
-            onCancel={() => setDialog(null)}
-            onAdd={(choice) => {
-              const id = nextOnlineId(dialog.term, plan.semesters);
-              edit(updateSemester(dialog.term, (s) => ({ ...s, placeholders: [...s.placeholders, onlinePlaceholder(id, choice)] })), `Added online course ${choice.label} to ${formatTerm(dialog.term)}.`);
-              setDialog(null);
-            }}
-          />
-        </Dialog>
-      ) : null}
-      {dialog?.kind === 'placeholder' ? (
-        <PlaceholderDialog
-          term={dialog.term}
-          options={placeholderOptions}
-          onClose={() => setDialog(null)}
-          onAdd={(ph) => {
-            edit(updateSemester(dialog.term, (s) => ({ ...s, placeholders: [...s.placeholders, ph] })), `Added placeholder ${ph.label ?? ''}.`);
-            setDialog(null);
-          }}
-        />
-      ) : null}
     </div>
   );
 }
@@ -538,6 +547,8 @@ function SemesterTable({
   semester,
   allTerms,
   isCurrent,
+  collapsed,
+  onToggle,
   validation,
   roomLeft,
   limit,
@@ -556,6 +567,9 @@ function SemesterTable({
   semester: PlannedSemester;
   allTerms: string[];
   isCurrent: boolean;
+  /** Folded away by the student: the heading and the load stay, the items and the add buttons go. */
+  collapsed: boolean;
+  onToggle: () => void;
   /** Null while loading or while the plan has unvalidated edits. */
   validation: PlanValidation | null;
   /** Credits that still fit in this semester under the 28-credit limit (server number), or null before the first answer. */
@@ -582,9 +596,12 @@ function SemesterTable({
   const termIssues = issues.filter((i) => i.entityRefs.includes(semester.term_id));
   const itemIssues = (id: string) => issues.filter((i) => i.entityRefs.includes(id));
   return (
-    <section className="pb-col" aria-labelledby={headingId} data-current={isCurrent ? 'true' : undefined}>
+    <section className="pb-col" aria-labelledby={headingId} data-current={isCurrent ? 'true' : undefined} data-collapsed={collapsed ? 'true' : undefined}>
       <div className="pb-colhead">
         <div className="pb-colhead-row">
+          <button type="button" className="pb-fold" aria-expanded={!collapsed} aria-label={`${collapsed ? 'Show' : 'Hide'} ${label}`} onClick={onToggle}>
+            <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+          </button>
           <h2 id={headingId}>{label}</h2>
           {isCurrent ? <span className="pb-tag">Current term</span> : null}
           {planned !== undefined ? (
@@ -597,6 +614,8 @@ function SemesterTable({
           <i style={{ width: `${meterWidth(planned, limit)}%` }} />
         </div>
       </div>
+      {collapsed ? null : (
+        <>
       {workload ? (
         <p className="pb-load">
           {`${semester.term_id.endsWith('SUMMER') ? 'Summer' : 'Semester'} total: ${formatCredits(workload.target_credits ?? workload.selected_credits)} / ${formatCredits(limit)} credits`}
@@ -654,27 +673,29 @@ function SemesterTable({
                     ))}
                   </td>
                   <td data-label="Actions" className="pb-act">
-                    <label htmlFor={moveId} className="visually-hidden">
-                      Move {c.normalized_code} to
-                    </label>
-                    <select id={moveId} defaultValue={semester.term_id}>
-                      {moveTargets(semester.term_id, allTerms).map((t) => (
-                        <option key={t} value={t}>
-                          {formatTerm(t)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="btn btn-small"
-                      aria-label={`Move ${c.normalized_code}`}
-                      onClick={() => {
-                        const el = document.getElementById(moveId) as HTMLSelectElement | null;
-                        if (el) onMove(c.id, el.value);
-                      }}
-                    >
-                      Move
-                    </button>
+                    <span className="pb-move">
+                        <label htmlFor={moveId} className="visually-hidden">
+                          Move {c.normalized_code} to
+                        </label>
+                        <select id={moveId} defaultValue={semester.term_id}>
+                          {moveTargets(semester.term_id, allTerms).map((t) => (
+                            <option key={t} value={t}>
+                              {formatTerm(t)}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-small"
+                          aria-label={`Move ${c.normalized_code}`}
+                          onClick={() => {
+                            const el = document.getElementById(moveId) as HTMLSelectElement | null;
+                            if (el) onMove(c.id, el.value);
+                          }}
+                        >
+                          Move
+                        </button>
+                    </span>
                     <button type="button" className="btn btn-small btn-danger" aria-label={`Remove ${c.normalized_code}`} onClick={() => onRemoveCourse(c.id, c.normalized_code)}>
                       Remove
                     </button>
@@ -734,75 +755,8 @@ function SemesterTable({
           Add online course
         </button>
       </div>
+        </>
+      )}
     </section>
-  );
-}
-
-function PlaceholderDialog({
-  term,
-  options,
-  onClose,
-  onAdd,
-}: {
-  term: string;
-  options: (RequirementDefinition & { depth: number })[];
-  onClose: () => void;
-  onAdd: (p: { id: string; requirement_id: string; desired_credits: string; label?: string }) => void;
-}) {
-  const id = useId();
-  const [chosen, setChosen] = useState('');
-  const requirement = chosen || (options[0]?.id ?? ''); // the list may arrive after the dialog opens
-  const setRequirement = setChosen;
-  const [credits, setCredits] = useState('');
-  const [label, setLabel] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!requirement) return setError('Choose the requirement this placeholder is meant to fill.');
-    if (!isDecimalString(credits.trim())) return setError('Enter target credits as a number, for example 4 (no leading zeros, at most 4 decimal places).');
-    if (Number(credits.trim()) <= 0) return setError('Target credits must be more than 0.');
-    setError(null);
-    onAdd({ id: newId('placeholder'), requirement_id: requirement, desired_credits: credits.trim(), ...(label.trim() ? { label: label.trim() } : {}) });
-  };
-  return (
-    <Dialog open title={`Add placeholder to ${formatTerm(term)}`} onClose={onClose}>
-      <form onSubmit={submit} noValidate>
-        <p className="muted">A placeholder holds credits for a requirement until you choose a course.</p>
-        <div className="field">
-          <label htmlFor={`${id}-req`}>Requirement</label>
-          <select id={`${id}-req`} value={requirement} onChange={(e) => setRequirement(e.target.value)}>
-            {options.map((o) => (
-              <option key={o.id} value={o.id}>
-                {'— '.repeat(o.depth)}
-                {requirementLabel(o, undefined)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="inline-fields">
-          <div className="field">
-            <label htmlFor={`${id}-cr`}>Target credits</label>
-            <input id={`${id}-cr`} type="text" inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-label`}>Label</label>
-            <input id={`${id}-label`} type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. HSS elective" />
-          </div>
-        </div>
-        {error ? (
-          <p className="field-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="panel-row">
-          <button type="submit" className="btn btn-primary">
-            Add placeholder
-          </button>
-          <button type="button" className="btn" onClick={onClose}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </Dialog>
   );
 }

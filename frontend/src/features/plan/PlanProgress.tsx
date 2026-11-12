@@ -74,6 +74,8 @@ export function PlanProgress({ check, pending, showOnlineWarnings = false, plann
             </p>
           ))}
           {open.length > 0 ? (
+            <details className="pb-needed">
+              <summary>{open.length === 1 ? `What is still needed: ${open[0]!.group}` : `What is still needed: ${open.length} groups`}</summary>
             <ul className="progress-list" aria-label="Credits still needed">
               {open.map(({ group, rows }) =>
                 rows.length === 1 && rows[0]!.label === group ? (
@@ -90,6 +92,7 @@ export function PlanProgress({ check, pending, showOnlineWarnings = false, plann
                 ),
               )}
             </ul>
+            </details>
           ) : null}
           {open.length > 0 && coveredRows > 0 ? <p className="muted">Everything else is covered.</p> : null}
         </div>

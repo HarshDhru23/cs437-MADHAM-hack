@@ -37,7 +37,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
   return (
     <div className="grid-2" aria-busy={stale || undefined}>
       <section className="panel" aria-labelledby={timeId} data-stale={stale || undefined}>
-        <h2 id={timeId}>Time away / course conflicts</h2>
+        <h3 id={timeId}>Time away / course conflicts</h3>
         {isNone ? (
           <p>No internship: no time away and no course conflicts from an internship in this scenario.</p>
         ) : (
@@ -107,7 +107,7 @@ export function InternshipPanels({ evaluation, assumptions = [], items, stale }:
       </section>
 
       <section className="panel" aria-labelledby={creditId} data-stale={stale || undefined}>
-        <h2 id={creditId}>Proposed academic credit</h2>
+        <h3 id={creditId}>Proposed academic credit</h3>
         <p>
           <strong>Choosing a duration awards no credit.</strong> Only IN 498 modules can carry credit, and only after institute approval.
         </p>

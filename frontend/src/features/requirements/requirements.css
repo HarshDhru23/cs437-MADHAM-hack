@@ -81,18 +81,19 @@
 .ring-of {
   margin-top: var(--space-1);
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 .ring-caption {
-  min-height: 1.5rem;
+  /* room for the longest group name on three lines, so pointing at a segment never moves the list below it */
+  min-height: 4.5rem;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .ring-caption .muted {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 /* Build status */
@@ -107,7 +108,7 @@
   border-radius: var(--radius);
   background: var(--warning-soft);
   font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -135,7 +136,7 @@
 }
 .req-tiles dt {
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -173,7 +174,7 @@
   padding: 0 var(--space-3);
   border-radius: calc(var(--radius) - 1px);
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -232,7 +233,7 @@
 }
 .req-list .req-row .req-toggle .req-credits {
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -263,7 +264,7 @@
   background: var(--ok);
 }
 .req-course-row {
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .req-course-row > .mono,
 .req-courses .mono,

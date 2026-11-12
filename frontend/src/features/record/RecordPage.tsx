@@ -2,14 +2,15 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { endpoints } from '../../api/endpoints';
-import { useRecord } from '../../api/hooks';
+import { useCatalogue, useRecord } from '../../api/hooks';
 import { useResourceCache } from '../../api/resources';
-import type { AcademicRecord, CompletionStatus, CourseAttempt, CurrentEnrolment } from '../../api/types';
+import type { AcademicRecord, CatalogueCourse, CompletionStatus, CourseAttempt, CurrentEnrolment } from '../../api/types';
 import { useSaveQueue } from '../../api/useSaveQueue';
 import { RECORD_TABS, SubNav } from '../../app/AppShell';
 import { useSession } from '../../app/session';
 import { usePublishView } from '../../app/viewContext';
 import { ConflictPanel } from '../../components/ConflictPanel';
+import { CourseSearchBox } from '../../components/CourseSearchBox';
 import { Dialog } from '../../components/Dialog';
 import { DataTable } from '../../components/DataTable';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
@@ -17,6 +18,7 @@ import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
 import { compareTerms, describeCorrection, formatCredits, formatTerm, formatTimestamp, humanize } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm } from '../../lib/terms';
+import { meterLevel, meterWidth, sumCredits } from '../plan/loadLevel';
 import { isCourseCode, isDecimalString, normalizeCode } from '../../lib/validation';
 import { StudyLoadSection } from './StudyLoad';
 import './record.css';
@@ -394,6 +396,10 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
   const [sections, setSections] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [removed, setRemoved] = useState<{ item: CurrentEnrolment; index: number } | null>(null);
+  const [announce, setAnnounce] = useState('');
+  const catalogue = useCatalogue();
 
   // Adopt newer server revisions (e.g. after a correction) when no local draft is pending.
   useEffect(() => {
@@ -401,6 +407,38 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
   }, [record.revision, record.current_enrolment, queue]);
 
   const items = useMemo(() => queue.value ?? record.current_enrolment, [queue.value, record.current_enrolment]);
+
+  // The semesters a student is likely to be registered for: the one after the latest completed term, and the two after it.
+  const termChoices = useMemo(() => {
+    const first = defaultTerm || null;
+    const second = first ? nextRegularTerm(first) : null;
+    const third = second ? nextRegularTerm(second) : null;
+    return [first, second, third].filter((t): t is string => Boolean(t));
+  }, [defaultTerm]);
+  const inTerm = items.filter((e) => e.term_id === term);
+  const registered = sumCredits(inTerm.map((e) => e.credits));
+
+  /** Choosing a course from the search: the credits are the catalogue's, and choosing it is the confirmation that the student is registered. */
+  const addFromSearch = (course: CatalogueCourse) => {
+    if (!course.credits) return;
+    if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setSearchError('Choose the semester first, for example 2026-27-I.');
+    setSearchError(null);
+    setRemoved(null);
+    queue.edit([...items, { id: newId('enrol'), normalized_code: course.normalized_code, term_id: term, credits: course.credits, confirmed: true }]);
+    setAnnounce(`Added ${course.normalized_code} to ${formatTerm(term)}.`);
+  };
+  const removeItem = (item: CurrentEnrolment) => {
+    setRemoved({ item, index: items.findIndex((x) => x.id === item.id) });
+    queue.edit(items.filter((x) => x.id !== item.id));
+  };
+  const undoRemove = () => {
+    if (!removed) return;
+    const next = [...items];
+    next.splice(Math.min(removed.index, next.length), 0, removed.item);
+    queue.edit(next);
+    setAnnounce(`Put ${removed.item.normalized_code} back.`);
+    setRemoved(null);
+  };
 
   const add = (event: FormEvent) => {
     event.preventDefault();
@@ -469,6 +507,55 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
           </button>
         </div>
       ) : null}
+      <div className="enrol-add">
+        {termChoices.length > 0 ? (
+          <div className="field">
+            <label htmlFor={`${id}-semester`}>Semester</label>
+            <select id={`${id}-semester`} value={term} onChange={(e) => setTerm(e.target.value)}>
+              {termChoices.includes(term) ? null : <option value={term}>{term ? formatTerm(term) : 'Choose a semester'}</option>}
+              {termChoices.map((t) => (
+                <option key={t} value={t}>
+                  {formatTerm(t)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+        {(catalogue.data?.courses.length ?? 0) > 0 ? (
+          <CourseSearchBox
+            courses={catalogue.data?.courses ?? []}
+            label="Find a course (code or title)"
+            placeholder="For example “oper” or “CS 33”"
+            onPick={addFromSearch}
+            isAdded={(c) => inTerm.some((e) => e.normalized_code === c.normalized_code)}
+          />
+        ) : null}
+      </div>
+      {searchError ? (
+        <p className="field-error" role="alert">
+          {searchError}
+        </p>
+      ) : null}
+      {items.length > 0 ? (
+        <div className="enrol-total">
+          <span className="num">{`${formatCredits(registered)} of 28 credits`}</span>
+          <span className="pb-meter" aria-hidden="true" data-level={meterLevel(registered, '28')}>
+            <i style={{ width: `${meterWidth(registered, '28')}%` }} />
+          </span>
+          {Number(registered) > 28 ? <span className="field-error">Over the 28-credit limit for a semester.</span> : null}
+        </div>
+      ) : null}
+      <p className="visually-hidden" aria-live="polite">
+        {announce}
+      </p>
+      {removed ? (
+        <p className="enrol-undo">
+          {`Removed ${removed.item.normalized_code}.`}{' '}
+          <button type="button" className="btn btn-small" onClick={undoRemove}>
+            Undo
+          </button>
+        </p>
+      ) : null}
       {items.length === 0 ? (
         <p>No confirmed current courses.</p>
       ) : (
@@ -485,7 +572,7 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
               key: 'remove',
               header: 'Actions',
               render: (e) => (
-                <button type="button" className="btn btn-small" aria-label={`Remove ${e.normalized_code} from current enrolment`} onClick={() => queue.edit(items.filter((x) => x.id !== e.id))}>
+                <button type="button" className="btn btn-small" aria-label={`Remove ${e.normalized_code} from current enrolment`} onClick={() => removeItem(e)}>
                   Remove
                 </button>
               ),
@@ -493,6 +580,7 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
           ]}
         />
       )}
+      <h3 className="enrol-by-code">Not in the list? Add it by its code</h3>
       <form onSubmit={add} noValidate aria-label="Add current course">
         <div className="inline-fields">
           <div className="field">
