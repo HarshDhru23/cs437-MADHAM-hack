@@ -587,6 +587,26 @@
           "items": {
             "$ref": "#/$defs/allocation"
           }
+        },
+        "degree_surplus": {
+          "type": "object",
+          "required": [
+            "actual",
+            "current",
+            "projected"
+          ],
+          "properties": {
+            "actual": {
+              "$ref": "#/$defs/degree_surplus"
+            },
+            "current": {
+              "$ref": "#/$defs/degree_surplus"
+            },
+            "projected": {
+              "$ref": "#/$defs/degree_surplus"
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -1216,6 +1236,9 @@
                 },
                 "additionalProperties": false
               }
+            },
+            "degree_surplus": {
+              "$ref": "#/$defs/degree_surplus"
             }
           },
           "additionalProperties": false
@@ -2763,6 +2786,9 @@
         },
         "status": {
           "$ref": "#/$defs/plan_status"
+        },
+        "degree_surplus": {
+          "$ref": "#/$defs/degree_surplus"
         }
       },
       "additionalProperties": false
@@ -3151,6 +3177,23 @@
         "uncovered_credits": {
           "$ref": "#/$defs/decimal",
           "description": "Degree credits the plan leaves uncovered."
+        }
+      },
+      "additionalProperties": false
+    },
+    "degree_surplus": {
+      "type": "object",
+      "description": "Credits beyond what the degree asks for (D-07) and every credit toward it: earned_credits is counted_credits plus surplus_credits, so it can pass the degree total (172 of 170).",
+      "required": [
+        "surplus_credits",
+        "earned_credits"
+      ],
+      "properties": {
+        "surplus_credits": {
+          "$ref": "#/$defs/decimal"
+        },
+        "earned_credits": {
+          "$ref": "#/$defs/decimal"
         }
       },
       "additionalProperties": false

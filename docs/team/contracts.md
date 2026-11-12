@@ -159,6 +159,8 @@ Body `{record_revision, semesters}` (the `semesters` of a plan, saved or not). R
 
 `POST /analysis` returns `audit.degree.{actual,current,projected}` as `{total_credits, counted_credits, remaining_credits}`: the degree total (170 for CSE 2024), the credits counted toward it (each requirement counts at most what it asks for) and the credits left. The UI shows these numbers and never computes them.
 
+CP-47, D-58: beside `degree` the audit carries `audit.degree_surplus.{actual,current,projected}` as `{surplus_credits, earned_credits}` (also `plan_check.degree_surplus` and `plan_holds.degree_surplus`): `surplus_credits` are the credits earned or planned beyond what a requirement asks for, `earned_credits` is counted plus surplus (it can pass `total_credits`: 172 of 170). `degree` itself is unchanged. The field is additive and optional for a client.
+
 ### Later terms (`GET /offerings`, D-38)
 
 A semester the institute has not published returns the carried-forward timetable of the same semester (`derived_from` names the source term; meetings are the same slots with active dates moved by whole years), up to five years after the latest official one.
