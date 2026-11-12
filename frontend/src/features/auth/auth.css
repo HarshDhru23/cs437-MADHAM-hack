@@ -22,7 +22,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: var(--accent);
 }
 .auth-mark::before {
@@ -59,7 +59,7 @@
 .auth-switch {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 
 /* "Try with a sample student": set apart from the sign-in options. */

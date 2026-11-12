@@ -6,14 +6,14 @@ import { useCatalogue, usePlans } from '../../api/hooks';
 import { useResourceCache } from '../../api/resources';
 import type { AcademicRecord, GeneratedPlacement, PlanCheck, PlanGeneration, PlannedSemester, PlanPayload, RequirementPlaceholder } from '../../api/types';
 import { useSession } from '../../app/session';
-import { CoursePicker, type PickedCourse } from '../../components/CoursePicker';
-import { Dialog } from '../../components/Dialog';
+import { type PickedCourse } from '../../components/CoursePicker';
 import { ErrorPanel } from '../../components/StatePanel';
 import { compareTerms, formatCredits, formatTerm } from '../../lib/format';
 import { latestCompletedTerm, nextRegularTerm, regularTermsThrough } from '../../lib/terms';
 import { isDecimalString } from '../../lib/validation';
 import { meterLevel, meterWidth, sumCredits } from './loadLevel';
 import { TermCoursePlans } from './CoursePlan';
+import { AddToSemesterDialog } from './AddToSemesterDialog';
 import { isNamedOnline, isOnline, nextOnlineId, OnlineCourseForm, onlinePlaceholder, type OnlineCourseChoice } from './OnlineCourseForm';
 import { plainIssues, type PlainIssue } from './plainIssues';
 import { PlanLoadStrip, type LoadCell } from './PlanLoadStrip';
@@ -712,9 +712,26 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
 
           {!stale && !checkError ? <PlanStatusNote status={check?.status} pending={checking} /> : null}
 
-          <Dialog open={adding !== null} title={`Add course to ${adding ? formatTerm(adding) : ''}`} onClose={() => setAdding(null)} variant="drawer">
-            {adding ? <CoursePicker term={adding} courses={catalogue.data?.courses ?? []} coverage={catalogue.data?.coverage ?? 'unknown'} onPick={(c) => addCourse(adding, c)} /> : null}
-          </Dialog>
+          {adding ? (
+            <AddToSemesterDialog
+              key={adding}
+              term={adding}
+              initial="course"
+              kinds={['course', 'project', 'online']}
+              courses={catalogue.data?.courses ?? []}
+              coverage={catalogue.data?.coverage ?? 'unknown'}
+              requirements={check?.requirements}
+              room={check?.load[adding]?.available_credits}
+              placeholderOptions={[]}
+              onClose={() => setAdding(null)}
+              onPickCourse={(c) => addCourse(adding, c)}
+              onAddOnline={(choice) => {
+                addOnline(adding, choice);
+                setAdding(null);
+              }}
+              onAddPlaceholder={() => undefined}
+            />
+          ) : null}
         </section>
       ) : null}
     </div>

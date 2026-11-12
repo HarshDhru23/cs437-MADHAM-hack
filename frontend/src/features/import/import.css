@@ -19,7 +19,7 @@
   background: var(--bg2);
   color: var(--text-muted);
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.04em;
 }
 .mc-steps li[data-state='current'] {
@@ -56,7 +56,7 @@
   border-radius: var(--radius);
   padding: var(--space-3);
   font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 .import-flow textarea:focus-visible {
@@ -87,7 +87,7 @@
   padding: 0 var(--space-3);
   border-radius: calc(var(--radius) - 1px);
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -111,7 +111,7 @@
 .review-table table.data {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
   table-layout: fixed;
 }
 .review-table table.data thead th:nth-child(1) {
@@ -133,7 +133,7 @@
   text-align: left;
   padding: var(--space-2) 0;
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -148,7 +148,7 @@
 }
 .review-table table.data thead th {
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -235,7 +235,7 @@
   }
   .review-table table.data.stack-mobile td[data-label='Grade / status'] {
     color: var(--text-muted);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
   }
   .review-table table.data.stack-mobile tr[data-flagged='true'] {
     background: var(--warning-soft);

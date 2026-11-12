@@ -5,8 +5,11 @@
 
 /* ---------- the what-if banner ---------- */
 .scenario-banner {
-  display: grid;
-  gap: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-2);
   border: 1px solid var(--whatif);
   border-left-width: 4px;
   border-radius: var(--radius-lg);
@@ -17,13 +20,20 @@
 }
 .scenario-banner-title {
   font-family: var(--font-m);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--whatif);
 }
 .scenario-banner .btn {
-  justify-self: start;
+  margin-left: auto;
+}
+.scenario-banner-plan {
+  color: var(--muted);
+}
+.scenario-banner-plan strong {
+  color: var(--fg);
+  font-weight: 500;
 }
 .facts {
   display: grid;
@@ -34,7 +44,7 @@
 .facts dt {
   color: var(--muted);
   font-family: var(--font-m);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -52,39 +62,52 @@
   display: grid;
   gap: var(--space-2);
 }
-.scenario-row {
+.scenario-list {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-3);
+}
+.scenario-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+}
+.scenario-card:hover,
+.scenario-card:focus-within {
+  border-color: var(--whatif);
+}
+.scenario-card p {
+  margin: 0;
+}
+.scenario-card-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
-.scenario-row::before,
-.change-chip::before {
-  font-family: var(--font-m);
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-  border-radius: 3px;
-  padding: 0.05rem 0.45rem;
-  white-space: nowrap;
-}
-.scenario-row::before {
-  content: 'what-if';
-  color: var(--whatif);
-}
-.scenario-row a {
-  font-weight: 500;
+.scenario-card-head a {
+  font-family: var(--font-d);
+  font-size: 1.125rem;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
-.scenario-row .muted {
-  flex: 1 1 14rem;
-  min-width: 0;
-  font-size: 0.85rem;
+.scenario-card-tag {
+  flex: none;
+  font-family: var(--font-m);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--whatif-text);
+  border: 1px solid color-mix(in srgb, var(--whatif) 45%, var(--line));
+  border-radius: 999px;
+  padding: 0 var(--space-2);
 }
-.scenario-row .btn {
-  margin-left: auto;
+.scenario-card .btn {
+  justify-self: start;
+  margin-top: var(--space-2);
 }
 
 /* ---------- the changes of a scenario, as chips ---------- */
@@ -138,7 +161,7 @@
 }
 .choice-group legend {
   font-family: var(--font-m);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -210,7 +233,7 @@ input[type='date'] {
 }
 .module-list legend {
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   padding: 0 var(--space-1);
 }
 
@@ -313,4 +336,130 @@ input[type='date'] {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 var(--space-3);
+}
+
+/* ---------- the three steps of a scenario ---------- */
+.scn-steps {
+  list-style: none;
+  counter-reset: scn;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-5);
+}
+.scn-step {
+  counter-increment: scn;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.scn-step > h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+.scn-step > h2::before {
+  content: counter(scn);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--whatif);
+  border-radius: 50%;
+  color: var(--whatif-text);
+  font-family: var(--font-d);
+  font-size: 1rem;
+}
+.scn-name {
+  gap: var(--space-2);
+}
+.scn-name .field {
+  max-width: 28rem;
+}
+
+/* ---------- what happens: three figures, then the full comparison one fold away ---------- */
+.scn-compare {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.scn-compare > p {
+  margin: 0;
+}
+.scn-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+}
+.scn-figures[data-stale='true'] {
+  opacity: 0.6;
+}
+.scn-figure {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  min-width: 0;
+}
+.scn-figure-label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scn-figure-value {
+  font-family: var(--font-d);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.scn-figure-note {
+  font-size: 0.875rem;
+  color: var(--warn-text);
+}
+.scn-figure-note[data-same='true'] {
+  color: var(--muted);
+}
+.scn-load {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.scn-load li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+.scn-load li > span:first-child {
+  color: var(--muted);
+  flex: 1 1 8rem;
+}
+.scn-fold {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  padding: var(--space-3);
+}
+.scn-fold > summary {
+  cursor: pointer;
+  font-family: var(--font-d);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.scn-fold[open] > summary {
+  margin-bottom: var(--space-3);
+}
+.scn-apply {
+  display: grid;
+  gap: var(--space-3);
+}
+.scn-apply > p {
+  margin: 0;
 }

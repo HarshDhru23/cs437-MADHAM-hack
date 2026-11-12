@@ -27,10 +27,7 @@ export function ScenariosPage() {
     <div>
       <SubNav label="Plan" items={PLAN_TABS} />
       <h1>Scenarios</h1>
-      <p className="muted">
-        A scenario is a hypothetical copy of one saved plan. Changes and internship choices in a scenario never change your accepted record, and they reach your
-        plan only if you apply them explicitly.
-      </p>
+      <p className="muted">Try a what-if on a copy of a saved plan. Your real plan only changes if you apply it.</p>
       {notice ? (
         <p className="callout" role="status">
           {notice}
@@ -106,12 +103,15 @@ function ScenarioList() {
         ) : (
           <ul className="scenario-list" aria-label="Your scenarios">
             {list.map((s) => (
-              <li key={s.id} className="chip scenario-row">
-                <Link to={`/scenarios/${encodeURIComponent(s.id)}`}>{s.label || 'Untitled scenario'}</Link>{' '}
-                <span className="muted">
-                  · copy of {planName(s.plan_id)} · {s.changes.length === 1 ? '1 change' : `${s.changes.length} changes`} · internship:{' '}
-                  {s.internship ? durationLabel(s.internship.duration_choice) : 'not chosen'}
-                </span>{' '}
+              <li key={s.id} className="scenario-card">
+                <div className="scenario-card-head">
+                  <Link to={`/scenarios/${encodeURIComponent(s.id)}`}>{s.label || 'Untitled scenario'}</Link>
+                  <span className="scenario-card-tag">what-if</span>
+                </div>
+                <p className="muted">
+                  Copy of {planName(s.plan_id)} · {s.changes.length === 0 ? 'No changes yet' : s.changes.length === 1 ? '1 change' : `${s.changes.length} changes`}
+                </p>
+                <p className="muted">Internship: {s.internship ? durationLabel(s.internship.duration_choice) : 'not chosen'}</p>
                 <button
                   type="button"
                   className="btn btn-small btn-danger"

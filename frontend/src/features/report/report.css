@@ -22,7 +22,7 @@
 }
 .report-facts dt {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .report-facts dd {
   margin: 0;

@@ -14,7 +14,7 @@
 }
 .rec-tiles dt {
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -31,14 +31,14 @@
 .rec-history table.data {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .rec-history table.data caption {
   caption-side: top;
   text-align: left;
   padding: var(--space-2) 0;
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
 }
 .rec-history table.data thead th {
   font-family: var(--font-m);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -89,7 +89,7 @@
   background: var(--bg2);
   color: var(--text) !important;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 @media (max-width: 760px) {
@@ -130,7 +130,7 @@
   }
   .rec-history table.data.stack-mobile td[data-label='Status'],
   .rec-history table.data.stack-mobile td[data-label='Counts as'] {
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
     color: var(--text-muted);
   }
   .rec-history table.data.stack-mobile td[data-label='Credits'] {
@@ -154,4 +154,39 @@
     grid-row: 2;
     justify-self: end;
   }
+}
+
+/* ---- UX pass: current enrolment is added by searching ---- */
+.enrol-add {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (max-width: 40rem) {
+  .enrol-add {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.enrol-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.enrol-total .pb-meter {
+  flex: 1 1 8rem;
+  max-width: 16rem;
+}
+.enrol-undo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+.enrol-by-code {
+  margin-top: var(--space-5);
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 500;
 }

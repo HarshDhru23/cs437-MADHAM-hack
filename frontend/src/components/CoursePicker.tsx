@@ -2,6 +2,8 @@ import { useId, useMemo, useState, type FormEvent } from 'react';
 import { useCurriculum, useTermOfferings } from '../api/hooks';
 import type { CatalogueCourse, RequirementDefinition } from '../api/types';
 import { formatCredits, formatTerm } from '../lib/format';
+import { CreditStepper } from './CreditStepper';
+import { findCourses } from './CourseSearchBox';
 import { isCourseCode, isDecimalString, normalizeCode } from '../lib/validation';
 
 export interface PickedCourse {
@@ -25,6 +27,10 @@ interface CoursePickerProps {
   pickLabel?: string;
   /** The semester the course is being added to. Only courses offered in it are listed, and the requirement filter is built from the rules. */
   term?: string;
+  /** Which parts to show (all by default): the search, the project form and the by-code form. The add box shows them on separate tabs. */
+  parts?: { search?: boolean; project?: boolean; manual?: boolean };
+  /** Adds a Cancel button after the submit button of the forms, which is how the add box ends every tab. */
+  onCancel?: () => void;
 }
 
 /** Shown until a requirement is chosen or something is typed: the full list of a semester is hundreds of courses. */
@@ -108,69 +114,32 @@ function PickerView({
   onRetry,
   choices,
   semester,
+  parts,
+  onCancel,
 }: CoursePickerProps & { offered?: Set<string> | null; note?: string | null; onRetry?: () => void; choices?: RequirementChoice[]; semester?: string }) {
   const id = useId();
   const [query, setQuery] = useState('');
   const [requirement, setRequirement] = useState('');
-  const [code, setCode] = useState('');
-  const [credits, setCredits] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [projectDept, setProjectDept] = useState('CS');
-  const [projectLevel, setProjectLevel] = useState('299');
-  const [projectCredits, setProjectCredits] = useState('4');
-  const [projectError, setProjectError] = useState<string | null>(null);
   const available = useMemo(() => (offered ? courses.filter((c) => offered.has(c.normalized_code)) : courses), [courses, offered]);
   const options = useMemo(() => choices ?? derivedChoices(available), [choices, available]);
   const chosen = options.find((o) => o.id === requirement) ?? null;
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return available
-      .filter((c) => !chosen || (c.baskets ?? []).includes(chosen.id))
-      .filter((c) => !q || [c.normalized_code, c.title, c.department, ...(c.could_satisfy ?? [])].some((v) => v?.toLowerCase().includes(q)))
-      .sort((a, b) => a.normalized_code.localeCompare(b.normalized_code, undefined, { numeric: true }));
+    return findCourses(
+      available.filter((c) => !chosen || (c.baskets ?? []).includes(chosen.id)),
+      query,
+    );
   }, [available, chosen, query]);
   const narrowed = Boolean(chosen) || query.trim() !== '';
   const results = narrowed ? filtered : filtered.slice(0, DEFAULT_LIMIT);
 
-  const submitManual = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = normalizeCode(code);
-    if (!isCourseCode(code)) {
-      setError('Enter a course code such as "CS 330" or "ES 242(N)".');
-      return;
-    }
-    if (!isDecimalString(credits.trim())) {
-      setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
-      return;
-    }
-    setError(null);
-    onPick({ normalized_code: trimmed, credits: credits.trim(), fromCatalogue: false });
-    setCode('');
-    setCredits('');
-  };
-
-  // D-52: a project (a department's 299, 399 or 499 course) is arranged with a supervisor, so no timetable lists it. The student gives the department,
-  // level and credits; the server's allocation decides whether it is the open project or an elective, so nothing here asks which.
-  const submitProject = (event: FormEvent) => {
-    event.preventDefault();
-    const dept = projectDept.trim().toUpperCase();
-    if (!/^[A-Z]{2,4}$/.test(dept)) {
-      setProjectError('Enter the department as two to four letters, for example CS.');
-      return;
-    }
-    const value = projectCredits.trim();
-    if (!isDecimalString(value) || Number(value) <= 0) {
-      setProjectError('Enter the project credits as a number above 0, for example 4.');
-      return;
-    }
-    setProjectError(null);
-    onPick({ normalized_code: `${dept} ${projectLevel}`, credits: value, fromCatalogue: false });
-  };
-
+  const showSearch = parts?.search ?? true;
+  const showProject = parts?.project ?? true;
+  const showManual = parts?.manual ?? true;
+  const departments = useMemo(() => courseDepartments(courses), [courses]);
   const count = filtered.length === 1 ? '1 course' : `${filtered.length} courses`;
   return (
     <div className="stack">
-      {note ? (
+      {note && showSearch ? (
         <p className="muted" role="status">
           {note}{' '}
           {onRetry ? (
@@ -180,7 +149,7 @@ function PickerView({
           ) : null}
         </p>
       ) : null}
-      {courses.length > 0 && !(offered && offered.size === 0) ? (
+      {showSearch && courses.length > 0 && !(offered && offered.size === 0) ? (
         <div>
           <div className="inline-fields">
             {options.length > 0 ? (
@@ -232,65 +201,149 @@ function PickerView({
             ))}
           </ul>
         </div>
-      ) : courses.length === 0 ? (
+      ) : showSearch && courses.length === 0 ? (
         <div className="callout">
           <strong>No course list is available right now.</strong> You can still add a course by its code and credits.
         </div>
       ) : null}
-      <form onSubmit={submitProject} noValidate aria-label="Add a project course">
-        <h3>Project course</h3>
-        <p className="muted">A project is arranged with a supervisor, so it is not in the timetable. CoursePath decides by itself whether it counts as your open project or as an elective.</p>
-        <div className="inline-fields">
-          <div className="field">
-            <label htmlFor={`${id}-pdept`}>Department code</label>
-            <input id={`${id}-pdept`} type="text" value={projectDept} onChange={(e) => setProjectDept(e.target.value)} autoComplete="off" aria-invalid={Boolean(projectError)} />
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-plevel`}>Project level</label>
-            <select id={`${id}-plevel`} value={projectLevel} onChange={(e) => setProjectLevel(e.target.value)}>
-              <option value="299">299</option>
-              <option value="399">399</option>
-              <option value="499">499</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-pcredits`}>Project credits</label>
-            <input id={`${id}-pcredits`} type="text" inputMode="decimal" value={projectCredits} onChange={(e) => setProjectCredits(e.target.value)} aria-invalid={Boolean(projectError)} />
-          </div>
-          <div className="field">
-            <button type="submit" className="btn">
-              Add project course
-            </button>
-          </div>
-        </div>
-        {projectError ? (
-          <p className="field-error" role="alert">
-            {projectError}
-          </p>
-        ) : null}
-      </form>
-      <form onSubmit={submitManual} noValidate aria-label="Add a course by code">
-        <div className="inline-fields">
-          <div className="field">
-            <label htmlFor={`${id}-code`}>Course code</label>
-            <input id={`${id}-code`} type="text" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" aria-invalid={Boolean(error)} />
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-credits`}>Credits</label>
-            <input id={`${id}-credits`} type="text" inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} aria-invalid={Boolean(error)} />
-          </div>
-          <div className="field">
-            <button type="submit" className="btn btn-primary">
-              {submitLabel}
-            </button>
-          </div>
-        </div>
-        {error ? (
-          <p className="field-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </form>
+      {showProject ? <ProjectCourseForm departments={departments} onPick={onPick} onCancel={onCancel} /> : null}
+      {showManual ? <ManualCourseForm submitLabel={submitLabel} onPick={onPick} onCancel={onCancel} /> : null}
     </div>
+  );
+}
+
+/** The departments a project can be arranged in, as the catalogue names them (CS first), for the quick-pick buttons. */
+export function courseDepartments(courses: CatalogueCourse[]): string[] {
+  const found = new Set<string>(['CS']);
+  for (const c of courses) if (c.department && /^[A-Z]{2,4}$/.test(c.department)) found.add(c.department);
+  return [...found].sort((a, b) => (a === 'CS' ? -1 : b === 'CS' ? 1 : a.localeCompare(b))).slice(0, 8);
+}
+
+/**
+ * D-52: a project (a department's 299, 399 or 499 course) is arranged with a supervisor, so no timetable lists it. The student gives the department,
+ * level and credits; the server's allocation decides whether it is the open project or an elective, so nothing here asks which.
+ */
+export function ProjectCourseForm({ departments = ['CS'], onPick, onCancel }: { departments?: string[]; onPick: (course: PickedCourse) => void; onCancel?: () => void }) {
+  const id = useId();
+  const [dept, setDept] = useState('CS');
+  const [level, setLevel] = useState('299');
+  const [credits, setCredits] = useState('4');
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const department = dept.trim().toUpperCase();
+    if (!/^[A-Z]{2,4}$/.test(department)) {
+      setError('Enter the department as two to four letters, for example CS.');
+      return;
+    }
+    const value = credits.trim();
+    if (!isDecimalString(value) || Number(value) <= 0) {
+      setError('Enter the project credits as a number above 0, for example 4.');
+      return;
+    }
+    setError(null);
+    onPick({ normalized_code: `${department} ${level}`, credits: value, fromCatalogue: false });
+  };
+
+  return (
+    <form className="add-form" data-add-form="project" onSubmit={submit} noValidate aria-label="Add a project course">
+      <p className="muted">A project is arranged with a supervisor, so it is not in the timetable. CoursePath decides by itself whether it counts as your open project or as an elective.</p>
+      <div className="field">
+        <label htmlFor={`${id}-dept`}>Department code</label>
+        <input id={`${id}-dept`} type="text" value={dept} onChange={(e) => setDept(e.target.value)} autoComplete="off" aria-invalid={Boolean(error)} />
+        <div className="chips" role="group" aria-label="Departments">
+          {departments.map((d) => (
+            <button key={d} type="button" className="chip-button" aria-pressed={dept.trim().toUpperCase() === d} onClick={() => setDept(d)}>
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="add-row">
+        <div className="field">
+          <label htmlFor={`${id}-level`}>Project level</label>
+          <select id={`${id}-level`} value={level} onChange={(e) => setLevel(e.target.value)}>
+            <option value="299">299</option>
+            <option value="399">399</option>
+            <option value="499">499</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor={`${id}-credits`}>Project credits</label>
+          <CreditStepper id={`${id}-credits`} value={credits} onChange={setCredits} min={1} max={12} invalid={Boolean(error)} />
+        </div>
+      </div>
+      {error ? (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="add-actions" data-add-actions>
+        <button type="submit" className="btn btn-primary">
+          Add project course
+        </button>
+        {onCancel ? (
+          <button type="button" className="btn" onClick={onCancel}>
+            Cancel
+          </button>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+/** A course the list does not have, or anything outside the timetable, added by its code and credits. */
+export function ManualCourseForm({ submitLabel = 'Add course', onPick, onCancel }: { submitLabel?: string; onPick: (course: PickedCourse) => void; onCancel?: () => void }) {
+  const id = useId();
+  const [code, setCode] = useState('');
+  const [credits, setCredits] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = normalizeCode(code);
+    if (!isCourseCode(code)) {
+      setError('Enter a course code such as "CS 330" or "ES 242(N)".');
+      return;
+    }
+    if (!isDecimalString(credits.trim())) {
+      setError('Enter credits as a number, for example 4 or 1.5 (no leading zeros, at most 4 decimal places).');
+      return;
+    }
+    setError(null);
+    onPick({ normalized_code: trimmed, credits: credits.trim(), fromCatalogue: false });
+    setCode('');
+    setCredits('');
+  };
+
+  return (
+    <form className="add-form" data-add-form="course" onSubmit={submit} noValidate aria-label="Add a course by code">
+      <div className="add-row">
+        <div className="field">
+          <label htmlFor={`${id}-code`}>Course code</label>
+          <input id={`${id}-code`} type="text" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" aria-invalid={Boolean(error)} />
+        </div>
+        <div className="field">
+          <label htmlFor={`${id}-credits`}>Credits</label>
+          <input id={`${id}-credits`} type="text" inputMode="decimal" value={credits} onChange={(e) => setCredits(e.target.value)} aria-invalid={Boolean(error)} />
+        </div>
+      </div>
+      {error ? (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="add-actions" data-add-actions>
+        <button type="submit" className="btn btn-primary">
+          {submitLabel}
+        </button>
+        {onCancel ? (
+          <button type="button" className="btn" onClick={onCancel}>
+            Cancel
+          </button>
+        ) : null}
+      </div>
+    </form>
   );
 }

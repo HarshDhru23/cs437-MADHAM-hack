@@ -72,7 +72,7 @@ export function InternshipEditor({ value, onChange, modules, presets = null }: I
 
   return (
     <section className="panel" aria-labelledby={`${id}-h`}>
-      <h2 id={`${id}-h`}>Internship</h2>
+      <h3 id={`${id}-h`}>Internship</h3>
       <fieldset className="choice-group">
         <legend>Internship duration</legend>
         {(['none', 'three_months', 'six_months'] as DurationChoice[]).map((d) => (
