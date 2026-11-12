@@ -1598,7 +1598,7 @@
     {
       "id": "CP-48",
       "oct27_target": false,
-      "implementation_scope": "backend_evidence",
+      "implementation_scope": "frontend",
       "release_evidence": {
         "browser": true,
         "human_review": false,
@@ -1607,7 +1607,7 @@
       "academic_data": "not_applicable",
       "tests": [],
       "browser_tests": [
-        "e2e/tests/ux-final-audit.spec.ts::a current course is found by typing part of its title, added with one click, and put back with Undo (CP-48)"
+        "e2e/tests/ux-final-audit.spec.ts::final usability pass > a current course is found by typing part of its title, added with one click, and put back with Undo (CP-48)"
       ],
       "frontend_tests": [
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > lists the courses that match a part of the code or the title as the student types",
@@ -1625,7 +1625,7 @@
     {
       "id": "CP-49",
       "oct27_target": false,
-      "implementation_scope": "backend_evidence",
+      "implementation_scope": "frontend",
       "release_evidence": {
         "browser": true,
         "human_review": false,
@@ -1634,7 +1634,7 @@
       "academic_data": "not_applicable",
       "tests": [],
       "browser_tests": [
-        "e2e/tests/ux-final-audit.spec.ts::every kind of addition to a semester is made from one box with the same ending (CP-49)"
+        "e2e/tests/ux-final-audit.spec.ts::final usability pass > every kind of addition to a semester is made from one box with the same ending (CP-49)"
       ],
       "frontend_tests": [
         "frontend/src/features/plan/addBox.test.tsx::One add box for a course, a project, an online course and a placeholder (CP-49) > opens one dialog with the four kinds as tabs, on the kind of the button that was pressed",
@@ -1670,8 +1670,8 @@
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_move_is_quiet_until_wanted_but_never_hidden_from_touch_or_keyboard"
       ],
       "browser_tests": [
-        "e2e/tests/ux-final-audit.spec.ts::the plan page folds a semester away, keeps Move quiet until wanted, and sets text at 16 px (CP-50)",
-        "e2e/tests/ux-final-audit.spec.ts::a scenario reads as three steps, with the full comparison one fold away (CP-50)"
+        "e2e/tests/ux-final-audit.spec.ts::final usability pass > the plan page folds a semester away, keeps Move quiet until wanted, and sets text at 16 px (CP-50)",
+        "e2e/tests/ux-final-audit.spec.ts::final usability pass > a scenario reads as three steps, with the full comparison one fold away (CP-50)"
       ],
       "frontend_tests": [
         "frontend/src/features/plan/planCalm.test.tsx::The plan page shows less at once (CP-50) > lets a semester be hidden and shown again, keeping its name and load while hidden",
