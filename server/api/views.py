@@ -377,7 +377,7 @@ def plan_detail(request, plan_id):
         return response()
     result = update_plan(stored, expected, validated_plan(request.payload))
     record = get_object_or_404(AcademicRecord, owner=request.user)
-    return response({**result, 'status': plan_status(_plan_check(request.user, record, stored.payload)), 'validation': _validate_owned_plan(request.user, stored)})
+    return response({**result, 'status': plan_status(_plan_check(request.user, record, stored.payload, saved=True)), 'validation': _validate_owned_plan(request.user, stored)})
 
 
 @endpoint({'POST'})
@@ -621,15 +621,16 @@ def plan_validate(request, plan_id):
     return response(_validate_owned_plan(request.user, plan))
 
 
-def _plan_check(user, stored, payload):
-    """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
+def _plan_check(user, stored, payload, saved=False):
+    """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing.
+    A saved plan is checked with the saved-plan rules (standing and advisor cap, CP-44, issue #153); a draft keeps one 28-credit limit (D-36)."""
     from coursepath.degree_audit import evaluate_audit
     from coursepath.plan_generation import term_cap
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
     online, held, requirements, uncovered = _plan_holds(rules, record, audit, payload)
-    validation = _validate_payload(user, payload, simple_load=True)
+    validation = _validate_payload(user, payload, simple_load=not saved)
     validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
     load = {}
     for term, row in validation['workload'].items():
@@ -726,7 +727,7 @@ def plan_status(check):
 
 
 def _plan_with_status(user, stored, plan):
-    return {**plan_data(plan), 'status': plan_status(_plan_check(user, stored, plan.payload))}
+    return {**plan_data(plan), 'status': plan_status(_plan_check(user, stored, plan.payload, saved=True))}
 
 
 @endpoint({'POST'})
