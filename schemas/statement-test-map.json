@@ -1237,7 +1237,14 @@
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused",
         "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_twelve_students_on_one_network_all_sign_in",
-        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten"
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_a_real_signed_token_signs_in_and_the_certificates_are_fetched_once",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_thirty_junk_tokens_do_not_lock_the_address_or_reach_google",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_tokens_naming_a_key_google_does_not_use_are_not_counted_and_fetch_at_most_once",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_an_unknown_key_is_looked_up_again_after_five_minutes",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_expired_certificates_are_fetched_again",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_well_formed_tokens_with_a_bad_signature_are_still_stopped_after_ten",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_a_token_for_another_app_or_issuer_is_refused"
       ],
       "browser_tests": [],
       "frontend_tests": [
