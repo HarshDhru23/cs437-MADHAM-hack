@@ -74,8 +74,8 @@ def plan_payload(payload):
 def current_enrolment(rows):
     if not isinstance(rows, list) or len(rows) > 100:
         raise ValueError('Invalid current enrolment')
-    ids = set()
-    for item in rows:
+    ids, result = set(), deepcopy(rows)
+    for item in result:
         if not isinstance(item, dict) or set(item) - {'id', 'normalized_code', 'term_id', 'credits', 'confirmed', 'section_ids', 'course_version_id'}:
             raise ValueError('Invalid enrolment fields')
         text(item['id'])
@@ -83,9 +83,9 @@ def current_enrolment(rows):
             raise ValueError('Enrolment must have distinct IDs and be explicitly confirmed')
         ids.add(item['id'])
         validate_term_id(item['term_id'])
-        course_code(item['normalized_code'])
+        item['normalized_code'] = course_code(item['normalized_code'])   # issue #157: 'cs202' is stored as 'CS 202'
         decimal_value(item['credits'])
-    return deepcopy(rows)
+    return result
 
 
 REPORTED_CONTROL_FIELDS = {'earned_credits', 'performance_credits', 'grade_points', 'cpi'}

@@ -51,6 +51,13 @@ def count_online(curriculum, record, plan):
     for semester in plan.get('semesters', []):
         semesters.append({'term_id': semester['term_id'], 'courses': list(semester.get('courses', [])) + rows.get(semester['term_id'], [])})
     audit = evaluate_audit(curriculum, {}, record, {'semesters': semesters})
+    if any(i['code'] == 'ALLOCATION_UNRESOLVED' for i in audit['issues']):
+        # Issue #157: the allocator ran out of its search budget, so which rows it left out says nothing about the online limit. Nothing is claimed
+        # to count, and the student is told the check did not finish instead of being given a made-up limit.
+        return {'planned': planned, 'counted': Decimal(0), 'counted_by_placeholder': {}, 'counted_by_requirement': {},
+                'issues': [issue('ALLOCATION_UNRESOLVED', 'Your online courses could not be checked against your degree: the plan has too many of them to work out.',
+                                 'unknown', list(dict.fromkeys(ref for term, p in found for ref in (term, p['id'])))[:20], [],
+                                 'Combine your online courses into fewer, larger ones, then check the plan again.')]}
     placed = {a['attempt_id']: a['requirement_id'] for a in audit['projected_ledger']}   # a course is never split between requirements (D-07)
     allocated = set(placed)
     counted_rows = {row_id: credits for row_id, (_placeholder, credits) in owner.items() if row_id in allocated}
