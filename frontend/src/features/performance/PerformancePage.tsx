@@ -4,10 +4,10 @@ import { useAnalysis, useRecord } from '../../api/hooks';
 import type { CourseAttempt, Issue, PerformanceValue } from '../../api/types';
 import { RECORD_TABS, SubNav } from '../../app/AppShell';
 import { usePublishView } from '../../app/viewContext';
-import { IssueList, visibleIssues } from '../../components/IssueList';
+import { IssueList, studentMessage, visibleIssues } from '../../components/IssueList';
 import { ErrorPanel, StatePanel } from '../../components/StatePanel';
 import { Badge } from '../../components/StatusBadge';
-import { formatCredits, formatTerm, humanize, plainMessage } from '../../lib/format';
+import { formatCredits, formatTerm, humanize } from '../../lib/format';
 import { SpiSparkline } from './SpiSparkline';
 import './performance.css';
 
@@ -145,7 +145,7 @@ export function PerformancePage() {
 function unavailableReason(value: PerformanceValue, issues: Issue[]): string {
   if (value.performance_credits === '0' || value.unrounded_value === null) return 'No graded credits in this period.';
   const first = visibleIssues(value.issues)[0] ?? visibleIssues(issues)[0];
-  return first ? plainMessage(first.message) : 'Not available.';
+  return first ? studentMessage(first) : 'Not available.';
 }
 
 function AttemptDetails({ value, attempts, label }: { value: PerformanceValue; attempts: Map<string, CourseAttempt>; label: string }) {

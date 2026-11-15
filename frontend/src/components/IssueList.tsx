@@ -19,6 +19,16 @@ interface IssueListProps {
   headingLevel?: 3 | 4;
 }
 
+/** Issues whose server message is policy text, said to a student in plain words instead (by code). Anything not listed uses the cleaned server message. */
+const STUDENT_WORDS: Record<string, string> = {
+  ADDITIONAL_LEARNING_POLICY_UNKNOWN: 'Courses marked as additional learning (honours or minor) are not counted in your CPI here yet.',
+};
+
+/** An issue as a student reads it. */
+export function studentMessage(entry: Issue): string {
+  return STUDENT_WORDS[entry.code] ?? plainMessage(entry.message);
+}
+
 export function visibleIssues(issues: Issue[]): Issue[] {
   return issues.filter((i) => i.severity !== 'info');
 }
@@ -32,9 +42,9 @@ export function IssueList({ issues: all, onSelect, emptyMessage = 'Nothing to ch
       <div className="issue-head">
         <SeverityBadge severity={entry.severity} />
       </div>
-      <p>{plainMessage(entry.message)}</p>
+      <p>{studentMessage(entry)}</p>
       {onSelect && entry.entity_refs.length > 0 ? (
-        <button type="button" className="btn btn-small" aria-label={`Show affected items: ${plainMessage(entry.message)}`} onClick={() => onSelect(entry)}>
+        <button type="button" className="btn btn-small" aria-label={`Show affected items: ${studentMessage(entry)}`} onClick={() => onSelect(entry)}>
           Show affected items
         </button>
       ) : null}
