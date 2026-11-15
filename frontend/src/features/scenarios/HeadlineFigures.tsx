@@ -31,8 +31,8 @@ function Card({ label, children, extra }: { label: string; children: ReactNode; 
   );
 }
 
-function Single({ label, figure, hypothetical }: { label: string; figure: Figure; hypothetical?: boolean }) {
-  const text = note(figure);
+function Single({ label, figure, hypothetical, missing }: { label: string; figure: Figure; hypothetical?: boolean; missing?: string }) {
+  const text = note(figure) ?? (figure.value === null ? (missing ?? null) : null);
   return (
     <Card label={label} extra={text ? <span className="scn-figure-note" data-same={text === 'No change' ? 'true' : undefined}>{text}</span> : null}>
       <strong className="num scn-figure-value">{figure.value ?? '—'}</strong>
@@ -49,7 +49,11 @@ export function HeadlineFigures({ comparison, stale }: { comparison: ScenarioCom
   return (
     <div className="scn-figures" role="group" aria-label="What happens in brief" aria-busy={stale || undefined} data-stale={stale || undefined}>
       <Single label="CPI" figure={{ value: cpiOf(scenario), was: cpiOf(baseline) }} hypothetical={Boolean(scenario?.performance?.hypothetical)} />
-      <Single label="You finish" figure={{ value: finishOf(scenario), was: finishOf(baseline) }} />
+      <Single
+        label="You finish"
+        figure={{ value: finishOf(scenario), was: finishOf(baseline) }}
+        missing={scenario ? 'Not covered yet: part of your degree is still missing from this plan.' : undefined}
+      />
       <Card label="Credits per semester">
         {terms.length === 0 ? (
           <strong className="scn-figure-value">—</strong>
