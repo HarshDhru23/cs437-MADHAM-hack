@@ -12,6 +12,7 @@ from coursepath.internships import evaluate_internship, remaining_needs
 from coursepath.issues import issue
 from coursepath.models import term_key, validate_term_id
 from coursepath.performance import calculate_performance
+from coursepath.plan_holds import plan_holds
 from coursepath.semester_plan import validate_plan
 from coursepath.serialization import decimal_value, decimal_string
 from coursepath.validation import course_code
@@ -96,7 +97,18 @@ def evaluate(context, record, plan, caps=None, hypothetical=(), internship=None,
     stay = evaluate_internship(internship_context(context, record, audit), internship, plan, context.get('calendar')) if internship else None
     issues = audit['issues'] + performance['issues'] + validation['issues'] + (stay['issues'] if stay else [])
     return {'audit': audit, 'performance': {**performance, 'hypothetical': bool(hypothetical)}, 'validation': validation,
-            'internship': stay, 'completion_term': None, 'issues': issues}
+            'internship': stay, 'completion_term': finishing_term(context['curriculum'], record, audit, plan), 'issues': issues}
+
+
+def finishing_term(curriculum, record, audit, plan):
+    """Issue #156 (CP-50): the last semester of the plan that holds any credit, when the plan leaves no degree credit uncovered (the count behind the
+    plan's "Valid" status, D-45). A plan that does not cover the degree has no finishing term: None, never a guess."""
+    _, _, _, uncovered = plan_holds(curriculum, record, audit, plan)
+    if uncovered > 0:
+        return None
+    terms = [s['term_id'] for s in plan.get('semesters', [])
+             if any(decimal_value(c['credits']) > 0 for c in s.get('courses', [])) or any(decimal_value(p['desired_credits']) > 0 for p in s.get('placeholders', []))]
+    return max(terms, key=term_key) if terms else None
 
 
 def internship_context(context, record, audit):
