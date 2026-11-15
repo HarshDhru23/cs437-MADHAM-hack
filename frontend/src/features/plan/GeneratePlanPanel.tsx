@@ -710,7 +710,7 @@ export function GeneratePlanPanel({ record, autoStart = false, onAutoStarted }: 
             </section>
           ) : null}
 
-          {!stale && !checkError ? <PlanStatusNote status={check?.status} pending={checking} /> : null}
+          {!stale && !checkError ? <PlanStatusNote status={check?.status} pending={checking} ownLimit={record.profile.standing === 'GPS' || Boolean(record.profile.advisor_cap)} /> : null}
 
           {adding ? (
             <AddToSemesterDialog

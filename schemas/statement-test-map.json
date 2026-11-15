@@ -1533,7 +1533,12 @@
         "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > accepts the two ends of the range",
         "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > says the record changed elsewhere on a conflict, saves nothing, and offers to reload",
         "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > says plainly when the save fails, without developer words",
-        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > explains that the limit applies to saved plans and drafts keep 28, with no decision numbers"
+        "frontend/src/features/record/studyLoad.test.tsx::Study load on the Record page (CP-44) > explains that the limit applies to saved plans and drafts keep 28, with no decision numbers",
+        "frontend/src/features/plan/planValidNote.test.tsx::The valid-plan note and a limit the student set themselves > says the student's own credit limit is checked when they save",
+        "frontend/src/features/plan/planValidNote.test.tsx::The valid-plan note and a limit the student set themselves > says nothing about a limit when the student has not set one",
+        "frontend/src/features/plan/planValidNote.test.tsx::The valid-plan note and a limit the student set themselves > adds nothing to a plan that is not valid, which already says it is not",
+        "frontend/src/features/plan/planValidNote.test.tsx::The valid-plan note and a limit the student set themselves > on the draft page, a GPS student is told, and a regular student is not",
+        "frontend/src/features/plan/planValidNote.test.tsx::The valid-plan note and a limit the student set themselves > on the draft page, a student with an advisor limit is told too"
       ]
     },
     {
@@ -1731,7 +1736,11 @@
         "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says in the folded semester that it has a problem, in words a screen reader reads",
         "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the folded semester when the student picks its problem in Validation, and highlights it",
         "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the semester of a course whose problem is picked",
-        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says nothing extra on an open semester or a folded one with no problem"
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says nothing extra on an open semester or a folded one with no problem",
+        "frontend/src/features/scenarios/finishNotCovered.test.tsx::\"You finish\" when the scenario leaves part of the degree uncovered > says \"Not covered yet\" in words, and keeps the dash",
+        "frontend/src/features/scenarios/finishNotCovered.test.tsx::\"You finish\" when the scenario leaves part of the degree uncovered > says it when neither the plan nor the scenario covers the degree",
+        "frontend/src/features/scenarios/finishNotCovered.test.tsx::\"You finish\" when the scenario leaves part of the degree uncovered > shows the semester, with no \"Not covered yet\", when the server gives one",
+        "frontend/src/features/scenarios/finishNotCovered.test.tsx::\"You finish\" when the scenario leaves part of the degree uncovered > says nothing when the scenario has not been evaluated at all"
       ]
     }
   ],
