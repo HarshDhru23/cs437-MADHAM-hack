@@ -380,6 +380,8 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
   const { api, user } = useSession();
   const id = useId();
   const defaultTerm = (latestCompleted && nextRegularTerm(latestCompleted)) ?? '';
+  // With no completed term there is no next semester to propose (issue #157): offer the eight regular semesters from the admission year, none chosen.
+  const firstTerm = `${record.profile.admission_year}-${String((record.profile.admission_year + 1) % 100).padStart(2, '0')}-I`;
   const queue = useSaveQueue<CurrentEnrolment[]>(
     user ? `enrolment:${user.id}` : null,
     { value: record.current_enrolment, revision: record.revision },
@@ -410,11 +412,16 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
 
   // The semesters a student is likely to be registered for: the one after the latest completed term, and the two after it.
   const termChoices = useMemo(() => {
-    const first = defaultTerm || null;
-    const second = first ? nextRegularTerm(first) : null;
-    const third = second ? nextRegularTerm(second) : null;
-    return [first, second, third].filter((t): t is string => Boolean(t));
-  }, [defaultTerm]);
+    const first = defaultTerm || firstTerm;
+    const out: string[] = [first];
+    while (out.length < (defaultTerm ? 3 : 8)) {
+      const next = nextRegularTerm(out[out.length - 1] ?? first);
+      if (!next) break;
+      out.push(next);
+    }
+    return out;
+  }, [defaultTerm, firstTerm]);
+  const alreadyIn = (code: string, termId: string) => items.some((e) => e.normalized_code === code && e.term_id === termId);
   const inTerm = items.filter((e) => e.term_id === term);
   const registered = sumCredits(inTerm.map((e) => e.credits));
 
@@ -422,6 +429,7 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
   const addFromSearch = (course: CatalogueCourse) => {
     if (!course.credits) return;
     if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setSearchError('Choose the semester first, for example 2026-27-I.');
+    if (alreadyIn(course.normalized_code, term)) return;
     setSearchError(null);
     setRemoved(null);
     queue.edit([...items, { id: newId('enrol'), normalized_code: course.normalized_code, term_id: term, credits: course.credits, confirmed: true }]);
@@ -433,6 +441,12 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
   };
   const undoRemove = () => {
     if (!removed) return;
+    if (alreadyIn(removed.item.normalized_code, removed.item.term_id)) {
+      // Added again since it was removed (issue #157): putting it back as well would list it twice and count its credits twice.
+      setAnnounce(`${removed.item.normalized_code} is already back in your enrolment.`);
+      setRemoved(null);
+      return;
+    }
     const next = [...items];
     next.splice(Math.min(removed.index, next.length), 0, removed.item);
     queue.edit(next);
@@ -447,7 +461,9 @@ export function CurrentEnrolmentSection({ record, onSaved, latestCompleted }: { 
     if (!isDecimalString(credits.trim())) return setError('Enter credits as a number, for example 4 (no leading zeros, at most 4 decimal places).');
     if (!/^\d{4}-\d{2}-(I|II|SUMMER)$/.test(term)) return setError('Enter the term, for example 2026-27-I.');
     if (!confirmed) return setError('Confirm that you are enrolled in this course this term.');
+    if (alreadyIn(normalized, term)) return setError(`${normalized} is already in your enrolment for ${formatTerm(term)}.`);
     setError(null);
+    setRemoved(null);
     const sectionIds = sections
       .split(',')
       .map((s) => s.trim())
