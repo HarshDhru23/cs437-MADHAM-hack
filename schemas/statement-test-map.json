@@ -1633,7 +1633,12 @@
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows how many credits are registered out of 28, and says so in words when that is more",
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > says it is over the limit when the registered credits pass 28, without blocking anything",
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > puts a removed course back with Undo, in the same place, and saves the final list",
-        "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows plain words only, no codes, revision numbers or developer detail"
+        "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows plain words only, no codes, revision numbers or developer detail",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > Remove, add the course again by code, then Undo leaves exactly one row and counts its credits once",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > refuses to add by code a course that is already registered for that semester, and says so",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > still puts a removed course back with Undo when it was not added again",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Course search for a student with no completed term (issue #157) > offers a semester menu, and adds the chosen course to the semester the student picks",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Course search for a student with no completed term (issue #157) > asks for the semester, pointing at a menu that is on the page, when none is chosen yet"
       ]
     },
     {
@@ -1704,7 +1709,11 @@
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > says \"No change\" when the server's figure equals the plan's, and a dash when it has none",
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > puts the full comparison, the things to check and the internship panels in one fold titled Full comparison",
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > shows no decision numbers or upper-case codes anywhere on the page",
-        "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > keeps Delete scenario at the top and Apply to plan disabled until the scenario has a plan edit"
+        "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > keeps Delete scenario at the top and Apply to plan disabled until the scenario has a plan edit",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says in the folded semester that it has a problem, in words a screen reader reads",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the folded semester when the student picks its problem in Validation, and highlights it",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the semester of a course whose problem is picked",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says nothing extra on an open semester or a folded one with no problem"
       ]
     }
   ],
