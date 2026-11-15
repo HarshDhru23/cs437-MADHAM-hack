@@ -2,6 +2,7 @@ from copy import deepcopy
 from decimal import Decimal
 from coursepath.rules.allocation import allocate
 from coursepath.rules.loader import validate_curriculum
+from coursepath.identity import canonical_code, identity_map
 from coursepath.issues import issue
 from coursepath.serialization import decimal_string, decimal_value
 
@@ -15,8 +16,14 @@ def evaluate_audit(curriculum, catalogue, record, plan=None, awards=(), approval
             current_rows.append({**row, 'completion_status': 'completed', 'learning_designation': row.get('learning_designation', 'degree'), 'current': True})
     current = allocate(curriculum, catalogue, current_rows, **limits)
     projected_rows = deepcopy(current_rows)
+    # Issue #154 (CR-105): a course both confirmed-enrolled and planned in the same term is one course, as in the plan's load check; a repeatable
+    # project such as CS 299 must not count twice.
+    identity = identity_map(curriculum.get('identity_groups'))
+    enrolled = {(row.get('term_id'), canonical_code(row['normalized_code'], identity)) for row in record.get('current_enrolment', []) if row.get('confirmed')}
     for semester in (plan or {}).get('semesters', []):
         for row in semester.get('courses', []):
+            if (semester.get('term_id'), canonical_code(row.get('normalized_code', row.get('course_id')), identity)) in enrolled:
+                continue
             projected_rows.append({**row, 'term_id': semester.get('term_id'), 'normalized_code': row.get('normalized_code', row.get('course_id')), 'completion_status': 'completed',
                                    'learning_designation': row.get('learning_designation', 'degree'), 'planned': True})
     projected = allocate(curriculum, catalogue, projected_rows, **limits)

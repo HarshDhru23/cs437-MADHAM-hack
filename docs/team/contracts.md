@@ -102,7 +102,7 @@ Evaluation sequence:
 
 The example's 12 OE+4 HSS allocation is a valid **proposal to test**, not an automatic 6-month preset credit grant. Three months can have zero credited modules; six months can have fewer than 16. Presets may suggest a proposed allocation but cannot mark it approved or earned.
 
-`ScenarioComparison`: exact baseline record/plan/rule revisions, scenario IDs, course/term changes, unavailable windows, selected/placeholder workload, completed/proposed/approved credit deltas, unmet/unknown requirements, prerequisite/clash deltas, metrics under explicitly hypothetical grades and conditional completion-term change. Compare none/3/6 on equal baseline data. If stale, require rebase/compare before applying; never silently update the baseline.
+`ScenarioComparison`: exact baseline record/plan/rule revisions, scenario IDs, course/term changes, unavailable windows, selected/placeholder workload, completed/proposed/approved credit deltas, unmet/unknown requirements, prerequisite/clash deltas, metrics under explicitly hypothetical grades and conditional completion-term change. Each evaluation's `completion_term` is the last semester of the plan that holds any credit when the plan leaves no degree credit uncovered, and `null` when it does not (#156). Compare none/3/6 on equal baseline data. If stale, require rebase/compare before applying; never silently update the baseline.
 
 ## 7. HTTP/API contract
 
@@ -119,7 +119,7 @@ Prefix `/api/v1`. Same-origin session cookies and CSRF; authenticated owner come
 | POST `/imports/preview` | Multipart file for PDF or JSON `{kind:"ims", text:..., expected_revision:N}`; creates owned expiring preview, no accepted-record change. |
 | POST `/imports/{id}/commit` | `{expected_revision, resolutions, accepted_candidate_ids}`; recompute/validate proposed record and commit transactionally; return new revision. Server rejects foreign/expired previews and unresolved blocking fields. |
 | POST `/analysis` | `{record_revision, plan_id?, plan_revision?, award_ids}`; server loads owned state and reviewed rules. Return audit, performance and validations. No client-supplied calculated totals are trusted. |
-| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. Every plan read or saved carries `status: {valid, problems, uncovered_credits}` (D-45), computed from the plan and the current record. |
+| GET/POST `/plans`; GET/PATCH/DELETE `/plans/{id}` | Create/load/edit/delete owned plan. Mutations validate `expected_revision`; return acknowledged revision and validation. Every plan read or saved carries `status: {valid, problems, uncovered_credits}` (D-45), computed from the plan and the current record with the saved-plan rules, so it agrees with the plan's `validation` (standing and advisor cap included, CP-44, #153). |
 | GET `/offerings?term_id=...` | Snapshot coverage/evidence, offerings, section/meeting groups and unknown state when absent. Committed official snapshots are served without a load step (D-22). |
 | GET `/calendar` | Published academic calendar terms (classes, quads, exams, recess, events; end-exclusive) and D-25 internship presets; `CALENDAR_MISSING` for unpublished years. |
 | POST `/plans/{id}/validate` | Evaluate persisted plan at supplied revisions, with no state change. |

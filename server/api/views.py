@@ -1,6 +1,10 @@
+import base64
+import binascii
 import hashlib
 import json
 import re
+import threading
+import time
 from pathlib import Path
 from datetime import timedelta
 from functools import lru_cache, wraps
@@ -9,6 +13,7 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError, RequestDataTooBig
+from django.core.signals import setting_changed
 from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import F, ProtectedError
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse, Http404
@@ -16,6 +21,7 @@ from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from coursepath.issues import issue
+from coursepath.plan_holds import plan_holds as _plan_holds   # in the domain so a scenario can name its finishing term (#156)
 from decimal import Decimal
 from coursepath.serialization import plain, decimal_string, decimal_value
 from server.records.models import AcademicRecord, AcademicPlan, LoginThrottle, ImportPreview, Scenario, ApprovalEvidence
@@ -132,12 +138,78 @@ def session(request):
                      'sign_in': sign_in_options(), 'sample_student': settings.COURSEPATH_DEMO_ENABLED})
 
 
-def verify_google_credential(credential):
-    """The claims of a Google ID token meant for this app, or an exception. Google's own library checks the signature, the audience (our client ID),
-    the issuer and the expiry. Tests replace this function; they never reach Google."""
-    from google.oauth2 import id_token
+class MalformedCredential(ValueError):
+    """Issue #107: a credential that is not shaped like a Google ID token, or names a key Google does not use. It is refused before any signature
+    check or certificate fetch, so it costs nothing and is not counted against the address."""
+
+
+GOOGLE_CERTS_URL = 'https://www.googleapis.com/oauth2/v1/certs'
+GOOGLE_ISSUERS = ('accounts.google.com', 'https://accounts.google.com')
+CERT_REFETCH_SECONDS = 300   # an unknown key ID asks Google again at most this often (Google rotates keys every few days)
+_GOOGLE_CERTS = {'certs': {}, 'expires': 0.0, 'fetched': None}
+_GOOGLE_CERTS_LOCK = threading.Lock()
+
+
+def _drop_google_certs(setting, **kwargs):
+    """The certificates belong to the configured Google client: changing its ID (only tests do that while running) starts the cache afresh."""
+    if setting == 'COURSEPATH_GOOGLE_CLIENT_ID':
+        with _GOOGLE_CERTS_LOCK:
+            _GOOGLE_CERTS.update(certs={}, expires=0.0, fetched=None)
+
+
+setting_changed.connect(_drop_google_certs)
+
+
+def _credential_key_id(credential):
+    """The key ID of a credential shaped like a Google ID token (three base64url parts, an RS256 header naming a key), or MalformedCredential."""
+    parts = credential.split('.')
+    if len(parts) != 3 or not all(re.fullmatch(r'[A-Za-z0-9_-]+', part) for part in parts):
+        raise MalformedCredential('Not a signed token')
+    try:
+        header = json.loads(base64.urlsafe_b64decode(parts[0] + '=' * (-len(parts[0]) % 4)))
+    except (ValueError, binascii.Error) as exc:
+        raise MalformedCredential('Unreadable token header') from exc
+    if not isinstance(header, dict) or header.get('alg') != 'RS256' or not isinstance(header.get('kid'), str) or not header['kid']:
+        raise MalformedCredential('Not a Google ID token header')
+    return header['kid']
+
+
+def _fetch_google_certs():
+    """Google's current signing certificates {key ID: PEM} and how many seconds Google says they may be kept (Cache-Control max-age)."""
+    from google.auth.exceptions import TransportError
     from google.auth.transport import requests as google_requests
-    return id_token.verify_oauth2_token(credential, google_requests.Request(), settings.COURSEPATH_GOOGLE_CLIENT_ID, clock_skew_in_seconds=10)
+    reply = google_requests.Request()(url=GOOGLE_CERTS_URL, method='GET')
+    if reply.status != 200:
+        raise TransportError(f'Google certificates answered {reply.status}')
+    max_age = re.search(r'max-age=(\d+)', reply.headers.get('cache-control', '') or '')
+    return json.loads(reply.data.decode('utf-8')), int(max_age.group(1)) if max_age else 3600
+
+
+def google_certs(key_id):
+    """The cached certificates, fetched again when Google's max-age has passed, or (at most every CERT_REFETCH_SECONDS) when a token names a key
+    the cache does not have, which is how a key rotation shows up."""
+    with _GOOGLE_CERTS_LOCK:
+        now, cache = time.monotonic(), _GOOGLE_CERTS
+        unknown = key_id not in cache['certs'] and (cache['fetched'] is None or now - cache['fetched'] >= CERT_REFETCH_SECONDS)
+        if now >= cache['expires'] or unknown:
+            certs, max_age = _fetch_google_certs()
+            cache.update(certs=certs, expires=now + min(max(max_age, 60), 6 * 3600), fetched=now)
+        return cache['certs']
+
+
+def verify_google_credential(credential):
+    """The claims of a Google ID token meant for this app, or an exception: the shape and key ID first (MalformedCredential), then the signature
+    against Google's cached certificates, the audience (our client ID), the expiry and the issuer. Most tests replace this function; none reach Google."""
+    from google.auth import jwt
+    from google.auth.exceptions import GoogleAuthError
+    key_id = _credential_key_id(credential)
+    certs = google_certs(key_id)
+    if key_id not in certs:
+        raise MalformedCredential('The token names a key Google does not use')
+    claims = jwt.decode(credential, certs={key_id: certs[key_id]}, audience=settings.COURSEPATH_GOOGLE_CLIENT_ID, clock_skew_in_seconds=10)
+    if claims.get('iss') not in GOOGLE_ISSUERS:
+        raise GoogleAuthError('The token was not issued by Google')   # as google-auth's own check raises it
+    return claims
 
 
 def iitgn_email(claims):
@@ -157,11 +229,17 @@ def _google_sign_in(request, credential):
     from google.auth.exceptions import GoogleAuthError, TransportError
     domain = settings.COURSEPATH_GOOGLE_DOMAIN
     if not isinstance(credential, str) or not 20 <= len(credential) <= 4096:
+        throttle_success(request)   # issue #107: junk, refused for nothing, so it is not counted against the address
         raise ValueError('Invalid Google credential')
     try:
         claims = verify_google_credential(credential)
     except TransportError:
         return response(issues=[issue('SIGN_IN_UNAVAILABLE', 'Google could not be reached. Try again in a moment.', 'error')], status=503)
+    except MalformedCredential:
+        # Issue #107: not even shaped like a Google token, or naming a key Google does not use. Refusing it cost nothing, so it gives its count back
+        # and junk cannot lock out a shared campus address; well-formed tokens that fail the signature check are still counted below.
+        throttle_success(request)
+        return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
     except (ValueError, GoogleAuthError):
         return response(issues=[issue('INVALID_CREDENTIALS', 'Google sign-in was not accepted.', 'error')], status=401)
     # Google verified this token, so it is not a forgery and not a guess: whatever is decided about the account below must not use up the shared
@@ -346,6 +424,7 @@ def validated_plan(payload):
 
 
 MAX_SAVED_PLANS = 50   # the same bound a backup may restore
+MAX_SAVED_SCENARIOS = 30   # issue #155: each holds up to 100 changes and list/export return them all; a sample visitor gets the same bound
 
 
 def _require_room_for_plans(user, adding):
@@ -377,7 +456,7 @@ def plan_detail(request, plan_id):
         return response()
     result = update_plan(stored, expected, validated_plan(request.payload))
     record = get_object_or_404(AcademicRecord, owner=request.user)
-    return response({**result, 'status': plan_status(_plan_check(request.user, record, stored.payload)), 'validation': _validate_owned_plan(request.user, stored)})
+    return response({**result, 'status': plan_status(_plan_check(request.user, record, stored.payload, saved=True)), 'validation': _validate_owned_plan(request.user, stored)})
 
 
 @endpoint({'POST'})
@@ -621,15 +700,16 @@ def plan_validate(request, plan_id):
     return response(_validate_owned_plan(request.user, plan))
 
 
-def _plan_check(user, stored, payload):
-    """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing."""
+def _plan_check(user, stored, payload, saved=False):
+    """The validation of a plan (saved or not), the degree credits it covers and what it still leaves uncovered. Saves nothing.
+    A saved plan is checked with the saved-plan rules (standing and advisor cap, CP-44, issue #153); a draft keeps one 28-credit limit (D-36)."""
     from coursepath.degree_audit import evaluate_audit
     from coursepath.plan_generation import term_cap
     record = record_data(stored)
     rules = _curriculum_for(stored)
     audit = evaluate_audit(rules, {}, record, payload)
     online, held, requirements, uncovered = _plan_holds(rules, record, audit, payload)
-    validation = _validate_payload(user, payload, simple_load=True)
+    validation = _validate_payload(user, payload, simple_load=not saved)
     validation['issues'] = validation['issues'] + online['issues'] + _incomplete_noncredit_issues(rules, audit, record)
     load = {}
     for term, row in validation['workload'].items():
@@ -639,28 +719,6 @@ def _plan_check(user, stored, payload):
     return {'validation': validation, 'degree': audit['degree']['projected'], 'degree_surplus': audit['degree_surplus']['projected'], 'placeholder_credits': decimal_string(sum(held.values(), Decimal(0))),
             'uncovered_credits': decimal_string(uncovered), 'requirements': requirements, 'load': load,
             'online': {'planned_credits': decimal_string(online['planned']), 'counted_credits': decimal_string(online['counted'])}}
-
-
-def _plan_holds(rules, record, audit, payload):
-    """What a plan's placeholders keep: per credit-bearing requirement the credits held (never more than it can still take) and what stays
-    uncovered. Returns the online count, the credits held per requirement before capping, the requirement rows and the total uncovered."""
-    from coursepath.degree_audit import requirement_progress
-    from coursepath.online_credits import count_online
-    online = count_online(rules, record, payload)   # which of the planned online credits count (the pool of 16 and the discipline-elective cap)
-    # An online credit is held where the allocator counted it (D-10, D-42): above the 8-credit discipline cap, or aimed at a requirement online
-    # courses cannot fill, it holds open-elective credit, never the requirement the student aimed it at.
-    held = dict(online['counted_by_requirement'])
-    for semester in payload['semesters']:
-        for p in semester.get('placeholders', []):
-            if p.get('online') is not True:
-                held[p['requirement_id']] = held.get(p['requirement_id'], Decimal(0)) + decimal_value(p['desired_credits'])
-    requirements, uncovered = [], Decimal(0)
-    for row in requirement_progress(rules, audit['projected']):
-        covered = min(held.get(row['id'], Decimal(0)), decimal_value(row['remaining_credits']))
-        left = decimal_value(row['remaining_credits']) - covered
-        uncovered += left
-        requirements.append({**row, 'held_credits': decimal_string(covered), 'uncovered_credits': decimal_string(left)})
-    return online, held, requirements, uncovered
 
 
 def _plan_holds_view(rules, audit, requirements, payload):
@@ -726,7 +784,7 @@ def plan_status(check):
 
 
 def _plan_with_status(user, stored, plan):
-    return {**plan_data(plan), 'status': plan_status(_plan_check(user, stored, plan.payload))}
+    return {**plan_data(plan), 'status': plan_status(_plan_check(user, stored, plan.payload, saved=True))}
 
 
 @endpoint({'POST'})
@@ -798,6 +856,9 @@ def scenarios(request):
     plan = get_object_or_404(AcademicPlan, pk=request.payload.get('plan_id'), owner=request.user)
     stored = get_object_or_404(AcademicRecord, owner=request.user)
     payload = _checked_changes(plan, {k: v for k, v in payload.items() if k in {'label', 'changes', 'internship', 'award_ids'}})
+    if Scenario.objects.filter(owner=request.user).count() >= MAX_SAVED_SCENARIOS:   # issue #155: the same bound for a sample student
+        return response(issues=[issue('SCENARIO_LIMIT', f'You can keep at most {MAX_SAVED_SCENARIOS} scenarios. Delete one to save another.', 'error',
+                                      action='Delete a scenario you no longer need, then save this one again.')], status=400)
     scenario = Scenario.objects.create(owner=request.user, plan=plan, baseline_record_revision=stored.revision, baseline_plan_revision=plan.revision,
                                        rule_version=_curriculum_for(stored)['version'], payload=payload)
     return response(scenario_data(scenario), status=201)

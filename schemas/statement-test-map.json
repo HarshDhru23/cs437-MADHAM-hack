@@ -716,7 +716,11 @@
         "tests.reference.test_plan_current_enrolment.CurrentEnrolmentPreparationTests.test_cp28_scenario_validation_counts_confirmed_current_enrolment",
         "tests.reference.test_scenario_downstream.ScenarioDownstreamTests.test_cp28_a_worsened_prerequisite_warning_is_downstream",
         "tests.reference.test_scenario_downstream.ScenarioDownstreamTests.test_cp28_unchanged_warnings_are_not_downstream",
-        "server.records.test_apply_noop_regression.ApplyNoPlanEditTests.test_cp28_apply_without_plan_edits_keeps_the_plan_revision"
+        "server.records.test_apply_noop_regression.ApplyNoPlanEditTests.test_cp28_apply_without_plan_edits_keeps_the_plan_revision",
+        "server.records.test_scenario_limit.ScenarioLimitTests.test_cp28_the_limit_is_a_small_fixed_number",
+        "server.records.test_scenario_limit.ScenarioLimitTests.test_cp28_one_scenario_past_the_limit_is_refused_and_nothing_is_written",
+        "server.records.test_scenario_limit.ScenarioLimitTests.test_cp28_deleting_a_scenario_makes_room_again",
+        "server.records.test_scenario_limit.ScenarioLimitTests.test_cp28_the_limit_is_per_account"
       ],
       "implementation_scope": "backend_evidence",
       "release_evidence": {
@@ -1243,7 +1247,14 @@
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_signed_by_another_key_is_refused",
         "server.records.test_google_sign_in.GoogleTokenVerificationTests.test_cp37_a_token_from_another_issuer_is_refused",
         "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_twelve_students_on_one_network_all_sign_in",
-        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten"
+        "server.records.test_signin_throttle_regression.GoogleSignInThrottleTests.test_cp37_failed_google_sign_ins_are_still_stopped_after_ten",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_a_real_signed_token_signs_in_and_the_certificates_are_fetched_once",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_thirty_junk_tokens_do_not_lock_the_address_or_reach_google",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_tokens_naming_a_key_google_does_not_use_are_not_counted_and_fetch_at_most_once",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_an_unknown_key_is_looked_up_again_after_five_minutes",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_expired_certificates_are_fetched_again",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_well_formed_tokens_with_a_bad_signature_are_still_stopped_after_ten",
+        "server.records.test_google_junk_tokens.JunkTokenTests.test_cp37_a_token_for_another_app_or_issuer_is_refused"
       ],
       "browser_tests": [],
       "frontend_tests": [
@@ -1348,7 +1359,11 @@
         "server.records.test_plan_holds.PlanHoldsAgreeWithThePlanCheckTests.test_cp40_the_remaining_credits_equal_the_plan_checks_uncovered_credits_in_every_case",
         "server.records.test_plan_holds.PlanHoldsAgreeWithThePlanCheckTests.test_cp40_two_open_elective_placeholders_keep_what_the_requirement_can_take_and_are_both_named",
         "server.records.test_plan_holds.PlanHoldsAgreeWithThePlanCheckTests.test_cp40_a_placeholder_aimed_at_a_requirement_that_is_already_met_keeps_nothing",
-        "server.records.test_plan_holds.PlanHoldsAgreeWithThePlanCheckTests.test_cp40_online_credits_over_the_discipline_cap_are_kept_up_to_the_cap_only"
+        "server.records.test_plan_holds.PlanHoldsAgreeWithThePlanCheckTests.test_cp40_online_credits_over_the_discipline_cap_are_kept_up_to_the_cap_only",
+        "tests.domain.test_enrolled_and_planned_once.EnrolledAndPlannedOnceTests.test_cp40_the_hand_counted_start",
+        "tests.domain.test_enrolled_and_planned_once.EnrolledAndPlannedOnceTests.test_cp40_a_project_enrolled_and_planned_in_the_same_term_counts_once",
+        "tests.domain.test_enrolled_and_planned_once.EnrolledAndPlannedOnceTests.test_cp40_a_different_course_planned_beside_the_enrolled_project_still_counts",
+        "tests.domain.test_enrolled_and_planned_once.EnrolledAndPlannedOnceTests.test_cp40_without_enrolment_the_planned_project_counts_as_before"
       ],
       "browser_tests": [],
       "frontend_tests": [
@@ -1417,7 +1432,8 @@
         "server.records.test_sample_student.SampleLimitTests.test_cp37_starting_samples_does_not_use_up_the_sign_in_failure_allowance",
         "server.records.test_sample_student.SampleInProductionTests.test_cp37_in_production_the_sample_works_without_google_and_opens_no_password_path",
         "server.records.test_sample_student.SampleContractTests.test_cp37_the_sample_account_and_the_session_match_the_published_schema",
-        "server.records.test_sample_student.SampleContractTests.test_cp37_the_schema_refuses_a_demo_flag_that_is_not_true"
+        "server.records.test_sample_student.SampleContractTests.test_cp37_the_schema_refuses_a_demo_flag_that_is_not_true",
+        "server.records.test_scenario_limit.SampleStudentScenarioLimitTests.test_cp28_a_sample_student_cannot_go_past_the_limit_either"
       ],
       "browser_tests": [
         "e2e/tests/sample-student.spec.ts::a visitor tries the sample student, sees the requirements and the planner, and leaves (CP-37)",
@@ -1496,6 +1512,11 @@
         "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_the_same_gps_student_gets_it_in_a_saved_plan",
         "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_an_advisor_cap_does_not_limit_a_draft_but_limits_a_saved_plan",
         "tests.domain.test_draft_ignores_declared_load.DraftIgnoresDeclaredLoadTests.test_cp44_a_draft_still_stops_at_28_credits_for_everyone",
+        "server.records.test_saved_plan_status_limits.SavedPlanStatusFollowsTheLimitsTests.test_cp44_a_saved_plan_over_the_declared_limit_is_not_valid_when_created",
+        "server.records.test_saved_plan_status_limits.SavedPlanStatusFollowsTheLimitsTests.test_cp44_the_list_and_the_detail_say_not_valid_too",
+        "server.records.test_saved_plan_status_limits.SavedPlanStatusFollowsTheLimitsTests.test_cp44_an_updated_plan_over_the_limit_is_still_not_valid",
+        "server.records.test_saved_plan_status_limits.SavedPlanStatusFollowsTheLimitsTests.test_cp44_clearing_the_declared_limits_makes_the_same_saved_plan_valid_again",
+        "server.records.test_saved_plan_status_limits.SavedPlanStatusFollowsTheLimitsTests.test_cp44_a_draft_check_of_the_same_semesters_keeps_the_28_credit_limit",
         "server.records.test_review_157_backend.RestoreStudyLoadTests.test_cp44_a_backup_round_trip_restores_standing_and_the_advisor_limit",
         "server.records.test_review_157_backend.RestoreStudyLoadTests.test_cp44_a_backup_without_a_limit_clears_the_limit_set_since",
         "server.records.test_review_157_backend.RestoreStudyLoadTests.test_cp44_the_same_study_load_is_reported_unchanged",
@@ -1630,7 +1651,12 @@
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows how many credits are registered out of 28, and says so in words when that is more",
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > says it is over the limit when the registered credits pass 28, without blocking anything",
         "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > puts a removed course back with Undo, in the same place, and saves the final list",
-        "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows plain words only, no codes, revision numbers or developer detail"
+        "frontend/src/features/record/enrolmentSearch.test.tsx::Adding a current course by searching (CP-48) > shows plain words only, no codes, revision numbers or developer detail",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > Remove, add the course again by code, then Undo leaves exactly one row and counts its credits once",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > refuses to add by code a course that is already registered for that semester, and says so",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Undo after re-adding the same course by code (issue #157) > still puts a removed course back with Undo when it was not added again",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Course search for a student with no completed term (issue #157) > offers a semester menu, and adds the chosen course to the semester the student picks",
+        "frontend/src/features/record/enrolmentReview157.test.tsx::Course search for a student with no completed term (issue #157) > asks for the semester, pointing at a menu that is on the page, when none is chosen yet"
       ]
     },
     {
@@ -1678,7 +1704,10 @@
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_page_titles_are_32_pixels_and_section_titles_17_or_more",
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_table_text_is_16_pixels",
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_the_checker_sees_a_small_size",
-        "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_move_is_quiet_until_wanted_but_never_hidden_from_touch_or_keyboard"
+        "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_move_is_quiet_until_wanted_but_never_hidden_from_touch_or_keyboard",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_the_baseline_finishes_in_the_last_semester_of_the_plan",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_postponing_a_final_year_course_past_the_last_semester_finishes_later",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_a_plan_that_no_longer_covers_the_degree_has_no_finishing_term"
       ],
       "browser_tests": [
         "e2e/tests/ux-final-audit.spec.ts::final usability pass > the plan page folds a semester away, keeps Move quiet until wanted, and sets text at 16 px (CP-50)",
@@ -1698,7 +1727,11 @@
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > says \"No change\" when the server's figure equals the plan's, and a dash when it has none",
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > puts the full comparison, the things to check and the internship panels in one fold titled Full comparison",
         "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > shows no decision numbers or upper-case codes anywhere on the page",
-        "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > keeps Delete scenario at the top and Apply to plan disabled until the scenario has a plan edit"
+        "frontend/src/features/scenarios/scenariosCalm.test.tsx::A scenario as three steps (CP-50) > keeps Delete scenario at the top and Apply to plan disabled until the scenario has a plan edit",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says in the folded semester that it has a problem, in words a screen reader reads",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the folded semester when the student picks its problem in Validation, and highlights it",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > opens the semester of a course whose problem is picked",
+        "frontend/src/features/plan/planFoldedProblems.test.tsx::A folded semester and its problems (issue #157) > says nothing extra on an open semester or a folded one with no problem"
       ]
     }
   ],

@@ -432,9 +432,14 @@ function Planner({ initial, record, recordRevision, latestCompleted }: { initial
             issues={shownIssues}
             onSelect={(i) => {
               setHighlight(new Set(i.entityRefs));
-              const first = i.entityRefs[0];
-              const target = first ? document.querySelector<HTMLElement>(`[data-item="${CSS.escape(first)}"]`) : null;
-              target?.scrollIntoView?.({ block: 'center' });
+              // Issue #157: a problem can point into a folded semester; open it first, so there is something to scroll to.
+              const terms = new Set(plan.semesters.filter((s) => i.entityRefs.includes(s.term_id) || [...s.courses, ...s.placeholders].some((x) => i.entityRefs.includes(x.id))).map((s) => s.term_id));
+              if ([...terms].some((t) => hidden.has(t))) setHidden((now) => new Set([...now].filter((t) => !terms.has(t))));
+              const first = i.entityRefs.find((r) => !terms.has(r)) ?? i.entityRefs[0];
+              window.setTimeout(() => {
+                const target = first ? document.querySelector<HTMLElement>(`[data-item="${CSS.escape(first)}"]`) : null;
+                target?.scrollIntoView?.({ block: 'center' });
+              }, 0);
             }}
           />
         ) : null}
@@ -595,6 +600,11 @@ function SemesterTable({
   const planned = workload ? (workload.target_credits ?? workload.selected_credits) : undefined;
   const termIssues = issues.filter((i) => i.entityRefs.includes(semester.term_id));
   const itemIssues = (id: string) => issues.filter((i) => i.entityRefs.includes(id));
+  // Issue #157: folded, the semester's problems are out of sight, so its heading says how many it has (errors, as "problems to fix" counts them).
+  const itemIds = [...semester.courses, ...semester.placeholders].map((x) => x.id);
+  const foldedProblems = collapsed
+    ? issues.filter((i) => i.severity === 'error' && (i.entityRefs.includes(semester.term_id) || i.entityRefs.some((r) => itemIds.includes(r)))).length
+    : 0;
   return (
     <section className="pb-col" aria-labelledby={headingId} data-current={isCurrent ? 'true' : undefined} data-collapsed={collapsed ? 'true' : undefined}>
       <div className="pb-colhead">
@@ -604,6 +614,7 @@ function SemesterTable({
           </button>
           <h2 id={headingId}>{label}</h2>
           {isCurrent ? <span className="pb-tag">Current term</span> : null}
+          {foldedProblems > 0 ? <span className="pb-tag field-error">{foldedProblems === 1 ? '1 problem' : `${foldedProblems} problems`}</span> : null}
           {planned !== undefined ? (
             <span className="pb-used" aria-hidden="true">
               {`${formatCredits(planned)} / ${formatCredits(limit)}`}
