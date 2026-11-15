@@ -19,18 +19,20 @@ export function Dialog({ open, title, onClose, children, actions, variant = 'con
   const opener = useRef<Element | null>(null);
 
   useEffect(() => {
+    if (!open) return undefined;
+    // The <dialog> is unmounted as soon as `open` turns false, so focus is given back from this effect's cleanup, not from a branch that
+    // runs when the dialog is already gone (CR-72).
     const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      opener.current = document.activeElement;
+    opener.current = document.activeElement;
+    if (dialog && !dialog.open) {
       if (typeof dialog.showModal === 'function') dialog.showModal();
       else dialog.setAttribute('open', '');
     }
-    if (!open && dialog.open) {
-      if (typeof dialog.close === 'function') dialog.close();
-      else dialog.removeAttribute('open');
-      if (opener.current instanceof HTMLElement) opener.current.focus();
-    }
+    return () => {
+      const target = opener.current;
+      opener.current = null;
+      if (target instanceof HTMLElement && target.isConnected) target.focus();
+    };
   }, [open]);
 
   if (!open) return null;
