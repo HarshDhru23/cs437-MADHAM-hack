@@ -1681,7 +1681,10 @@
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_page_titles_are_32_pixels_and_section_titles_17_or_more",
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_table_text_is_16_pixels",
         "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_the_checker_sees_a_small_size",
-        "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_move_is_quiet_until_wanted_but_never_hidden_from_touch_or_keyboard"
+        "tests.tooling.test_type_scale.TypeScaleTests.test_cp50_move_is_quiet_until_wanted_but_never_hidden_from_touch_or_keyboard",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_the_baseline_finishes_in_the_last_semester_of_the_plan",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_postponing_a_final_year_course_past_the_last_semester_finishes_later",
+        "server.records.test_scenario_finishing_term.ScenarioFinishingTermTests.test_cp50_a_plan_that_no_longer_covers_the_degree_has_no_finishing_term"
       ],
       "browser_tests": [
         "e2e/tests/ux-final-audit.spec.ts::final usability pass > the plan page folds a semester away, keeps Move quiet until wanted, and sets text at 16 px (CP-50)",

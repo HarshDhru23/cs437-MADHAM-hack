@@ -102,7 +102,7 @@ Evaluation sequence:
 
 The example's 12 OE+4 HSS allocation is a valid **proposal to test**, not an automatic 6-month preset credit grant. Three months can have zero credited modules; six months can have fewer than 16. Presets may suggest a proposed allocation but cannot mark it approved or earned.
 
-`ScenarioComparison`: exact baseline record/plan/rule revisions, scenario IDs, course/term changes, unavailable windows, selected/placeholder workload, completed/proposed/approved credit deltas, unmet/unknown requirements, prerequisite/clash deltas, metrics under explicitly hypothetical grades and conditional completion-term change. Compare none/3/6 on equal baseline data. If stale, require rebase/compare before applying; never silently update the baseline.
+`ScenarioComparison`: exact baseline record/plan/rule revisions, scenario IDs, course/term changes, unavailable windows, selected/placeholder workload, completed/proposed/approved credit deltas, unmet/unknown requirements, prerequisite/clash deltas, metrics under explicitly hypothetical grades and conditional completion-term change. Each evaluation's `completion_term` is the last semester of the plan that holds any credit when the plan leaves no degree credit uncovered, and `null` when it does not (#156). Compare none/3/6 on equal baseline data. If stale, require rebase/compare before applying; never silently update the baseline.
 
 ## 7. HTTP/API contract
 
