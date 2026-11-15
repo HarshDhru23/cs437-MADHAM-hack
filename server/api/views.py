@@ -346,6 +346,7 @@ def validated_plan(payload):
 
 
 MAX_SAVED_PLANS = 50   # the same bound a backup may restore
+MAX_SAVED_SCENARIOS = 30   # issue #155: each holds up to 100 changes and list/export return them all; a sample visitor gets the same bound
 
 
 def _require_room_for_plans(user, adding):
@@ -799,6 +800,9 @@ def scenarios(request):
     plan = get_object_or_404(AcademicPlan, pk=request.payload.get('plan_id'), owner=request.user)
     stored = get_object_or_404(AcademicRecord, owner=request.user)
     payload = _checked_changes(plan, {k: v for k, v in payload.items() if k in {'label', 'changes', 'internship', 'award_ids'}})
+    if Scenario.objects.filter(owner=request.user).count() >= MAX_SAVED_SCENARIOS:   # issue #155: the same bound for a sample student
+        return response(issues=[issue('SCENARIO_LIMIT', f'You can keep at most {MAX_SAVED_SCENARIOS} scenarios. Delete one to save another.', 'error',
+                                      action='Delete a scenario you no longer need, then save this one again.')], status=400)
     scenario = Scenario.objects.create(owner=request.user, plan=plan, baseline_record_revision=stored.revision, baseline_plan_revision=plan.revision,
                                        rule_version=_curriculum_for(stored)['version'], payload=payload)
     return response(scenario_data(scenario), status=201)
