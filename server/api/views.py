@@ -982,6 +982,10 @@ def backup_preview(request):
     attempts = validate_attempts(record.get('attempts'))
     enrolment = current_enrolment(record.get('current_enrolment', []))
     reported = reported_controls(record.get('reported_controls', []))
+    # Issue #157: the declared standing and advisor limit (CP-44) are part of the record and come back with it, checked as PATCH /record checks
+    # them; the backup's curriculum fields are ignored (they change only after review). None: the study load is already the same.
+    fixed = {k: v for k, v in stored.profile.items() if k not in STUDY_LOAD_FIELDS}
+    study_load = _declared_profile(stored.profile, {**fixed, **{k: record['profile'][k] for k in STUDY_LOAD_FIELDS if k in record['profile']}})
     plans, scenarios = backup.get('plans', []), backup.get('scenarios', [])
     if not isinstance(plans, list) or len(plans) > 50 or not isinstance(scenarios, list):
         raise ValueError('Backup lists exceed limits')
@@ -1001,7 +1005,8 @@ def backup_preview(request):
     shared = incoming.keys() & existing.keys()
     diff = {'attempts_added': sorted(incoming.keys() - existing.keys()), 'attempts_removed': sorted(existing.keys() - incoming.keys()),
             'attempts_changed': sorted(k for k in shared if incoming[k] != existing[k]), 'attempts_unchanged': sum(incoming[k] == existing[k] for k in shared),
-            'current_enrolment_changed': enrolment != stored.current_enrolment, 'reported_controls_changed': reported != stored.reported_controls, 'plans_to_create': len(plans),
+            'current_enrolment_changed': enrolment != stored.current_enrolment, 'reported_controls_changed': reported != stored.reported_controls,
+            'study_load_changed': study_load is not None, 'plans_to_create': len(plans),
             'plans_skipped_existing': sorted({m for m in matches if m is not None}), 'scenarios_not_restored': len(scenarios)}
     issues = []
     if backup.get('rule_version') != _curriculum_for(stored)['version']:
@@ -1010,7 +1015,8 @@ def backup_preview(request):
         issues.append(issue('BACKUP_SCENARIOS_NOT_RESTORED', 'Scenarios depend on an exact baseline; recreate them after restoring.', 'warning'))
     _purge_expired_previews()
     preview = ImportPreview.objects.create(owner=request.user, record=stored, base_record_revision=stored.revision, expires_at=timezone.now() + timedelta(hours=1),
-                                           payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans})
+                                           payload={'kind': 'backup', 'attempts': attempts, 'current_enrolment': enrolment, 'reported_controls': reported, 'plans': plans,
+                                                    'profile': study_load})
     return response({'id': str(preview.pk), 'kind': 'backup', 'base_record_revision': stored.revision, 'expires_at': preview.expires_at.isoformat(), 'diff': diff},
                     issues, 201)
 
@@ -1038,7 +1044,7 @@ def _restore_backup(request, preview, stored, expected):
     # commits for one account cannot both pass the count; a refusal rolls the whole restore back.
     AcademicRecord.objects.select_for_update().get(pk=stored.pk)
     _require_room_for_plans(request.user, len(payload['plans']))
-    restored =replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'])
+    restored = replace_record(stored, expected, payload['attempts'], payload['current_enrolment'], payload['reported_controls'], profile=payload.get('profile'))
     AcademicPlan.objects.bulk_create([AcademicPlan(owner=request.user, payload=plan) for plan in payload['plans']])
     _spend_preview(preview)
     return response(restored)
