@@ -108,12 +108,11 @@ const creditsText = (def: RequirementDefinition, result?: RequirementResult): st
   return required ? `${formatCredits(required)} credits` : '';
 };
 
-/** Credits counted so far, never shown above what the requirement asks for. */
+/** Credits counted so far, exactly as the server counted them. A client-side cap would turn surplus into "28 of 28" and hide a shortfall (D-07, CR-70). */
 function progressText(def: RequirementDefinition, result: RequirementResult): string | null {
   const required = def.minimum_credits ?? result.required_credits;
   if (!required || result.counted_credits == null) return null;
-  const counted = Number(result.counted_credits) > Number(required) ? required : result.counted_credits;
-  return `${formatCredits(counted)} of ${formatCredits(required)} credits`;
+  return `${formatCredits(result.counted_credits)} of ${formatCredits(required)} credits`;
 }
 
 /** How much of a requirement's bar to fill: a drawing detail, the counted credits themselves come from the server. */
